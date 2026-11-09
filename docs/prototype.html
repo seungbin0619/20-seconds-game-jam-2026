@@ -1,0 +1,821 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>폰 찾기</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: a full-bleed 3D room, with every menu shown as a phone lock screen floating over it. */
+:root {
+  --night: #10161c;
+  --glass: rgba(16, 22, 28, 0.84);
+  --paper: #f3eee3;
+  --muted: #b5b3a8;
+  --ring: #ffd23f;
+  --miss: #ff6b57;
+  --answer: #57d68d;
+  --display: "Black Han Sans", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--night); color: var(--paper); font-family: var(--body); font-size: 15px; line-height: 1.55; touch-action: none; user-select: none; -webkit-user-select: none; }
+#view { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
+
+#hud { position: fixed; top: calc(14px + env(safe-area-inset-top, 0px)); left: 0; right: 0; display: grid; justify-items: center; gap: 2px; pointer-events: none; text-shadow: 0 2px 10px rgba(0,0,0,.7); }
+#clock { font-family: var(--display); font-size: clamp(44px, 9vw, 72px); line-height: 1; color: var(--ring); font-variant-numeric: tabular-nums; }
+#clock.low { color: var(--miss); }
+#hint { min-height: 1.5em; font-weight: 500; text-align: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+#aim { position: fixed; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; border: 2px solid var(--paper); box-shadow: 0 0 0 1px rgba(0,0,0,.6); pointer-events: none; transition: transform .08s; }
+#aim.item { transform: scale(1.7); border-color: var(--ring); }
+#aim.phone { transform: scale(2.3); border-color: var(--answer); }
+#aimLabel { position: fixed; left: 50%; top: calc(50% + 20px); transform: translateX(-50%); font-weight: 700; font-size: 13px; text-shadow: 0 1px 5px #000; pointer-events: none; }
+
+.overlay { position: fixed; inset: 0; display: grid; justify-items: center; align-items: safe center; overflow-y: auto; touch-action: pan-y; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: rgba(8, 11, 14, .34); }
+.handset { width: 320px; max-width: 100%; display: grid; gap: 14px; padding: 22px 22px 20px; border: 3px solid #39424b; border-radius: 34px; background: var(--glass); box-shadow: 0 24px 60px rgba(0,0,0,.55); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+.lockTime { text-align: center; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+h1, h2 { margin: 0; font-family: var(--display); font-weight: 400; text-wrap: balance; text-align: center; line-height: 1.15; }
+h1 { font-size: 62px; color: var(--ring); }
+h2 { font-size: 34px; }
+h2.miss { color: var(--miss); }
+h2.answer { color: var(--answer); }
+.lead { margin: 0; text-align: center; }
+.caller { margin: 0; text-align: center; font-weight: 700; font-size: 18px; }
+.quote { margin: 0; text-align: center; color: var(--muted); }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 13px; }
+.keys dt { font-weight: 700; color: var(--ring); }
+.keys dd { margin: 0; }
+.note { margin: 0; text-align: center; font-size: 13px; color: var(--muted); }
+button { font: 700 17px var(--body); color: var(--night); background: var(--ring); border: 0; border-radius: 999px; padding: 12px 18px; cursor: pointer; }
+button:hover { filter: brightness(1.08); }
+button:focus-visible { outline: 3px solid var(--paper); outline-offset: 2px; }
+
+#answerBox { pointer-events: none; background: transparent; }
+.slideTrack { position: relative; height: 58px; border-radius: 999px; background: rgba(255,255,255,.14); overflow: hidden; }
+.slideTrack span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 14px; color: var(--muted); }
+#thumb { position: absolute; left: 4px; top: 4px; width: 50px; height: 50px; border-radius: 50%; background: var(--answer); box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+
+@media (prefers-reduced-motion: reduce) { #aim { transition: none; } }
+</style>
+
+<canvas id="view" aria-label="전화벨이 울리는 어질러진 방"></canvas>
+
+<div id="hud" hidden>
+  <div id="clock">20.0</div>
+  <div id="hint"></div>
+</div>
+<div id="aim" hidden></div>
+<div id="aimLabel" hidden></div>
+
+<section class="overlay" id="titleBox">
+  <div class="handset">
+    <div class="lockTime" id="lockTime"></div>
+    <h1>폰 찾기</h1>
+    <p class="lead">폰이 어딘가에서 울리고 있어요.<br>벨이 끊기기 전에 찾아서 받으세요.</p>
+    <dl class="keys">
+      <dt>WASD</dt><dd>걷기</dd>
+      <dt>마우스</dt><dd>둘러보기</dd>
+      <dt>클릭</dt><dd>물건 던지기, 폰 집기</dd>
+      <dt>터치</dt><dd>끌어서 둘러보기, 길게 눌러 걷기, 탭해서 던지기</dd>
+    </dl>
+    <button id="startBtn" type="button">벨 울리기</button>
+    <p class="note">이어폰을 끼면 소리 방향이 훨씬 잘 들려요.</p>
+  </div>
+</section>
+
+<section class="overlay" id="answerBox" hidden>
+  <div class="handset">
+    <div class="lockTime">수신 전화</div>
+    <h2 class="answer">받아!</h2>
+    <div class="slideTrack"><span>옆으로 밀어서 받기</span><div id="thumb"></div></div>
+  </div>
+</section>
+
+<section class="overlay" id="resultBox" hidden>
+  <div class="handset">
+    <div class="lockTime" id="resultTime"></div>
+    <h2 id="resultHead"></h2>
+    <p class="caller" id="resultCaller"></p>
+    <p class="quote" id="resultQuote"></p>
+    <p class="note" id="resultStat"></p>
+    <button id="againBtn" type="button">다시 찾기</button>
+    <p class="note">R 키로 바로 다시 시작</p>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* 재미를 맞출 때 먼저 만질 값들 */
+const TUNE = {
+  duration: 20,        // 게임 길이(초)
+  walkSpeed: 3.2,      // 걷는 속도(m/s)
+  lookSpeed: 0.0023,   // 마우스 감도
+  reach: 3.1,          // 손이 닿는 거리(m)
+  throwForward: 4.6,   // 던지는 수평 속도
+  throwUp: 3.6,        // 던지는 위쪽 속도
+  throwCooldown: 0.1,  // 던지기 간격(초)
+  clearCutoff: 7000,   // 아무것도 안 덮였을 때 벨소리 고음 한계(Hz)
+  coveredCutoff: 420,  // 많이 덮였을 때 고음 한계(Hz)
+  maxCovers: 4,        // 이 개수부터 가장 먹먹하게 들림
+  rolloff: 2.2,        // 거리에 따라 소리가 줄어드는 정도
+  jiggle: 0.55,        // 진동 시 덮인 물건이 튀어 오르는 속도
+  slideNeeded: 210     // 전화 받기 슬라이드 거리(px)
+};
+
+const CALLERS = [
+  { name: '엄마', ok: '"밥은 먹었니?"', miss: '문자 1통: "왜 전화를 안 받아"' },
+  { name: '택배 기사님', ok: '"문 앞에 두고 갑니다"', miss: '"부재중으로 반송 처리됩니다"' },
+  { name: '면접 본 회사', ok: '"합격 안내 전화드렸습니다"', miss: '"연락이 닿지 않아 다음 후보자에게 넘어갑니다"' },
+  { name: '치킨집', ok: '"주소가 안 찍혀서요. 몇 동이세요?"', miss: '치킨이 식어갑니다' },
+  { name: '모르는 번호', ok: '"고객님, 저금리 대출 안내드립니다"', miss: '받았어도 별일 없었을 전화입니다' }
+];
+
+const $ = id => document.getElementById(id);
+const canvas = $('view');
+
+if (!window.THREE || !window.CANNON) {
+  $('titleBox').querySelector('.lead').textContent = '게임 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.';
+  $('startBtn').hidden = true;
+  return;
+}
+
+/* ---------- 렌더러와 조명 ---------- */
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+} catch (err) {
+  $('titleBox').querySelector('.lead').textContent = '이 브라우저에서 WebGL을 쓸 수 없어요. 하드웨어 가속을 켜고 다시 시도해 주세요.';
+  $('startBtn').hidden = true;
+  return;
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x10161c);
+const camera = new THREE.PerspectiveCamera(72, 1, 0.05, 40);
+camera.rotation.order = 'YXZ';
+
+scene.add(new THREE.HemisphereLight(0xdfe7ff, 0x5a4638, 0.72));
+const ceiling = new THREE.SpotLight(0xffe2b0, 0.95, 12, 1.15, 0.55, 1);
+ceiling.position.set(0, 2.55, 0.1);
+ceiling.target.position.set(0, 0, 0);
+ceiling.castShadow = true;
+ceiling.shadow.mapSize.set(1024, 1024);
+ceiling.shadow.bias = -0.002;
+scene.add(ceiling, ceiling.target);
+const lamp = new THREE.PointLight(0xffb45e, 0.8, 5.5, 2);
+lamp.position.set(-3, 1.5, -2.45);
+scene.add(lamp);
+const tvGlow = new THREE.PointLight(0x62a7ff, 0.55, 4.5, 2);
+tvGlow.position.set(2.5, 1, 0);
+scene.add(tvGlow);
+
+/* ---------- 물리 세계 ---------- */
+const world = new CANNON.World();
+world.gravity.set(0, -9.82, 0);
+world.broadphase = new CANNON.NaiveBroadphase();
+world.solver.iterations = 7;
+world.allowSleep = true;
+world.defaultContactMaterial.friction = 0.55;
+world.defaultContactMaterial.restitution = 0.06;
+
+const ROOM = { x: 3.5, z: 3, h: 2.6 };
+const solids = [];        // 플레이어가 통과하지 못하는 영역
+const furniture = [];     // 조준선을 가리는 가구
+
+function solidBox(x, y, z, w, h, d) {
+  const b = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(w / 2, h / 2, d / 2)), position: new CANNON.Vec3(x, y, z) });
+  world.addBody(b);
+}
+function block(x, y, z, w, h, d, color, opts = {}) {
+  const mat = new THREE.MeshLambertMaterial({ color, emissive: opts.glow || 0x000000 });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  m.castShadow = !opts.noShadow;
+  m.receiveShadow = true;
+  scene.add(m);
+  if (opts.solid !== false) solidBox(x, y, z, w, h, d);
+  if (opts.blocksAim !== false) furniture.push(m);
+  return m;
+}
+function noWalk(x, z, w, d) { solids.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 }); }
+
+/* 방 */
+block(0, -0.25, 0, 7.6, 0.5, 6.6, 0x8a6b4f);                 // 바닥
+block(0, ROOM.h + 0.15, 0, 7.6, 0.3, 6.6, 0xd9d3c3, { noShadow: true });
+block(0, 1.3, -ROOM.z - 0.15, 7.6, 2.6, 0.3, 0x3f6b6e, { noShadow: true });
+block(0, 1.3, ROOM.z + 0.15, 7.6, 2.6, 0.3, 0x3f6b6e, { noShadow: true });
+block(-ROOM.x - 0.15, 1.3, 0, 0.3, 2.6, 6.6, 0x47787a, { noShadow: true });
+block(ROOM.x + 0.15, 1.3, 0, 0.3, 2.6, 6.6, 0x47787a, { noShadow: true });
+for (let i = -3; i <= 3; i++) block(i * 1, 0.002, 0, 0.012, 0.004, 6, 0x6f5540, { solid: false, blocksAim: false, noShadow: true });
+
+/* 러그, 창문, 액자 */
+block(0.4, 0.008, 0.2, 3, 0.012, 2.3, 0xc24f3d, { solid: false, blocksAim: false, noShadow: true });
+block(0.4, 0.016, 0.2, 2.6, 0.012, 1.9, 0xe2b04a, { solid: false, blocksAim: false, noShadow: true });
+block(1.1, 1.55, -ROOM.z + 0.01, 1.7, 1.2, 0.02, 0x16263f, { solid: false, blocksAim: false, noShadow: true, glow: 0x0c1730 });
+block(1.1, 1.55, -ROOM.z + 0.02, 0.05, 1.2, 0.02, 0xe6e0d0, { solid: false, blocksAim: false, noShadow: true });
+block(1.1, 1.55, -ROOM.z + 0.02, 1.7, 0.05, 0.02, 0xe6e0d0, { solid: false, blocksAim: false, noShadow: true });
+block(-1.2, 1.7, -ROOM.z + 0.02, 0.8, 0.55, 0.03, 0xe2b04a, { solid: false, blocksAim: false, noShadow: true });
+
+/* 소파 */
+const SOFA = 0xa8452f;
+block(-1.2, 0.22, -2.45, 2.5, 0.44, 1.0, SOFA);
+block(-1.2, 0.7, -2.88, 2.5, 0.75, 0.24, 0x8e3926);
+block(-2.56, 0.42, -2.45, 0.24, 0.84, 1.0, 0x8e3926);
+block(0.16, 0.42, -2.45, 0.24, 0.84, 1.0, 0x8e3926);
+noWalk(-1.2, -2.45, 3, 1.1);
+
+/* 탁자 */
+block(-1, 0.4, -0.9, 1.35, 0.06, 0.78, 0xd9b27c);
+for (const [dx, dz] of [[-.58, -.3], [.58, -.3], [-.58, .3], [.58, .3]]) block(-1 + dx, 0.19, -0.9 + dz, 0.07, 0.38, 0.07, 0x7a5a3a, { solid: false });
+noWalk(-1, -0.9, 1.4, 0.82);
+
+/* TV 장 */
+block(3.1, 0.25, 0, 0.72, 0.5, 2.2, 0x5b4636);
+block(3.3, 1.02, 0, 0.06, 0.72, 1.3, 0x12161a, { solid: false });
+block(3.26, 1.02, 0, 0.01, 0.64, 1.22, 0x264a78, { solid: false, glow: 0x20497e });
+noWalk(3.1, 0, 0.76, 2.24);
+
+/* 책장 */
+block(-3.25, 1, 1.3, 0.46, 2, 1.5, 0x5b4636);
+const BOOKS = [0xd9524a, 0xe2b04a, 0x4a8fb5, 0xe9e2d3, 0x6fa86a];
+for (let s = 0; s < 4; s++) for (let i = 0; i < 9; i++) {
+  block(-3.0, 0.3 + s * 0.45, 0.72 + i * 0.145, 0.04, 0.3 + (i % 3) * 0.03, 0.11, BOOKS[(i + s * 2) % 5], { solid: false, blocksAim: false, noShadow: true });
+}
+noWalk(-3.25, 1.3, 0.5, 1.54);
+
+/* 매트리스 */
+block(2.25, 0.12, -2.05, 2.2, 0.24, 1.8, 0xd8d3cb);
+noWalk(2.25, -2.05, 2.24, 1.84);
+
+/* 빨래 바구니 */
+const BASKET = { x: 2.75, z: 2.3, w: 0.76, wall: 0.32 };
+block(BASKET.x, 0.01, BASKET.z, BASKET.w, 0.02, BASKET.w, 0xc8d2d4, { solid: false, noShadow: true });
+block(BASKET.x - BASKET.w / 2, BASKET.wall / 2, BASKET.z, 0.04, BASKET.wall, BASKET.w, 0xc8d2d4);
+block(BASKET.x + BASKET.w / 2, BASKET.wall / 2, BASKET.z, 0.04, BASKET.wall, BASKET.w, 0xc8d2d4);
+block(BASKET.x, BASKET.wall / 2, BASKET.z - BASKET.w / 2, BASKET.w, BASKET.wall, 0.04, 0xc8d2d4);
+block(BASKET.x, BASKET.wall / 2, BASKET.z + BASKET.w / 2, BASKET.w, BASKET.wall, 0.04, 0xc8d2d4);
+noWalk(BASKET.x, BASKET.z, BASKET.w, BASKET.w);
+
+/* 스탠드 */
+block(-3, 0.75, -2.45, 0.05, 1.5, 0.05, 0x2d2a26, { solid: false });
+block(-3, 1.52, -2.45, 0.36, 0.3, 0.36, 0xffc77a, { solid: false, glow: 0xff9d3f });
+
+/* 폰이 숨을 수 있는 자리. kind: 맨 아래에 까는 물건 */
+const SPOTS = [
+  { x: -2.0, y: 0.44, z: -2.35, base: 'shirt' },
+  { x: -0.4, y: 0.44, z: -2.35, base: 'shirt' },
+  { x: -1.0, y: 0.43, z: -0.9, base: 'shirt' },
+  { x: 1.3, y: 0.022, z: 0.8, base: 'blanket' },
+  { x: 2.3, y: 0.24, z: -2.05, base: 'blanket' },
+  { x: BASKET.x, y: 0.02, z: BASKET.z, base: 'smallShirt', basket: true },
+  { x: -2.6, y: 0, z: 2.3, base: 'blanket' },
+  { x: 3.1, y: 0.5, z: -0.5, base: 'smallShirt' }
+];
+
+/* ---------- 물건 ---------- */
+const KINDS = {
+  shirt: { w: 0.66, h: 0.07, d: 0.56, mass: 0.5, soft: true, colors: [0xe8e0cd, 0x4a8fb5, 0xd9524a, 0x6fa86a, 0x3a4150] },
+  smallShirt: { w: 0.5, h: 0.07, d: 0.5, mass: 0.4, soft: true, colors: [0xf0a8a0, 0x7fb9c9, 0xe8e0cd, 0xc9a6dc] },
+  blanket: { w: 0.98, h: 0.08, d: 0.78, mass: 0.8, soft: true, colors: [0x75558f, 0x356e8c, 0xcc8f35] },
+  cushion: { w: 0.48, h: 0.17, d: 0.48, mass: 0.6, soft: true, colors: [0xe2b04a, 0xe46f55, 0x88b49a, 0xf0e4c8] },
+  book: { w: 0.24, h: 0.05, d: 0.33, mass: 0.5, soft: false, colors: [0xd9524a, 0x4a8fb5, 0xe2b04a, 0xe9e2d3] },
+  carton: { w: 0.36, h: 0.27, d: 0.32, mass: 0.7, soft: false, colors: [0xc69a63, 0xb88a56] }
+};
+
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = list => list[Math.floor(Math.random() * list.length)];
+
+function softGeometry(w, h, d) {
+  const g = new THREE.BoxGeometry(w, h, d, 4, 1, 4);
+  const p = g.attributes.position;
+  const seed = Math.random() * 100;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), z = p.getZ(i);
+    const wave = Math.sin(x * 9 + seed) * Math.cos(z * 8 + seed * 1.7);
+    p.setY(i, p.getY(i) + wave * Math.min(h * 0.65, 0.035));
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
+let items = [];
+function addItem(kindName, x, y, z, spin = rand(-0.3, 0.3)) {
+  const k = KINDS[kindName];
+  const mat = new THREE.MeshLambertMaterial({ color: pick(k.colors), flatShading: k.soft });
+  const geo = k.soft ? softGeometry(k.w, k.h, k.d) : new THREE.BoxGeometry(k.w, k.h, k.d);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = mesh.receiveShadow = true;
+  mesh.userData.kind = 'item';
+  scene.add(mesh);
+  const half = new CANNON.Vec3(k.w / 2, k.h / 2, k.d / 2);
+  const body = new CANNON.Body({
+    mass: k.mass, shape: new CANNON.Box(half),
+    position: new CANNON.Vec3(x, y + k.h / 2 + 0.005, z),
+    linearDamping: 0.22, angularDamping: 0.45,
+    allowSleep: true, sleepSpeedLimit: 0.18, sleepTimeLimit: 0.35
+  });
+  body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), spin);
+  world.addBody(body);
+  const item = { mesh, body, half };
+  mesh.userData.item = item;
+  items.push(item);
+  return y + k.h + 0.01;
+}
+
+function buildPile(spot) {
+  let y = addItem(spot.base, spot.x, spot.y, spot.z, rand(-0.12, 0.12));
+  if (spot.basket) {
+    y = addItem('smallShirt', spot.x, y, spot.z, rand(-0.12, 0.12));
+    addItem('smallShirt', spot.x, y, spot.z, rand(-0.12, 0.12));
+    return;
+  }
+  const extra = 2 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < extra; i++) {
+    y = addItem(pick(['cushion', 'book', 'shirt', 'carton', 'book']), spot.x + rand(-0.08, 0.08), y, spot.z + rand(-0.08, 0.08));
+  }
+}
+
+/* ---------- 폰 ---------- */
+const phone = new THREE.Group();
+const phoneBody = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.014, 0.2), new THREE.MeshLambertMaterial({ color: 0x15181c }));
+const screenMat = new THREE.MeshLambertMaterial({ color: 0x000000, emissive: 0x8ee6ff });
+const phoneScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.088, 0.184), screenMat);
+phoneScreen.rotation.x = -Math.PI / 2;
+phoneScreen.position.y = 0.008;
+phone.add(phoneBody, phoneScreen);
+phoneBody.castShadow = true;
+scene.add(phone);
+const phoneGrip = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), new THREE.MeshBasicMaterial({ visible: false }));
+phoneGrip.userData.kind = 'phone';
+scene.add(phoneGrip);
+const phoneSpot = new THREE.Vector3();
+const phonePoint = new CANNON.Vec3();
+const localPoint = new CANNON.Vec3();
+
+function countCovers() {
+  let n = 0;
+  for (const it of items) {
+    const p = it.body.position;
+    if (p.y < phonePoint.y - 0.03 || p.y > phonePoint.y + 1.1) continue;
+    it.body.pointToLocalFrame(phonePoint, localPoint);
+    if (Math.abs(localPoint.x) < it.half.x + 0.05 && Math.abs(localPoint.z) < it.half.z + 0.05) n++;
+  }
+  return n;
+}
+
+/* ---------- 소리 ---------- */
+let ac = null, master, ringBus, muffle, panner;
+const NOTES = [659.25, 987.77, 830.61, 987.77, 1318.51, 987.77, 830.61, 659.25, 739.99, 987.77, 1108.73, 1479.98];
+const NOTE_GAP = 0.125, PAUSE = 0.5;
+let nextNote = 0, noteIndex = 0;
+
+function initAudio() {
+  if (ac) { ac.resume(); return; }
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  ac = new Ctx();
+  master = ac.createGain();
+  master.gain.value = 0.85;
+  master.connect(ac.destination);
+  ringBus = ac.createGain();
+  ringBus.gain.value = 0;
+  muffle = ac.createBiquadFilter();
+  muffle.type = 'lowpass';
+  muffle.frequency.value = TUNE.coveredCutoff;
+  muffle.Q.value = 0.7;
+  panner = ac.createPanner();
+  panner.panningModel = 'HRTF';
+  panner.distanceModel = 'inverse';
+  panner.refDistance = 0.8;
+  panner.rolloffFactor = TUNE.rolloff;
+  panner.maxDistance = 20;
+  ringBus.connect(muffle);
+  muffle.connect(panner);
+  panner.connect(master);
+  ac.resume();
+}
+
+function playNote(freq, at) {
+  const osc = ac.createOscillator(), shimmer = ac.createOscillator(), amp = ac.createGain();
+  osc.type = 'square';
+  osc.frequency.value = freq;
+  shimmer.type = 'sine';
+  shimmer.frequency.value = freq * 2.01;
+  amp.gain.setValueAtTime(0.0001, at);
+  amp.gain.exponentialRampToValueAtTime(0.34, at + 0.008);
+  amp.gain.exponentialRampToValueAtTime(0.0001, at + 0.16);
+  osc.connect(amp); shimmer.connect(amp); amp.connect(ringBus);
+  osc.start(at); shimmer.start(at);
+  osc.stop(at + 0.18); shimmer.stop(at + 0.18);
+}
+function playBuzz(at) {
+  const osc = ac.createOscillator(), amp = ac.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.value = 158;
+  amp.gain.setValueAtTime(0.0001, at);
+  amp.gain.linearRampToValueAtTime(0.45, at + 0.02);
+  amp.gain.setValueAtTime(0.45, at + 0.3);
+  amp.gain.linearRampToValueAtTime(0.0001, at + 0.34);
+  osc.connect(amp); amp.connect(ringBus);
+  osc.start(at); osc.stop(at + 0.36);
+}
+function scheduleRing() {
+  if (!ac) return;
+  while (nextNote < ac.currentTime + 0.14) {
+    if (noteIndex === 0) playBuzz(nextNote);
+    playNote(NOTES[noteIndex], nextNote);
+    noteIndex = (noteIndex + 1) % NOTES.length;
+    nextNote += NOTE_GAP + (noteIndex === 0 ? PAUSE : 0);
+  }
+}
+function oneShot(type, freq, length, level, when = 0) {
+  if (!ac) return;
+  const t = ac.currentTime + when;
+  const osc = ac.createOscillator(), amp = ac.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq * 0.5), t + length);
+  amp.gain.setValueAtTime(level, t);
+  amp.gain.exponentialRampToValueAtTime(0.0001, t + length);
+  osc.connect(amp); amp.connect(master);
+  osc.start(t); osc.stop(t + length + 0.02);
+}
+function updateListener() {
+  if (!ac) return;
+  const pos = camera.position;
+  const dir = camera.getWorldDirection(tmpDir);
+  const l = ac.listener;
+  if (l.positionX) {
+    l.positionX.value = pos.x; l.positionY.value = pos.y; l.positionZ.value = pos.z;
+    l.forwardX.value = dir.x; l.forwardY.value = dir.y; l.forwardZ.value = dir.z;
+    l.upX.value = 0; l.upY.value = 1; l.upZ.value = 0;
+  } else {
+    l.setPosition(pos.x, pos.y, pos.z);
+    l.setOrientation(dir.x, dir.y, dir.z, 0, 1, 0);
+  }
+}
+
+/* ---------- 게임 상태 ---------- */
+const player = { x: 0, z: 2.2, yaw: 0, pitch: -0.4 };
+const keys = new Set();
+const tmpDir = new THREE.Vector3();
+const ray = new THREE.Raycaster();
+const sightRay = new THREE.Raycaster();
+const tmpSight = new THREE.Vector3();
+const CENTER = new THREE.Vector2(0, 0);
+let state = 'title';     // title | playing | answer | won | missed
+let timeLeft = TUNE.duration;
+let caller = CALLERS[0];
+let covers = 0, target = null, cooldown = 0, jiggleClock = 0, slide = 0, shakeAmount = 0;
+let hintUntil = 0, walkHeld = false;
+
+function clearRound() {
+  for (const it of items) {
+    world.removeBody(it.body);
+    scene.remove(it.mesh);
+    it.mesh.geometry.dispose();
+    it.mesh.material.dispose();
+  }
+  items = [];
+  target = null;
+}
+
+function setupRound() {
+  clearRound();
+  const hide = pick(SPOTS);
+  SPOTS.forEach(buildPile);
+  for (let i = 0; i < 6; i++) {
+    const x = rand(-2.2, 2.2), z = rand(-0.2, 1.1);
+    addItem(pick(['book', 'shirt', 'carton']), x, 0.03, z, rand(-3, 3));
+  }
+  for (let i = 0; i < 90; i++) world.step(1 / 60);
+
+  const px = hide.x + rand(-0.06, 0.06), pz = hide.z + rand(-0.05, 0.05);
+  phone.position.set(px, hide.y + 0.012, pz);
+  phone.rotation.y = rand(-0.5, 0.5);
+  phoneSpot.copy(phone.position);
+  phoneGrip.position.copy(phone.position);
+  phonePoint.set(px, hide.y + 0.012, pz);
+  if (panner) {
+    if (panner.positionX) {
+      panner.positionX.value = px; panner.positionY.value = phone.position.y; panner.positionZ.value = pz;
+    } else panner.setPosition(px, phone.position.y, pz);
+  }
+  caller = pick(CALLERS);
+  player.x = 0; player.z = 2.2; player.yaw = 0; player.pitch = -0.4;
+  timeLeft = TUNE.duration;
+  slide = 0; cooldown = 0; jiggleClock = 0.3; shakeAmount = 0;
+  covers = countCovers();
+}
+
+function lockPointer() {
+  if (matchMedia('(pointer: coarse)').matches || !canvas.requestPointerLock) return;
+  try {
+    const p = canvas.requestPointerLock();
+    if (p && p.catch) p.catch(() => {});
+  } catch (e) { /* 끌어서 둘러보기로 동작 */ }
+}
+
+function startRound() {
+  initAudio();
+  setupRound();
+  state = 'playing';
+  $('titleBox').hidden = true;
+  $('resultBox').hidden = true;
+  $('answerBox').hidden = true;
+  $('hud').hidden = false;
+  $('aim').hidden = false;
+  $('hint').textContent = '소리를 따라가서 쌓인 물건을 치우세요';
+  hintUntil = performance.now() + 4000;
+  $('clock').classList.remove('low');
+  if (ac) {
+    ringBus.gain.cancelScheduledValues(ac.currentTime);
+    ringBus.gain.setValueAtTime(0.75, ac.currentTime);
+    nextNote = ac.currentTime + 0.05;
+    noteIndex = 0;
+  }
+  lockPointer();
+}
+
+function endRound(result) {
+  state = result;
+  if (ac) ringBus.gain.setTargetAtTime(0, ac.currentTime, 0.012);
+  if (document.pointerLockElement) document.exitPointerLock();
+  $('hud').hidden = true;
+  $('aim').hidden = true;
+  $('aimLabel').hidden = true;
+  $('answerBox').hidden = true;
+  setTarget(null);
+  const used = TUNE.duration - timeLeft;
+  const head = $('resultHead');
+  $('resultTime').textContent = lockClock();
+  if (result === 'won') {
+    head.textContent = '여보세요?';
+    head.className = 'answer';
+    $('resultCaller').textContent = caller.name;
+    $('resultQuote').textContent = caller.ok;
+    $('resultStat').textContent = `${used.toFixed(1)}초 만에 받았어요`;
+    oneShot('sine', 880, 0.14, 0.3);
+    oneShot('sine', 1320, 0.2, 0.3, 0.12);
+  } else {
+    const dist = Math.hypot(player.x - phoneSpot.x, player.z - phoneSpot.z);
+    head.textContent = '부재중 전화 1통';
+    head.className = 'miss';
+    $('resultCaller').textContent = caller.name;
+    $('resultQuote').textContent = caller.miss;
+    $('resultStat').textContent = `폰은 ${dist.toFixed(1)}m 앞에 있었어요`;
+    screenMat.emissive.setHex(0xff6b57);
+    oneShot('square', 420, 0.09, 0.18);
+    oneShot('square', 420, 0.09, 0.18, 0.16);
+  }
+  $('resultBox').hidden = false;
+}
+
+function lockClock() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function setTarget(next) {
+  if (target === next) return;
+  if (target && target.material && target.material.emissive && target.userData.kind === 'item') target.material.emissive.setHex(0x000000);
+  target = next;
+  if (target && target.userData.kind === 'item') target.material.emissive.setHex(0x3a3220);
+  const kind = target ? target.userData.kind : '';
+  $('aim').className = kind;
+  const label = $('aimLabel');
+  label.hidden = !kind;
+  label.textContent = kind === 'phone' ? '폰 집기' : '던지기';
+}
+
+function phoneInSight(blockers) {
+  const from = camera.position;
+  const dist = from.distanceTo(phoneSpot);
+  if (dist > TUNE.reach || ray.ray.distanceToPoint(phoneSpot) > 0.17) return false;
+  sightRay.set(from, tmpSight.copy(phoneSpot).sub(from).normalize());
+  sightRay.far = dist - 0.02;
+  return sightRay.intersectObjects(blockers, false).length === 0;
+}
+
+function updateTarget() {
+  ray.setFromCamera(CENTER, camera);
+  const list = furniture.concat(items.map(i => i.mesh));
+  if (phoneInSight(list)) { setTarget(phoneGrip); return; }
+  const hits = ray.intersectObjects(list, false);
+  const first = hits[0];
+  setTarget(first && first.distance < TUNE.reach && first.object.userData.kind === 'item' ? first.object : null);
+}
+
+function act() {
+  if (state !== 'playing' || cooldown > 0 || !target) return;
+  if (target === phoneGrip) { grabPhone(); return; }
+  const it = target.userData.item;
+  camera.getWorldDirection(tmpDir);
+  const len = Math.hypot(tmpDir.x, tmpDir.z) || 1;
+  const side = rand(-0.28, 0.28);
+  const hx = tmpDir.x / len, hz = tmpDir.z / len;
+  const p = it.body.position;
+  const inBasket = Math.abs(p.x - BASKET.x) < BASKET.w / 2 && Math.abs(p.z - BASKET.z) < BASKET.w / 2 && p.y < BASKET.wall + 0.2;
+  const forward = inBasket ? 1.6 : TUNE.throwForward, up = inBasket ? 6.2 : TUNE.throwUp;
+  it.body.wakeUp();
+  it.body.velocity.set(hx * forward - hz * side * forward, up, hz * forward + hx * side * forward);
+  it.body.angularVelocity.set(rand(-9, 9), rand(-6, 6), rand(-9, 9));
+  cooldown = TUNE.throwCooldown;
+  oneShot('triangle', 170, 0.1, 0.28);
+}
+
+function grabPhone() {
+  state = 'answer';
+  slide = 0;
+  setTarget(null);
+  $('aim').hidden = true;
+  $('aimLabel').hidden = true;
+  $('answerBox').hidden = false;
+  $('thumb').style.transform = 'translateX(0)';
+  phone.visible = false;
+  if (ac) { muffle.frequency.setTargetAtTime(TUNE.clearCutoff, ac.currentTime, 0.02); }
+  oneShot('triangle', 620, 0.08, 0.25);
+}
+
+function moveSlide(dx) {
+  slide = Math.max(0, Math.min(TUNE.slideNeeded, slide + dx));
+  const track = document.querySelector('.slideTrack');
+  const room = track.clientWidth - 58;
+  $('thumb').style.transform = `translateX(${room * slide / TUNE.slideNeeded}px)`;
+  if (slide >= TUNE.slideNeeded) { phone.visible = true; endRound('won'); }
+}
+
+/* ---------- 입력 ---------- */
+let down = false, lastX = 0, lastY = 0, moved = 0, downAt = 0, pointerType = 'mouse', holdTimer = 0;
+const active = () => state === 'playing' || state === 'answer';
+
+window.addEventListener('pointerdown', e => {
+  if (!active()) return;
+  down = true; moved = 0; downAt = performance.now();
+  lastX = e.clientX; lastY = e.clientY; pointerType = e.pointerType;
+  if (pointerType === 'mouse') {
+    if (!document.pointerLockElement) lockPointer();
+    act();
+  } else {
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => { if (down && moved < 10) walkHeld = true; }, 260);
+  }
+});
+window.addEventListener('pointermove', e => {
+  if (!active()) return;
+  const locked = !!document.pointerLockElement;
+  const dx = locked ? e.movementX : e.clientX - lastX;
+  const dy = locked ? e.movementY : e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  if (state === 'answer') { if (locked || down) moveSlide(dx); return; }
+  if (!locked && !down) return;
+  moved += Math.abs(dx) + Math.abs(dy);
+  const touchBoost = e.pointerType === 'touch' ? 1.9 : 1;
+  player.yaw -= dx * TUNE.lookSpeed * touchBoost;
+  player.pitch = Math.max(-1.42, Math.min(1.1, player.pitch - dy * TUNE.lookSpeed * touchBoost));
+});
+window.addEventListener('pointerup', () => {
+  if (down && pointerType !== 'mouse' && moved < 10 && performance.now() - downAt < 260) act();
+  down = false; walkHeld = false;
+  clearTimeout(holdTimer);
+});
+window.addEventListener('pointercancel', () => { down = false; walkHeld = false; });
+window.addEventListener('keydown', e => {
+  keys.add(e.code);
+  if (e.code === 'KeyR' && !e.repeat && state !== 'title') startRound();
+  if (e.code === 'Space' && state === 'playing') { e.preventDefault(); act(); }
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+});
+window.addEventListener('keyup', e => keys.delete(e.code));
+window.addEventListener('blur', () => { keys.clear(); down = false; walkHeld = false; });
+$('startBtn').addEventListener('click', startRound);
+$('againBtn').addEventListener('click', startRound);
+
+/* ---------- 이동과 루프 ---------- */
+function blocked(x, z) {
+  const r = 0.26;
+  if (Math.abs(x) > ROOM.x - r || Math.abs(z) > ROOM.z - r) return true;
+  return solids.some(s => x > s.x0 - r && x < s.x1 + r && z > s.z0 - r && z < s.z1 + r);
+}
+function walk(dt) {
+  let f = 0, s = 0;
+  if (keys.has('KeyW') || keys.has('ArrowUp')) f += 1;
+  if (keys.has('KeyS') || keys.has('ArrowDown')) f -= 1;
+  if (keys.has('KeyD') || keys.has('ArrowRight')) s += 1;
+  if (keys.has('KeyA') || keys.has('ArrowLeft')) s -= 1;
+  if (walkHeld) f = 1;
+  if (!f && !s) return;
+  const len = Math.hypot(f, s);
+  const sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
+  const vx = (-sin * f + cos * s) / len * TUNE.walkSpeed * dt;
+  const vz = (-cos * f - sin * s) / len * TUNE.walkSpeed * dt;
+  if (!blocked(player.x + vx, player.z)) player.x += vx;
+  if (!blocked(player.x, player.z + vz)) player.z += vz;
+}
+
+function vibrate(dt) {
+  jiggleClock -= dt;
+  if (jiggleClock > 0) return;
+  const cycle = NOTE_GAP * NOTES.length + PAUSE;
+  jiggleClock = cycle / 2;
+  for (const it of items) {
+    const p = it.body.position;
+    if (Math.hypot(p.x - phonePoint.x, p.z - phonePoint.z) < 0.5 && Math.abs(p.y - phonePoint.y) < 0.6) {
+      it.body.wakeUp();
+      it.body.velocity.y += TUNE.jiggle;
+      it.body.angularVelocity.set(rand(-1, 1), rand(-1.5, 1.5), rand(-1, 1));
+    }
+  }
+}
+
+function aimAtPhone(dt) {
+  const dx = phoneSpot.x - player.x, dz = phoneSpot.z - player.z;
+  const wantYaw = Math.atan2(-dx, -dz);
+  const wantPitch = Math.atan2(phoneSpot.y - 1.52, Math.hypot(dx, dz));
+  let diff = wantYaw - player.yaw;
+  diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+  const k = Math.min(1, dt * 4);
+  player.yaw += diff * k;
+  player.pitch += (wantPitch - player.pitch) * k;
+}
+
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+let lastTime = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const realDt = (now - lastTime) / 1000;   // 벨은 실제 시간으로 끊긴다
+  const dt = Math.min(0.05, realDt);
+  lastTime = now;
+  world.step(1 / 60, dt, 3);
+  for (const it of items) {
+    it.mesh.position.copy(it.body.position);
+    it.mesh.quaternion.copy(it.body.quaternion);
+  }
+
+  if (active()) {
+    timeLeft -= realDt;
+    cooldown -= realDt;
+    if (state === 'playing') { walk(dt); vibrate(dt); }
+    covers = countCovers();
+    scheduleRing();
+
+    if (ac) {
+      const level = Math.min(1, covers / TUNE.maxCovers);
+      const cut = state === 'answer' ? TUNE.clearCutoff : TUNE.clearCutoff * Math.pow(TUNE.coveredCutoff / TUNE.clearCutoff, Math.pow(level, 0.6));
+      muffle.frequency.setTargetAtTime(cut, ac.currentTime, 0.05);
+      ringBus.gain.setTargetAtTime(0.75 + 0.45 * (1 - timeLeft / TUNE.duration), ac.currentTime, 0.1);
+    }
+
+    const pulse = Math.sin(now * 0.02) > 0 ? 1 : 0.35;
+    screenMat.emissive.setRGB(0.55 * pulse, 0.9 * pulse, 1 * pulse);
+    shakeAmount = covers === 0 ? 0.004 : 0;
+    phone.position.x = phoneSpot.x + Math.sin(now * 0.09) * shakeAmount;
+
+    const clock = $('clock');
+    clock.textContent = Math.max(0, timeLeft).toFixed(1);
+    clock.classList.toggle('low', timeLeft <= 5);
+    if (hintUntil && now > hintUntil) { $('hint').textContent = ''; hintUntil = 0; }
+    if (timeLeft <= 0) endRound('missed');
+  } else if (state === 'title') {
+    player.yaw = Math.sin(now * 0.00025) * 0.35;
+  } else if (state === 'missed') {
+    aimAtPhone(dt);
+  }
+
+  camera.position.set(player.x, 1.52, player.z);
+  camera.rotation.set(player.pitch, player.yaw, 0);
+  camera.updateMatrixWorld();
+  updateListener();
+  if (state === 'playing') updateTarget();
+  renderer.render(scene, camera);
+}
+
+$('lockTime').textContent = lockClock();
+setupRound();
+requestAnimationFrame(frame);
+
+window.__phoneFind = {
+  get state() { return state; }, get covers() { return covers; }, get timeLeft() { return timeLeft; },
+  get target() { return target ? target.userData.kind : null; }, get caller() { return caller.name; },
+  player, phoneSpot, items: () => items, grab: () => { target = phoneGrip; grabPhone(); }
+};
+})();
+</script>
+
+</body></html>
