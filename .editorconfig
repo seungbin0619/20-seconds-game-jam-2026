@@ -1,0 +1,21 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+# 여는 중괄호는 같은 줄 끝에 둔다: if (x) {
+csharp_new_line_before_open_brace = none
+csharp_new_line_before_else = false
+csharp_new_line_before_catch = false
+csharp_new_line_before_finally = false
+
+[*.{json,asmdef,jslib,md}]
+indent_size = 2
+
+[*.asmdef]
+indent_size = 4

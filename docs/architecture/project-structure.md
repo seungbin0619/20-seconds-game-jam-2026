@@ -42,9 +42,11 @@ Feature ──▶ Core ──▶ Shared
 
 | 타입 | 책임 |
 |---|---|
-| `GameFlow` | 상태 머신 (`title / playing / answer / won / missed`), 라운드 시작과 종료 |
-| `RoundContext` | 라운드 공용 상태 |
+| `GameFlow` | 상태 머신 (`title / playing / answer / won / missed`), 판 시작과 종료 |
+| `RoundContext` | 판 공용 상태: 시드, 폰 위치, 덮임 수, 벽 수, 남은 시간, 조준 대상, 판 통계(던진 수 등) |
 | `GameTuning` (ScriptableObject) | 튜닝 값. [`game-design.md`](../design/game-design.md)와 일치시킨다 |
+
+판은 서로 독립이다. 새 판을 시작할 때 `RoundContext`를 통째로 초기화하고, 게임플레이 상태를 다음 판으로 넘기지 않는다. 판 사이에 남는 것은 `Result`의 기록뿐이다.
 
 ## Feature 목록 (계획)
 
@@ -52,13 +54,18 @@ Feature ──▶ Core ──▶ Shared
 
 | 폴더 | 책임 | 프로토타입 대응 |
 |---|---|---|
+| `Layout` | 집 생성: 템플릿 선택, 모듈 배치, 문 소켓, `RoomGraph` | 신규 |
+| `Room` | 방 모듈 프리팹, 가구, 조명, `HideSpot`, 라이트맵 복원 | `block`, `noWalk`, `SPOTS` |
 | `Player` | 걷기, 둘러보기, 입력 처리 | `walk`, `blocked`, 포인터 입력 |
-| `Room` | 방, 가구, 조명, 은신처 데이터 | `block`, `noWalk`, `SPOTS` |
-| `Clutter` | 물건 종류, 더미 생성, 물리 | `KINDS`, `addItem`, `buildPile` |
-| `Interaction` | 화면 중심 조준, 던지기 | `updateTarget`, `act` |
+| `Clutter` | 물건 종류, 더미 생성, 물리, 풀링 | `KINDS`, `addItem`, `buildPile` |
+| `Interaction` | 화면 중심 조준, 던지기, 문 열기 | `updateTarget`, `act` |
 | `Phone` | 폰 배치, 덮임 계산, 진동, 집기 | `countCovers`, `vibrate`, `grabPhone` |
-| `Ringtone` | 벨소리와 공간 음향, 효과음 | `initAudio`, `scheduleRing`, `oneShot` |
-| `Ui` | HUD, 타이틀, 받기 슬라이드, 결과, 발신자 데이터 | HTML 오버레이, `CALLERS` |
+| `Ringtone` | 발신자별 벨소리, 공간 음향, 벽 먹먹함, 문 쪽 음원, 효과음 | `initAudio`, `scheduleRing`, `oneShot` |
+| `Modifiers` | 판 변수 (미끼 소리, 진동 모드, 정전, 닫힌 문) | 신규 |
+| `Result` | 칭호 판정, 기록 저장과 조회 | 신규 |
+| `Ui` | HUD, 타이틀, 받기 슬라이드, 결과, 기록 화면, 발신자 데이터 | HTML 오버레이, `CALLERS` |
+
+에디터 전용 코드(라이트맵 굽기 도구 등)는 해당 기능 폴더의 `Editor/` 하위에 두고, 필요해질 때 `MissedCall.Feature.Editor` asmdef를 만든다.
 
 ## 네이밍
 
