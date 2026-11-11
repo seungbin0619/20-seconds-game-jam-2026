@@ -7,7 +7,10 @@ Assets/_Project/
 ├─ Shared/   MissedCall.Shared   게임 규칙을 모르는 재사용 요소
 │  └─ Input/                     InputSystem_Actions
 ├─ Core/     MissedCall.Core     게임 뼈대와 Feature 간 계약
+│  ├─ Round/                     GameFlow, RoundContext, RoundSeed, RoundStep
+│  ├─ Aim/                       조준 계약(IAimTarget, IThrowable, IGrabbable)
 │  ├─ Rooms/                     방 모듈 계약(RoomModule, DoorSocket, HideSpot, 열거형)과 RoomGraph
+│  ├─ Tests/                     EditMode 테스트 (MissedCall.Core.Tests, 에디터 전용)
 │  ├─ Scenes/Main.unity
 │  └─ Settings/                  URP 에셋, 볼륨 프로파일
 └─ Feature/  MissedCall.Feature  게임 기능
@@ -37,14 +40,18 @@ Feature ──▶ Core ──▶ Shared
   - 공용 상태: `RoundContext` (폰 위치, 덮임 수, 남은 시간, 현재 조준 대상)
   - 흐름: `GameFlow`의 상태 변경 이벤트
   - 동작: Core에 선언한 인터페이스 (예: `IThrowable`)
+  - 판 준비: `RoundStep`을 상속해 `GameFlow`의 준비 단계 목록에 넣는다
 - 씬 연결은 인스펙터 참조로 한다. `FindObjectOfType` 계열과 전역 싱글턴은 쓰지 않는다.
 
-## Core 구성 (계획)
+## Core 구성
 
 | 타입 | 책임 |
 |---|---|
-| `GameFlow` | 상태 머신 (`title / playing / answer / won / missed`), 판 시작과 종료 |
-| `RoundContext` | 판 공용 상태: 시드, 폰 위치, 덮임 수, 벽 수, 남은 시간, 조준 대상, 판 통계(던진 수 등) |
+| `Round/GameFlow` | 상태 머신 (`Title / Playing / Answer / Won / Missed`), 판 시작과 준비 단계 실행, 실제 시간 타이머. 입력은 읽지 않는다. Feature가 `StartRound`, `RequestRestart`(R), `PickUp`, `Answer`를 호출하고 `StateChanged`를 구독한다 |
+| `Round/RoundContext` | 판 공용 상태: 시드, 상태, 경과/남은 시간, `RoomGraph`, 폰 위치·방·덮임 수, 플레이어 위치·방, 조준 대상, 판 통계(던진 수, 받은 시간). `GameFlow.Context`로 얻는다. 판 시작 때 통째로 초기화한다 |
+| `Round/RoundSeed`, `RoundStream` | 판 시드 하나에서 용도별(`Layout`, `Phone`, `Clutter`, `Start`, `Caller`, `Modifier`) `System.Random`을 가른다. 한 기능의 뽑는 횟수가 바뀌어도 다른 기능의 결과는 그대로다. `RoundStream` 값은 바꾸지 않고 끝에만 추가한다 |
+| `Round/RoundStep` | 판 준비 단계의 추상 MonoBehaviour. Feature가 상속하고, `GameFlow` 인스펙터의 순서대로 `Prepare(context)`가 불린다. 이전 판 오브젝트는 여기서 풀에 돌려놓는다 |
+| `Aim/IAimTarget`, `IThrowable`, `IGrabbable`, `AimKind` | Interaction이 Clutter, Phone을 모르고 조준·던지기·집기를 하기 위한 계약. 속도 계산과 집기 조건 판정은 Interaction이 한다 |
 | `GameTuning` (ScriptableObject) | 튜닝 값. [`game-design.md`](../design/game-design.md)와 일치시킨다 |
 | `Rooms/RoomModule`, `DoorSocket`, `HideSpot` | 방 모듈 프리팹에 붙는 데이터 컴포넌트. Layout(배치, 문), Phone과 Clutter(숨는 자리)가 함께 읽으므로 Room이 아니라 Core에 둔다 |
 | `Rooms/RoomGraph`, `RoomDoor`, `GraphRoute` | 판의 집 구조와 소리 경로. Layout이 만들고 Ringtone, Player가 읽는다 |

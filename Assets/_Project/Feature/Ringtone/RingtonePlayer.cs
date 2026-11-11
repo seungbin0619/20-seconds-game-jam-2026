@@ -11,7 +11,7 @@ namespace MissedCall.Feature.Ringtone {
         [SerializeField] private GameTuning tuning;
         [SerializeField] private Transform listener;
 
-        private readonly List<VoiceState> voices = new List<VoiceState>();
+        private readonly List<VoiceState> voices = new();
         private IRingtoneBackend backend;
 
         public bool IsReady => backend != null && backend.IsReady;

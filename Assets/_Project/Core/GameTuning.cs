@@ -8,7 +8,7 @@ namespace MissedCall.Core {
     public sealed class GameTuning : ScriptableObject {
         [Header("Round")]
         public float duration = 20f;
-        public Vector2Int roomCount = new Vector2Int(2, 4);
+        public Vector2Int roomCount = new(2, 4);
         [Range(0f, 1f)] public float modifierChance = 0.5f;
 
         [Header("Player")]

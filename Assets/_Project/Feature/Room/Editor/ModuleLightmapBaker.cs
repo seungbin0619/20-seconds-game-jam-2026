@@ -17,7 +17,7 @@ namespace MissedCall.Feature.Room.Editor {
         private const string SettingsPath = OutputFolder + "/ModuleBake.lighting";
 
         /// <summary>굽기 씬의 환경광. 런타임 씬의 환경광과 맞춘다 (라이트맵이 환경광을 포함한다).</summary>
-        public static readonly Color Ambient = new Color(0.10f, 0.10f, 0.12f);
+        public static readonly Color Ambient = new(0.10f, 0.10f, 0.12f);
 
         [MenuItem("Missed Call/Room/Bake Module Lightmaps")]
         public static void BakeAllMenu() {

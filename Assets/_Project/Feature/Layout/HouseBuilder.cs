@@ -16,8 +16,8 @@ namespace MissedCall.Feature.Layout {
 
         private readonly RoomCatalog catalog;
         private readonly Transform root;
-        private readonly Dictionary<RoomModule, RoomModule> pool = new Dictionary<RoomModule, RoomModule>();
-        private readonly List<RoomModule> active = new List<RoomModule>();
+        private readonly Dictionary<RoomModule, RoomModule> pool = new();
+        private readonly List<RoomModule> active = new();
 
         public HouseBuilder(RoomCatalog catalog, Transform root) {
             this.catalog = catalog;

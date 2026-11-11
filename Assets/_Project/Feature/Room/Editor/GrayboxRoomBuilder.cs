@@ -112,8 +112,8 @@ namespace MissedCall.Feature.Room.Editor {
             private readonly Transform sockets;
             private readonly Transform furniture;
             private readonly Transform spots;
-            private readonly List<DoorSocket> socketList = new List<DoorSocket>();
-            private readonly List<HideSpot> spotList = new List<HideSpot>();
+            private readonly List<DoorSocket> socketList = new();
+            private readonly List<HideSpot> spotList = new();
             private Light mainLight;
 
             public ModuleBuilder(string name, RoomKind kind, RoomSize sizeClass, Vector2 size) {

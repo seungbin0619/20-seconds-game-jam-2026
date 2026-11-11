@@ -8,7 +8,7 @@ namespace MissedCall.Core.Rooms {
     public sealed class HideSpot : MonoBehaviour {
         [SerializeField] private ItemKind baseKind = ItemKind.Shirt;
         [Tooltip("더미에 쌓는 물건 수 범위 (맨 아래 물건 포함, 양 끝 포함)")]
-        [SerializeField] private Vector2Int pileCount = new Vector2Int(2, 4);
+        [SerializeField] private Vector2Int pileCount = new(2, 4);
         [Tooltip("바구니나 욕조처럼 둘레에 벽이 있는 자리인지")]
         [SerializeField] private bool enclosed;
 

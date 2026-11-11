@@ -16,7 +16,7 @@ namespace MissedCall.Feature.Ringtone.Sandbox {
         [SerializeField] private Transform phone;
         [SerializeField] private Transform decoy;
         [SerializeField] private Transform door;
-        [SerializeField] private Vector2 halfSize = new Vector2(4f, 2.5f);
+        [SerializeField] private Vector2 halfSize = new(4f, 2.5f);
         [SerializeField] private float doorHalfWidth = 0.5f;
 
         private const float BodyRadius = 0.3f;

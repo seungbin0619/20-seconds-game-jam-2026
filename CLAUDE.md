@@ -34,6 +34,7 @@
 
 - 여는 중괄호는 줄바꿈하지 않고 여는 줄 끝에 공백 하나 뒤에 쓴다: `if (x) {`, `public sealed class Foo {`. `.editorconfig`에도 설정되어 있다.
 - `else`, `catch`, `finally`는 닫는 중괄호와 같은 줄에 쓴다: `} else {`.
+- 선언 왼쪽에 타입이 보이면 `new()`를 쓴다: `private readonly List<int> items = new();`. 지역 변수는 `var x = new Foo();`를 쓰고 `Foo x = new();`와 섞지 않는다. 대입(`position = new Vector3(...)`), 반환, 인자처럼 타입이 안 보이는 곳은 타입을 적는다.
 
 ## Unity 에디터 다루기
 

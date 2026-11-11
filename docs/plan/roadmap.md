@@ -31,7 +31,7 @@ Web 빌드에서 확인한다. 실패하면 문서에 적힌 대안으로 바로
 
 ## 2. 코어 루프 — 11/12
 
-- [ ] `Core`: `GameFlow`, `RoundContext`, `GameTuning`, 시드
+- [x] `Core`: `GameFlow`, `RoundContext`, `GameTuning`, 시드 (`RoundSeed` 용도별 스트림, `RoundStep` 준비 단계, `Aim` 계약. EditMode 테스트 통과. 씬 연결은 한 판 조립 때)
 - [ ] `Player`: CharacterController 이동, 둘러보기
 - [ ] `Clutter`: 물건 종류, 더미 생성, 물리 안정화, 풀링
 - [ ] `Interaction`: 조준, 던지기

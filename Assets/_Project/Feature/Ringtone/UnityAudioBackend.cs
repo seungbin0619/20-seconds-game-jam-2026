@@ -13,8 +13,8 @@ namespace MissedCall.Feature.Ringtone {
         private const float MasterGain = 0.85f;
 
         private readonly Transform host;
-        private readonly List<Voice> voices = new List<Voice>();
-        private readonly Dictionary<OneShot, AudioClip> oneShotClips = new Dictionary<OneShot, AudioClip>();
+        private readonly List<Voice> voices = new();
+        private readonly Dictionary<OneShot, AudioClip> oneShotClips = new();
         private AudioSource oneShotSource;
         private float rolloff;
 

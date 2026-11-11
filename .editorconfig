@@ -13,6 +13,8 @@ csharp_new_line_before_open_brace = none
 csharp_new_line_before_else = false
 csharp_new_line_before_catch = false
 csharp_new_line_before_finally = false
+# 타입이 왼쪽에 보이면 new()를 쓴다: List<int> items = new();
+csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
 
 [*.{json,asmdef,jslib,md}]
 indent_size = 2

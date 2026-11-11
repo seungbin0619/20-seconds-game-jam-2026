@@ -19,7 +19,7 @@ namespace MissedCall.Feature.Player.Sandbox {
         private const string Charset =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz\n0123456789 !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
-        private readonly StringBuilder text = new StringBuilder(512);
+        private readonly StringBuilder text = new(512);
         private int lockClicks;
         private int throws;
         private int locks;
