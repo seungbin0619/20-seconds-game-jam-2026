@@ -26,7 +26,7 @@ Web 빌드에서 확인한다. 실패하면 문서에 적힌 대안으로 바로
 - [x] `Room`: 회색 박스 모듈 3개 (욕실 S, 침실 M, 거실 L). `Missed Call/Room/Build Graybox Modules` 메뉴로 다시 만든다
 - [x] `Room`: 모듈 라이트맵 굽기와 런타임 복원. Web 빌드에서 확인 (`Room/Sandbox/LightmapSandbox`, 빌드 약 16.7MB)
 - [x] `Layout`: 회색 박스 모듈로 조립과 `RoomGraph` 확인 (템플릿 5개, 시드 300개 검증, `Layout/Sandbox/LayoutSandbox`)
-- [ ] 포인터 잠금 동작 (데스크톱만 지원, 모바일 터치는 하지 않음). 구현과 테스트 씬은 완료. 실제 Chrome에서 확인 필요 (앱 내장 브라우저는 잠금을 거부함)
+- [x] 포인터 잠금 동작 (데스크톱만 지원). Chrome에서 잠금, Esc 해제, 재잠금, 첫 클릭 무시 확인. Esc 감지는 jslib로 브라우저 상태를 읽는다. 앱 내장 브라우저는 잠금을 거부하므로 Chrome으로 확인한다
 - [x] 영문 TMP 폰트 표시와 빌드 크기 (ASCII 정적 아틀라스 266KB. TMP Resources 기본 에셋 약 1.7MB는 나중에 제거)
 
 ## 2. 코어 루프 — 11/12
@@ -59,6 +59,7 @@ Web 빌드에서 확인한다. 실패하면 문서에 적힌 대안으로 바로
 - [ ] 수치 튜닝 (특히 `walkSpeed`, 방 크기, 변수 확률, 벽 효과 `wallCutoffScale`/`wallGainScale`, `doorBlendRadius`, `rolloff`)
 - [ ] 효과음 확정 (현재 프로토타입 소리는 임시)
 - [ ] 버그 수정, 성능 확인 (Web에서 R 연타, 메모리)
+- [ ] 저성능 대응: 소프트웨어 렌더러(`Basic Render Driver`, SwiftShader) 감지 시 최저 렌더 스케일과 타이틀 안내 문구, 시작 후 FPS를 재서 렌더 스케일 자동 조절
 - [ ] [`web-build.md`](../build/web-build.md) 체크리스트 수행, 제출용 빌드
 - [ ] 선택: 후순위 숨겨진 요소 (희귀 발신자부터)
 

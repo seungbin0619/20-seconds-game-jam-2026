@@ -22,6 +22,7 @@ unity install-modules -e 6000.3.25f1 -m webgl
 | Active Input Handling | Input System | 프로젝트 기본값 |
 | Quality (Web) | Mobile (`Mobile_RPAsset`) | 프로젝트 기본값. Render Scale 0.8 |
 | Graphics > Lightmap Modes | Manual, Baked Non-Directional만 | 라이트맵을 런타임에 복원하므로 빌드 씬에 구운 데이터가 없어도 변형을 남긴다 |
+| Code Optimization (Build Profile) | Runtime Speed (제출본은 Runtime Speed with LTO) | 기본값 Shorter Build Time은 실행이 느리다 |
 
 `Build Profiles`와 Player Settings의 변경은 에디터 안에서 한다.
 
@@ -51,6 +52,14 @@ npx http-server Builds/Web -p 8080 -c-1
 - [ ] 제출처 용량 제한 이내
 - [ ] `index.html`이 압축 파일 최상위에 있음
 - [ ] Development Build가 꺼져 있음
+
+## 성능을 볼 때
+
+- 프레임이 이상하게 낮으면 먼저 브라우저가 GPU를 쓰는지 확인한다. [`gpu-check.html`](gpu-check.html)을 빌드 폴더에 복사해 로컬 서버로 열면 Renderer와 단순 셰이더 FPS를 보여준다.
+- Renderer가 `Microsoft Basic Render Driver`나 SwiftShader면 소프트웨어 렌더링이다. Chrome 설정의 그래픽 가속을 켜고 브라우저를 완전히 다시 시작한다 (11/11 개발 PC의 Chrome에서 이 상태로 12fps가 나왔다).
+- 정확히 30fps에 묶이면 Chrome 에너지 절약 모드(`chrome://settings/performance`, 배터리 사용 시 자동으로 켜짐)를 의심한다. 끄면 60fps가 나왔다 (11/11).
+- 앱 내장 브라우저 창이 숨겨져 있으면 프레임이 제한되어 측정값을 믿을 수 없다.
+- 고해상도 화면(`devicePixelRatio` 2)에서는 렌더 픽셀이 4배다. GPU가 부족하면 렌더 스케일이나 커스텀 템플릿의 `devicePixelRatio` 제한을 검토한다.
 
 ## 알려진 로그
 

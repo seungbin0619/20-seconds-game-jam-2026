@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPU check</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 24px; background: #111; color: #eee; }
+  td { padding: 4px 12px 4px 0; vertical-align: top; }
+  td:first-child { color: #9ab; }
+  .bad { color: #ff6b6b; font-weight: bold; }
+  .ok { color: #7cfc9a; font-weight: bold; }
+  canvas { width: 960px; height: 600px; max-width: 100%; display: block; margin-top: 16px; }
+</style>
+</head>
+<body>
+<h2>WebGL GPU check</h2>
+<table id="info"></table>
+<canvas id="c"></canvas>
+<script>
+// 같은 크기 캔버스에 무거운 전체 화면 셰이더를 그려 GPU가 정상인지 본다.
+const rows = [];
+const add = (k, v, cls) => rows.push(`<tr><td>${k}</td><td class="${cls || ''}">${v}</td></tr>`);
+const c = document.getElementById('c');
+c.width = c.clientWidth * devicePixelRatio;
+c.height = c.clientHeight * devicePixelRatio;
+const gl = c.getContext('webgl2', { powerPreference: 'high-performance' });
+if (!gl) {
+  add('WebGL 2', 'NOT AVAILABLE', 'bad');
+} else {
+  const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+  const renderer = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+  const vendor = dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR);
+  const software = /swiftshader|software|llvmpipe|basic render/i.test(renderer);
+  add('Renderer', renderer, software ? 'bad' : 'ok');
+  add('Vendor', vendor);
+  add('Software rendering', software ? 'YES - hardware acceleration is off or blocked' : 'no', software ? 'bad' : 'ok');
+}
+add('devicePixelRatio', devicePixelRatio);
+add('Canvas pixels', c.width + ' x ' + c.height);
+document.getElementById('info').innerHTML = rows.join('');
+
+if (gl) {
+  const vs = `#version 300 es
+  in vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }`;
+  // 픽셀마다 반복 연산을 해서 단순 Lit 셰이더보다 조금 무거운 부하를 만든다.
+  const fs = `#version 300 es
+  precision highp float; uniform float t; out vec4 o;
+  void main() { vec2 uv = gl_FragCoord.xy * 0.01; float v = 0.0;
+    for (int i = 0; i < 24; i++) { v += sin(uv.x * float(i) + t) * cos(uv.y * float(i) - t); }
+    o = vec4(0.5 + 0.02 * v, 0.4, 0.3, 1.0); }`;
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  const tLoc = gl.getUniformLocation(prog, 't');
+  const fpsRow = document.createElement('tr');
+  document.getElementById('info').appendChild(fpsRow);
+  let frames = 0, start = performance.now();
+  function frame(now) {
+    gl.viewport(0, 0, c.width, c.height);
+    gl.uniform1f(tLoc, now * 0.001);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    frames++;
+    if (now - start > 1000) {
+      const fps = frames * 1000 / (now - start);
+      fpsRow.innerHTML = `<td>Test FPS</td><td class="${fps > 55 ? 'ok' : 'bad'}">${fps.toFixed(0)}</td>`;
+      frames = 0; start = now;
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
