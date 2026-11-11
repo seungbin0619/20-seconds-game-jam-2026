@@ -119,6 +119,10 @@ three.js는 오른손, Unity는 왼손 좌표계다. 방이 대칭이 아니므�
 ## 7. 입력과 웹 환경
 
 - 커서 잠금은 `Cursor.lockState`를 쓴다. 브라우저는 사용자 제스처 뒤에만 허용하고, Esc로 풀리면 다음 클릭에서 다시 잠근다 (프로토타입의 `pointerdown` 처리와 동일).
+  - 구현: `Feature/Player/PointerLook`. 잠기지 않은 상태의 클릭은 잠금 요청에만 쓰고, 버튼을 뗄 때까지 `CanAct`를 false로 둔다 (첫 클릭이 던지기가 되지 않게). 잠긴 직후 2프레임의 이동량은 버린다.
+  - 확인용 씬: `Feature/Player/Sandbox/PointerSandbox.unity`. 잠금, 해제 횟수, 잠금 클릭과 던지기 수, 이동량을 TMP로 표시한다.
+  - Unity의 `Cursor.lockState`는 **Esc로 풀린 것도, 브라우저가 거부한 것도 반영하지 않는다** (Chrome과 앱 내장 브라우저에서 확인). 그래서 `PointerLockWeb.jslib`로 `document.pointerLockElement`를 읽어 실제 잠금 상태로 쓴다. 브라우저가 풀었거나 요청 후 1초 안에 잠그지 않으면 Unity 쪽도 `None`으로 돌려 다음 클릭에서 다시 요청한다.
+  - 프레임 하나 안에 눌렀다 뗀 클릭은 `wasPressedThisFrame`이 놓칠 수 있다. 사람의 클릭은 보통 여러 프레임에 걸치므로 문제없지만 저프레임에서 확인한다.
 - 모바일 터치는 지원하지 않는다. 프로토타입의 터치 처리(탭, 길게 눌러 걷기)는 옮기지 않는다.
 - 슬라이드 210px은 화면 픽셀 기준이다. Canvas Scaler 환경에서 `Screen.dpi`나 참조 해상도로 보정한다.
 - 탭을 벗어나도 타이머는 계속 흐른다 (`Run In Background` 켬). 포커스를 잃으면 키 입력 상태를 비운다 (프로토타입의 `blur` 처리).
@@ -128,6 +132,9 @@ three.js는 오른손, Unity는 왼손 좌표계다. 방이 대칭이 아니므�
 - uGUI + TextMeshPro로 구현한다. HTML 오버레이의 `handset` 패널이 프리팹 하나에 대응한다.
 - 게임 텍스트는 영어만 쓴다. 프로토타입의 한국어 문구를 옮기지 말고 [`game-design.md`](../design/game-design.md)의 영어 문구를 쓴다.
 - Web에는 OS 폰트가 없다. Black Han Sans와 IBM Plex Sans를 프로젝트에 넣고 ASCII 범위의 **정적 TMP 아틀라스**로 만든다. 한글 글리프가 없어 아틀라스가 작다.
+  - 검증 (11/11): TMP 기본 LiberationSans로 ASCII 95자 정적 아틀라스(512², SDFAA, 48pt, Mobile Distance Field 셰이더)를 만들어 Web 빌드에서 모든 글자가 표시됨을 확인했다. 에셋은 `Shared/Fonts/UiFont_LiberationSans SDF` (빌드에서 266KB).
+  - 만드는 법: `TMP_FontAsset.CreateFontAsset(ttf, 48, 5, SDFAA, 512, 512)` → `TryAddCharacters`(32~126) → 아틀라스와 머티리얼을 하위 에셋으로 저장 → `atlasPopulationMode = Static`.
+  - 크기 주의: `Assets/TextMesh Pro/Resources`는 쓰지 않아도 빌드에 들어간다. 기본 폰트 `LiberationSans SDF`(1MB), `LiberationSans.ttf`(344KB), `EmojiOne.png`(341KB)가 포함된다. 최종 폰트를 정하면 TMP Settings의 기본 폰트를 바꾸고 이 세 개를 빼서 약 1.7MB를 줄인다.
 - `backdrop-filter` 블러는 옮기지 않는다. 반투명 패널로 대체한다.
 - 벨 박자에 맞춘 화면 깜빡임은 프레임 시간이 아니라 실제 시간 기준으로 계산한다.
 

@@ -7,7 +7,7 @@ Assets/_Project/
 ├─ Shared/   MissedCall.Shared   게임 규칙을 모르는 재사용 요소
 │  └─ Input/                     InputSystem_Actions
 ├─ Core/     MissedCall.Core     게임 뼈대와 Feature 간 계약
-│  ├─ Rooms/                     방 모듈 계약: RoomModule, DoorSocket, HideSpot, 열거형
+│  ├─ Rooms/                     방 모듈 계약(RoomModule, DoorSocket, HideSpot, 열거형)과 RoomGraph
 │  ├─ Scenes/Main.unity
 │  └─ Settings/                  URP 에셋, 볼륨 프로파일
 └─ Feature/  MissedCall.Feature  게임 기능
@@ -47,6 +47,7 @@ Feature ──▶ Core ──▶ Shared
 | `RoundContext` | 판 공용 상태: 시드, 폰 위치, 덮임 수, 벽 수, 남은 시간, 조준 대상, 판 통계(던진 수 등) |
 | `GameTuning` (ScriptableObject) | 튜닝 값. [`game-design.md`](../design/game-design.md)와 일치시킨다 |
 | `Rooms/RoomModule`, `DoorSocket`, `HideSpot` | 방 모듈 프리팹에 붙는 데이터 컴포넌트. Layout(배치, 문), Phone과 Clutter(숨는 자리)가 함께 읽으므로 Room이 아니라 Core에 둔다 |
+| `Rooms/RoomGraph`, `RoomDoor`, `GraphRoute` | 판의 집 구조와 소리 경로. Layout이 만들고 Ringtone, Player가 읽는다 |
 
 판은 서로 독립이다. 새 판을 시작할 때 `RoundContext`를 통째로 초기화하고, 게임플레이 상태를 다음 판으로 넘기지 않는다. 판 사이에 남는 것은 `Result`의 기록뿐이다.
 

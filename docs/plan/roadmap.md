@@ -25,9 +25,9 @@ Web 빌드에서 확인한다. 실패하면 문서에 적힌 대안으로 바로
 - [x] `Ringtone`: 벽 먹먹함 동작 확인 (값 미세 조정은 5단계 수치 튜닝으로 이동)
 - [x] `Room`: 회색 박스 모듈 3개 (욕실 S, 침실 M, 거실 L). `Missed Call/Room/Build Graybox Modules` 메뉴로 다시 만든다
 - [x] `Room`: 모듈 라이트맵 굽기와 런타임 복원. Web 빌드에서 확인 (`Room/Sandbox/LightmapSandbox`, 빌드 약 16.7MB)
-- [ ] `Layout`: 회색 박스 모듈로 조립과 `RoomGraph` 확인
-- [ ] 포인터 잠금 동작 (데스크톱만 지원, 모바일 터치는 하지 않음)
-- [ ] 영문 TMP 폰트 표시와 빌드 크기
+- [x] `Layout`: 회색 박스 모듈로 조립과 `RoomGraph` 확인 (템플릿 5개, 시드 300개 검증, `Layout/Sandbox/LayoutSandbox`)
+- [ ] 포인터 잠금 동작 (데스크톱만 지원, 모바일 터치는 하지 않음). 구현과 테스트 씬은 완료. 실제 Chrome에서 확인 필요 (앱 내장 브라우저는 잠금을 거부함)
+- [x] 영문 TMP 폰트 표시와 빌드 크기 (ASCII 정적 아틀라스 266KB. TMP Resources 기본 에셋 약 1.7MB는 나중에 제거)
 
 ## 2. 코어 루프 — 11/12
 
