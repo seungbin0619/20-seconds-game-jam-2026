@@ -135,7 +135,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 |---|---|---|
 | `duration` | 20 | 게임 길이(초) |
 | `walkSpeed` | 3.2 | 걷는 속도(m/s). 여러 방 기준으로 재조정 필요 |
-| `lookSpeed` | 0.0023 | 마우스 감도(rad/px). 터치는 ×1.9 |
+| `lookSpeed` | 0.0023 | 마우스 감도(rad/px) |
 | `reach` | 3.1 | 손이 닿는 거리(m) |
 | `throwForward` | 4.6 | 던지는 수평 속도 |
 | `throwUp` | 3.6 | 던지는 위쪽 속도 |
@@ -179,11 +179,10 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | WASD / 방향키 | 걷기 |
 | 마우스 (포인터 잠금) | 둘러보기 |
 | 클릭 / Space | 물건 던지기, 폰 집기, 닫힌 문 열기 |
-| 터치 끌기 | 둘러보기 |
-| 터치 길게 누르기 (260ms) | 앞으로 걷기 |
-| 터치 탭 | 던지기, 폰 집기, 문 열기 |
-| 마우스 또는 터치 가로 이동 (`answer`) | 슬라이드 |
+| 마우스 가로 이동 (`answer`) | 슬라이드 |
 | R | 즉시 새 판 |
+
+데스크톱 브라우저(키보드와 마우스)만 지원한다. 모바일 터치 조작은 만들지 않는다.
 
 ## 콘텐츠
 
@@ -207,7 +206,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 |---|---|
 | 타이틀 | Missed Call |
 | 타이틀 설명 | Your phone is ringing somewhere. Find it and pick up before it stops. |
-| 조작 안내 | WASD: Walk / Mouse: Look around / Click: Throw items, grab phone / Touch: Drag to look, hold to walk, tap to throw |
+| 조작 안내 | WASD: Walk / Mouse: Look around / Click: Throw items, grab phone |
 | 시작 버튼 | Ring It |
 | 타이틀 하단 | Headphones make the direction much easier to hear. |
 | 플레이 힌트 | Follow the sound and clear the piles |

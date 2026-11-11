@@ -7,6 +7,7 @@ Assets/_Project/
 ├─ Shared/   MissedCall.Shared   게임 규칙을 모르는 재사용 요소
 │  └─ Input/                     InputSystem_Actions
 ├─ Core/     MissedCall.Core     게임 뼈대와 Feature 간 계약
+│  ├─ Rooms/                     방 모듈 계약: RoomModule, DoorSocket, HideSpot, 열거형
 │  ├─ Scenes/Main.unity
 │  └─ Settings/                  URP 에셋, 볼륨 프로파일
 └─ Feature/  MissedCall.Feature  게임 기능
@@ -45,6 +46,7 @@ Feature ──▶ Core ──▶ Shared
 | `GameFlow` | 상태 머신 (`title / playing / answer / won / missed`), 판 시작과 종료 |
 | `RoundContext` | 판 공용 상태: 시드, 폰 위치, 덮임 수, 벽 수, 남은 시간, 조준 대상, 판 통계(던진 수 등) |
 | `GameTuning` (ScriptableObject) | 튜닝 값. [`game-design.md`](../design/game-design.md)와 일치시킨다 |
+| `Rooms/RoomModule`, `DoorSocket`, `HideSpot` | 방 모듈 프리팹에 붙는 데이터 컴포넌트. Layout(배치, 문), Phone과 Clutter(숨는 자리)가 함께 읽으므로 Room이 아니라 Core에 둔다 |
 
 판은 서로 독립이다. 새 판을 시작할 때 `RoundContext`를 통째로 초기화하고, 게임플레이 상태를 다음 판으로 넘기지 않는다. 판 사이에 남는 것은 `Result`의 기록뿐이다.
 
@@ -55,7 +57,7 @@ Feature ──▶ Core ──▶ Shared
 | 폴더 | 책임 | 프로토타입 대응 |
 |---|---|---|
 | `Layout` | 집 생성: 템플릿 선택, 모듈 배치, 문 소켓, `RoomGraph` | 신규 |
-| `Room` | 방 모듈 프리팹, 가구, 조명, `HideSpot`, 라이트맵 복원 | `block`, `noWalk`, `SPOTS` |
+| `Room` | 방 모듈 프리팹, 가구, 조명, 라이트맵 굽기와 복원, 회색 박스 생성 도구 | `block`, `noWalk`, `SPOTS` |
 | `Player` | 걷기, 둘러보기, 입력 처리 | `walk`, `blocked`, 포인터 입력 |
 | `Clutter` | 물건 종류, 더미 생성, 물리, 풀링 | `KINDS`, `addItem`, `buildPile` |
 | `Interaction` | 화면 중심 조준, 던지기, 문 열기 | `updateTarget`, `act` |
@@ -65,7 +67,7 @@ Feature ──▶ Core ──▶ Shared
 | `Result` | 칭호 판정, 기록 저장과 조회 | 신규 |
 | `Ui` | HUD, 타이틀, 받기 슬라이드, 결과, 기록 화면, 발신자 데이터 | HTML 오버레이, `CALLERS` |
 
-에디터 전용 코드(라이트맵 굽기 도구 등)는 해당 기능 폴더의 `Editor/` 하위에 두고, 필요해질 때 `MissedCall.Feature.Editor` asmdef를 만든다.
+에디터 전용 코드(라이트맵 굽기 도구 등)는 해당 기능 폴더의 `Editor/` 하위에 둔다. `MissedCall.Feature.Editor` asmdef는 `Feature/Room/Editor/`에 있다. 다른 기능의 `Editor/` 폴더는 이 asmdef를 가리키는 `.asmref`를 둔다.
 
 ## 네이밍
 
