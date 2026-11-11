@@ -42,7 +42,7 @@
 | `Room_Bedroom_M_A` | 4 × 3.5 | 남, 동, 서 | 침대 위 2곳, 협탁, 책상, 바닥 구석 |
 | `Room_LivingRoom_L_A` | 5 × 4 | 네 벽 | 소파 2곳, 커피 테이블, 러그, 안락의자, TV 장 |
 
-회색 박스 프리팹은 `Feature/Room/Graybox/`에 있고 `Missed Call/Room/Build Graybox Modules` 메뉴(`GrayboxRoomBuilder`)로 다시 만든다. 다시 만들면 손으로 고친 내용은 덮어쓴다.
+회색 박스 프리팹은 `Feature/Room/Graybox/`에 있고 `Missed Call/Room/Build Graybox Modules` 메뉴(`GrayboxRoomBuilder`)로 다시 만든다. 다시 만들면 손으로 고친 내용과 라이트맵 데이터가 덮어써지므로 이어서 다시 굽는다.
 
 ## 생성 순서
 
@@ -82,7 +82,21 @@ Unity는 프리팹에 라이트맵을 저장하지 않는다. 그래서 에디�
 - 모듈을 따로 굽기 때문에 문을 통해 옆방으로 번지는 빛은 없다. 허용한다.
 - 막힌 문 소켓의 벽 조각은 굽기 대상에서 제외하고 실시간 조명만 받는다.
 - 라이트맵 해상도는 낮게 두고 압축한다. 빌드 크기를 [`web-build.md`](../build/web-build.md)에서 확인한다.
-- 이 방식은 **기술 검증 항목**이다. Web 빌드에서 복원이 안 되면 굽기를 포기하고, 실시간 조명과 그림자 1개만 쓴다.
+
+### 구현 (`Feature/Room`)
+
+| 요소 | 내용 |
+|---|---|
+| `ModuleLightmapBaker` (에디터) | 메뉴 `Missed Call/Room/Bake Module Lightmaps`. `Graybox/` 아래 `RoomModule` 프리팹마다 빈 씬에서 굽고, 텍스처는 `Graybox/Lightmaps/<모듈>/`에 남긴 뒤 굽기용 씬과 LightingData는 지운다. 열린 씬에 저장 안 된 변경이 있으면 굽지 않는다 |
+| `ModuleLightmap` (런타임) | 프리팹 루트에 붙는다. 텍스처 목록과 렌더러별 (인덱스, 스케일 오프셋)을 갖고, `OnEnable`에서 텍스처를 `LightmapSettings.lightmaps`에 (중복 없이) 추가하고 렌더러에 값을 넣는다. 풀에서 다시 켜도 자동으로 적용된다. Layout이 Room을 직접 부르지 않아도 된다 |
+| 굽기 설정 `ModuleBake.lighting` | Progressive GPU, Baked Indirect, 비방향성, 10 texel/m, 최대 512, AO 켬, 바운스 2 |
+| 환경광 | 굽기 씬과 런타임 씬 모두 Flat `(0.10, 0.10, 0.12)`. 라이트맵에 환경광이 들어가므로 두 값을 맞춘다 (`ModuleLightmapBaker.Ambient`) |
+| 셰이더 변형 | Graphics Settings의 Lightmap Modes를 **Manual, Baked Non-Directional만** 남긴다. Automatic이면 빌드 씬(Main)에 구운 라이트맵이 없어서 라이트맵 변형이 빠진다 |
+
+- 순서: `Build Graybox Modules`로 프리팹을 다시 만들면 `ModuleLightmap`이 사라진다. 그 뒤에 반드시 `Bake Module Lightmaps`를 다시 실행한다.
+- 회색 박스 3개 결과: 모듈당 128px 라이트맵 1~2장, 원본 EXR 합계 약 700KB.
+- 확인용 씬: `Feature/Room/Sandbox/LightmapSandbox.unity`. 모듈 3개를 런타임에 생성해 문으로 잇고, L 키로 라이트맵을 끄고 켠다.
+- 검증 결과 (11/11): 에디터와 Web 빌드 모두 복원된다. 이 씬만 넣은 Web 빌드가 16.7MB로, 빈 씬(약 16MB) 대비 늘어난 양이 작다.
 
 ### URP 설정
 

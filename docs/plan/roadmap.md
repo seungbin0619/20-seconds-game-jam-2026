@@ -24,7 +24,7 @@ Web 빌드에서 확인한다. 실패하면 문서에 적힌 대안으로 바로
 - [x] `Ringtone`: 문 쪽 음원 이동과 문 통과가 자연스러운지
 - [x] `Ringtone`: 벽 먹먹함 동작 확인 (값 미세 조정은 5단계 수치 튜닝으로 이동)
 - [x] `Room`: 회색 박스 모듈 3개 (욕실 S, 침실 M, 거실 L). `Missed Call/Room/Build Graybox Modules` 메뉴로 다시 만든다
-- [ ] `Room`: 모듈 라이트맵 굽기와 런타임 복원 (실패 시 실시간 조명만 사용)
+- [x] `Room`: 모듈 라이트맵 굽기와 런타임 복원. Web 빌드에서 확인 (`Room/Sandbox/LightmapSandbox`, 빌드 약 16.7MB)
 - [ ] `Layout`: 회색 박스 모듈로 조립과 `RoomGraph` 확인
 - [ ] 포인터 잠금 동작 (데스크톱만 지원, 모바일 터치는 하지 않음)
 - [ ] 영문 TMP 폰트 표시와 빌드 크기

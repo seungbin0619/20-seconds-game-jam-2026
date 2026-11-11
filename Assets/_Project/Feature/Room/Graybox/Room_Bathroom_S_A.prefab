@@ -2640,6 +2640,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5318795239906525387}
   - component: {fileID: 996707671611765874}
+  - component: {fileID: 4134497839257733918}
   m_Layer: 0
   m_Name: MainLight
   m_TagString: Untagged
@@ -2727,6 +2728,35 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!114 &4134497839257733918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5881394343412413773}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &6457966491139406824
 GameObject:
   m_ObjectHideFlags: 0
@@ -2849,6 +2879,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2856451777670801421}
   - component: {fileID: 2903331008829098187}
+  - component: {fileID: 1357907477060150842}
   m_Layer: 0
   m_Name: Room_Bathroom_S_A
   m_TagString: Untagged
@@ -2900,6 +2931,87 @@ MonoBehaviour:
   - {fileID: 4723265722112701537}
   - {fileID: 5719901607379861791}
   mainLight: {fileID: 996707671611765874}
+--- !u!114 &1357907477060150842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6841002652608683782}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b756a0aa7c79e64c987ac1fb603ab51, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MissedCall.Feature::MissedCall.Feature.Room.ModuleLightmap
+  lightmaps:
+  - {fileID: 2800000, guid: a5bcfb05852454a408f214d93806edca, type: 3}
+  entries:
+  - renderer: {fileID: 5871528032239726646}
+    index: 0
+    scaleOffset: {x: 0.42501915, y: 0.4335059, z: 0.0021824716, w: 0.30683556}
+  - renderer: {fileID: 5006367787978712195}
+    index: 0
+    scaleOffset: {x: 0.42501915, y: 0.4335059, z: 0.0021824716, w: 0.0021480513}
+  - renderer: {fileID: 4723817949488578112}
+    index: 0
+    scaleOffset: {x: 0.39353624, y: 0.3973804, z: 0.002310159, w: 0.61166954}
+  - renderer: {fileID: 7514719438143465072}
+    index: 0
+    scaleOffset: {x: 0.22825103, y: 0.22879478, z: 0.44829303, w: 0.36235332}
+  - renderer: {fileID: 2225582340395377836}
+    index: 0
+    scaleOffset: {x: 0.22825103, y: 0.22879478, z: 0.69829303, w: 0.36235332}
+  - renderer: {fileID: 5434987882262185545}
+    index: 0
+    scaleOffset: {x: 0.10231943, y: 0.10837647, z: 0.8472413, w: 0.2612792}
+  - renderer: {fileID: 5869292915748877973}
+    index: 0
+    scaleOffset: {x: 0.23612174, y: 0.2408366, z: 0.44826108, w: 0.0029294728}
+  - renderer: {fileID: 5612290222127389161}
+    index: 0
+    scaleOffset: {x: 0.23612174, y: 0.2408366, z: 0.44826108, w: 0.18261698}
+  - renderer: {fileID: 6298433252682295166}
+    index: 0
+    scaleOffset: {x: 0.10231943, y: 0.10837647, z: 0.8159913, w: 0.7690917}
+  - renderer: {fileID: 4873946171066541148}
+    index: 0
+    scaleOffset: {x: 0.3777948, y: 0.38533857, z: 0.4164365, w: 0.6117184}
+  - renderer: {fileID: 5962354677938396029}
+    index: 0
+    scaleOffset: {x: 0.14954378, y: 0.15654379, z: 0.7064247, w: 0.13608384}
+  - renderer: {fileID: 7270918776909360192}
+    index: 0
+    scaleOffset: {x: 0.0944487, y: 0.09633464, z: 0.4175857, w: 0.88632804}
+  - renderer: {fileID: 8328826097211140234}
+    index: 0
+    scaleOffset: {x: 0.0944487, y: 0.09633464, z: 0.8160232, w: 0.86289054}
+  - renderer: {fileID: 7535445314168345165}
+    index: 0
+    scaleOffset: {x: 0.13380232, y: 0.14450197, z: 0.81586355, w: 0.65175766}
+  - renderer: {fileID: 1538590982222040144}
+    index: 0
+    scaleOffset: {x: 0.13380232, y: 0.14450197, z: 0.81586355, w: 0.53457016}
+  - renderer: {fileID: 9200937323250781539}
+    index: 0
+    scaleOffset: {x: 0.16528523, y: 0.16858563, z: 0.7063609, w: 0.003222506}
+  - renderer: {fileID: 7840355015245894396}
+    index: 0
+    scaleOffset: {x: 0.11806087, y: 0.1204183, z: 0.70655245, w: 0.26123035}
+  - renderer: {fileID: 8114327058418954096}
+    index: 0
+    scaleOffset: {x: 0.07870725, y: 0.084292814, z: 0.44889954, w: 0.53481436}
+  - renderer: {fileID: 1280414899482958565}
+    index: 0
+    scaleOffset: {x: 0.062965795, y: 0.072250985, z: 0.5505259, w: 0.53486323}
+  - renderer: {fileID: 7209284781236329736}
+    index: 0
+    scaleOffset: {x: 0.062965795, y: 0.072250985, z: 0.8786509, w: 0.13642572}
+  - renderer: {fileID: 585078287934654728}
+    index: 0
+    scaleOffset: {x: 0.055095073, y: 0.06020915, z: 0.8943078, w: 0.06616206}
+  - renderer: {fileID: 6124217812356907753}
+    index: 0
+    scaleOffset: {x: 0.055095073, y: 0.06020915, z: 0.8943078, w: 0.0036620558}
 --- !u!1 &7453131975643851850
 GameObject:
   m_ObjectHideFlags: 0

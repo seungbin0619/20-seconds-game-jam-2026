@@ -21,6 +21,7 @@ unity install-modules -e 6000.3.25f1 -m webgl
 | Run In Background | 켬 | 탭을 벗어나도 벨과 타이머가 실제 시간으로 흐른다 |
 | Active Input Handling | Input System | 프로젝트 기본값 |
 | Quality (Web) | Mobile (`Mobile_RPAsset`) | 프로젝트 기본값. Render Scale 0.8 |
+| Graphics > Lightmap Modes | Manual, Baked Non-Directional만 | 라이트맵을 런타임에 복원하므로 빌드 씬에 구운 데이터가 없어도 변형을 남긴다 |
 
 `Build Profiles`와 Player Settings의 변경은 에디터 안에서 한다.
 
