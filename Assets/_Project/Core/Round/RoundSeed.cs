@@ -11,7 +11,7 @@ namespace MissedCall.Core.Round {
         }
 
         /// <summary>용도별 난수 생성기. 같은 시드와 용도면 항상 같은 수열을 낸다.</summary>
-        public System.Random Stream(RoundStream stream) => new System.Random(Mix(Value, (int)stream + 1));
+        public System.Random Stream(RoundStream stream) => new(Mix(Value, (int)stream + 1));
 
         public override string ToString() => Value.ToString();
 

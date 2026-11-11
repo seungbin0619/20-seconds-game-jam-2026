@@ -56,6 +56,14 @@ namespace MissedCall.Feature.Player {
             Unlock();
         }
 
+        /// <summary>시선을 정한다(도). 판 시작 위치를 잡을 때 쓴다.</summary>
+        public void SetView(float newYaw, float newPitch) {
+            yaw = newYaw;
+            pitch = Mathf.Clamp(newPitch, -pitchLimit, pitchLimit);
+            body.rotation = Quaternion.Euler(0f, yaw, 0f);
+            head.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+        }
+
         public void Unlock() {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;

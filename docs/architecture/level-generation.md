@@ -53,7 +53,7 @@
 5. `RoomGraph`를 만든다.
 6. 모든 `HideSpot`을 모아 폰 자리를 하나 고르고, 모든 자리에 더미를 쌓고, 흩뿌릴 물건을 놓는다.
 7. 물리를 90스텝 돌려 안정화한 뒤 폰을 둔다.
-8. 폰이 없는 방에서 시작 위치를 고른다.
+8. 폰이 없는 방에서 시작 위치를 고른다. (`Player/PlayerStep`: 방 가운데, 막혀 있으면 방 안 무작위 지점을 캡슐 검사로 고르고, 그 방의 문 하나를 바라본다. 시드 1~200에서 막힌 시작 0건)
 9. 변수를 적용한다.
 
 - 생성은 시작 버튼을 누른 직후 한 번에 한다. 여러 프레임에 나누지 않는다.
@@ -65,6 +65,7 @@
 |---|---|
 | `LayoutTemplate` | 슬롯(크기 등급, 중심 XZ, `rotated`)과 링크(슬롯 쌍). `rotated`면 모듈을 90/270도로, 아니면 0/180도로 놓는다 |
 | `RoomCatalog_Default` | 템플릿 목록과 모듈 프리팹 목록 |
+| `LayoutStep` | 판 준비 단계(`RoundStep`). `RoundStream.Layout` 스트림으로 `HouseBuilder`를 돌려 `RoundContext.Graph`를 채우고 `Physics.SyncTransforms()`로 이후 단계의 물리 질의에 반영한다 |
 | `HouseBuilder` | 1~4단계와 `RoomGraph` 생성. `System.Random`을 받아서만 무작위를 뽑는다. 모듈 인스턴스는 프리팹마다 하나를 풀에 두고 끄고 켜며 재사용한다 |
 | `RoomGraph` (`Core/Rooms`) | Ringtone과 Player도 읽으므로 Core에 둔다. `RoomAt(위치)`, `Route(듣는 위치, 듣는 방, 음원, 음원 방)`, `IsConnected()` |
 

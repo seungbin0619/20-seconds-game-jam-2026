@@ -135,6 +135,16 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 |---|---|---|
 | `duration` | 20 | 게임 길이(초) |
 | `walkSpeed` | 3.2 | 걷는 속도(m/s). 여러 방 기준으로 재조정 필요 |
+| `backwardSpeedScale` | 0.7 | 뒤로 걸을 때 속도 배율 |
+| `strafeSpeedScale` | 0.85 | 옆으로 걸을 때 속도 배율 |
+| `walkAcceleration` | 14 | 걷기 시작 가속도(m/s²). 최고 속도까지 약 0.23초 |
+| `walkDeceleration` | 18 | 키를 뗐을 때 감속도(m/s²). 멈출 때까지 약 0.18초 |
+| `eyeHeight` | 1.52 | 바닥에서 눈까지 높이(m) |
+| `stepLength` | 1.0 | 한 걸음 길이(m). 3.2m/s에서 초당 약 3.2걸음 |
+| `bobHeight` | 0.035 | 발이 닿을 때 머리가 내려가는 깊이(m) |
+| `swayWidth` | 0.02 | 걸음마다 머리가 좌우로 옮겨가는 폭(m) |
+| `swayRoll` | 0.5 | 걸음마다 머리가 기우는 각도(도) |
+| `bobResponse` | 8 | 흔들림이 속도를 따라가는 빠르기(1/s) |
 | `lookSpeed` | 0.0023 | 마우스 감도(rad/px) |
 | `reach` | 3.1 | 손이 닿는 거리(m) |
 | `throwForward` | 4.6 | 던지는 수평 속도 |

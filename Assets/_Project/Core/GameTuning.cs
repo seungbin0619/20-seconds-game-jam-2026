@@ -16,6 +16,28 @@ namespace MissedCall.Core {
         public float lookSpeed = 0.0023f;
         public float reach = 3.1f;
 
+        [Header("Walk Feel")]
+        [Tooltip("뒤로 걸을 때 속도 배율")]
+        [Range(0.3f, 1f)] public float backwardSpeedScale = 0.7f;
+        [Tooltip("옆으로 걸을 때 속도 배율")]
+        [Range(0.3f, 1f)] public float strafeSpeedScale = 0.85f;
+        [Tooltip("걷기 시작할 때 가속도(m/s²). 클수록 바로 최고 속도에 닿는다")]
+        public float walkAcceleration = 14f;
+        [Tooltip("키를 뗐을 때 감속도(m/s²)")]
+        public float walkDeceleration = 18f;
+        [Tooltip("바닥에서 눈까지 높이(m)")]
+        public float eyeHeight = 1.52f;
+        [Tooltip("한 걸음 길이(m). 머리 흔들림과 발소리 간격을 정한다")]
+        public float stepLength = 1f;
+        [Tooltip("발이 닿을 때 머리가 내려가는 깊이(m)")]
+        public float bobHeight = 0.035f;
+        [Tooltip("걸음마다 머리가 좌우로 옮겨가는 폭(m)")]
+        public float swayWidth = 0.02f;
+        [Tooltip("걸음마다 머리가 좌우로 기우는 각도(도)")]
+        public float swayRoll = 0.5f;
+        [Tooltip("흔들림이 속도를 따라가는 빠르기(1/s). 멈출 때 흔들림이 가라앉는 속도")]
+        public float bobResponse = 8f;
+
         [Header("Throw")]
         public float throwForward = 4.6f;
         public float throwUp = 3.6f;
