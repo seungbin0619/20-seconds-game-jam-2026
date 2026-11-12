@@ -55,7 +55,23 @@ MonoBehaviour:
   maxThrowSpeed: 9
   throwCooldown: 0.1
   throwSpin: {x: 9, y: 6, z: 9}
+  phoneAimRadius: 0.17
+  phoneSpotJitter: {x: 0.06, y: 0.05}
+  phoneYawJitter: 28.6
+  coverBelow: 0.03
+  coverAbove: 1.1
+  coverMargin: 0.05
+  phoneShake: 0.004
+  phoneShakeRate: 90
+  screenBlinkRate: 20
+  screenBlinkDim: 0.35
   jiggle: 0.55
+  ringJiggleScale: 0.4
+  jiggleDelay: 0.3
+  jiggleInterval: 1
+  jiggleRadius: 0.5
+  jiggleHeight: 0.6
+  jiggleSpin: {x: 1, y: 1.5, z: 1}
   clearCutoff: 7000
   coveredCutoff: 420
   maxCovers: 4

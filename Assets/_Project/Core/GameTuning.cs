@@ -96,8 +96,43 @@ namespace MissedCall.Core {
         [Tooltip("던질 때 무작위 회전 속도 최대값 (rad/s, x y z 각각 ±)")]
         public Vector3 throwSpin = new(9f, 6f, 9f);
 
+        [Header("Phone")]
+        [Tooltip("화면 중심 레이와 폰 중심 사이 거리가 이 값(m) 이하이고 사이에 가림막이 없으면 폰을 조준한다")]
+        public float phoneAimRadius = 0.17f;
+        [Tooltip("숨는 자리 중심에서 폰을 옮기는 최대 거리(m). x = 자리의 좌우, y = 자리의 앞뒤")]
+        public Vector2 phoneSpotJitter = new(0.06f, 0.05f);
+        [Tooltip("폰을 숨는 자리 방향에서 돌리는 최대 각도(도)")]
+        public float phoneYawJitter = 28.6f;
+        [Tooltip("폰 중심보다 이만큼(m) 아래까지 중심이 있는 물건을 덮은 것으로 센다")]
+        public float coverBelow = 0.03f;
+        [Tooltip("폰 중심보다 이만큼(m) 위까지 중심이 있는 물건을 덮은 것으로 센다")]
+        public float coverAbove = 1.1f;
+        [Tooltip("물건 로컬 가로세로 범위를 이만큼(m) 넓혀 폰이 그 안에 들면 덮은 것으로 센다")]
+        public float coverMargin = 0.05f;
+        [Tooltip("덮인 물건이 없을 때 폰이 좌우로 떠는 폭(m)")]
+        public float phoneShake = 0.004f;
+        [Tooltip("폰이 떠는 빠르기(rad/s)")]
+        public float phoneShakeRate = 90f;
+        [Tooltip("울리는 동안 화면이 깜박이는 빠르기(rad/s)")]
+        public float screenBlinkRate = 20f;
+        [Tooltip("깜박일 때 어두운 쪽 밝기 비율")]
+        [Range(0f, 1f)] public float screenBlinkDim = 0.35f;
+
         [Header("Vibration")]
+        [Tooltip("진동 시 물건이 튀어 오르는 속도(m/s)")]
         public float jiggle = 0.55f;
+        [Tooltip("벨이 울리는 판(진동 모드가 아닌 판)의 진동 세기 배율. 튀는 속도와 회전에 곱한다. 소리가 주 단서이므로 가까이서만 보이게 약하게 둔다")]
+        [Range(0f, 1f)] public float ringJiggleScale = 0.4f;
+        [Tooltip("판 시작 후 첫 진동까지 시간(초)")]
+        public float jiggleDelay = 0.3f;
+        [Tooltip("진동 간격(초). 기본 벨소리 한 주기(2초)의 절반")]
+        public float jiggleInterval = 1f;
+        [Tooltip("폰에서 이 수평 거리(m) 안의 물건을 튀게 한다")]
+        public float jiggleRadius = 0.5f;
+        [Tooltip("폰과 높이 차가 이 값(m) 안인 물건을 튀게 한다")]
+        public float jiggleHeight = 0.6f;
+        [Tooltip("진동 시 무작위 회전 속도 최대값 (rad/s, x y z 각각 ±)")]
+        public Vector3 jiggleSpin = new(1f, 1.5f, 1f);
 
         [Header("Sound")]
         public float clearCutoff = 7000f;

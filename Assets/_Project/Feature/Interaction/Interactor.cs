@@ -15,6 +15,8 @@ namespace MissedCall.Feature.Interaction {
     public sealed class Interactor : MonoBehaviour {
         private const int SampleCount = 32;
         private const float LiftTolerance = 0.05f;
+        // 폰 시야 검사를 폰 중심 조금 앞에서 멈춘다. 폰이 놓인 표면을 스치며 맞지 않게 한다.
+        private const float PhoneSightMargin = 0.02f;
 
         [SerializeField] private GameFlow flow;
         [SerializeField] private GameTuning tuning;
@@ -160,7 +162,18 @@ namespace MissedCall.Feature.Interaction {
             }
 
             SetAim(FindTarget());
-            if (pressed && CanAct && Time.unscaledTime >= nextGrabTime && aimed is IThrowable item) {
+            if (!pressed || !CanAct || Time.unscaledTime < nextGrabTime) {
+                return;
+            }
+
+            if (aimed is IGrabbable phone) {
+                SetAim(null);
+                phone.Grab();
+                flow.PickUp();
+                return;
+            }
+
+            if (aimed is IThrowable item) {
                 if (item.Buried) {
                     Tug(item);
                 } else {
@@ -219,6 +232,12 @@ namespace MissedCall.Feature.Interaction {
         }
 
         private IAimTarget FindTarget() {
+            // 폰은 콜라이더가 없으므로 레이 명중이 아니라 레이와의 거리로 먼저 본다 (프로토타입 phoneInSight).
+            IGrabbable phone = flow.Context.Phone;
+            if (phone != null && PhoneInSight(phone.GrabPoint)) {
+                return phone;
+            }
+
             var ray = new Ray(view.transform.position, view.transform.forward);
             if (!Physics.Raycast(ray, out RaycastHit hit, tuning.reach, aimMask, QueryTriggerInteraction.Collide)) {
                 return null;
@@ -229,14 +248,37 @@ namespace MissedCall.Feature.Interaction {
             return hit.collider.GetComponentInParent<IAimTarget>();
         }
 
-        private void SetAim(IAimTarget next) {
-            if (ReferenceEquals(next, aimed)) {
-                return;
+        /// <summary>
+        /// 폰이 도달 거리 안에 있고, 화면 중심 레이와 폰 중심의 거리가 phoneAimRadius 이하이며,
+        /// 눈과 폰 사이에 물건이나 가구가 없으면 조준한다. 물건에 덮여 있으면 시야가 막힌다.
+        /// </summary>
+        private bool PhoneInSight(Vector3 point) {
+            Transform eye = view.transform;
+            Vector3 toPhone = point - eye.position;
+            float distance = toPhone.magnitude;
+            if (distance > tuning.reach || distance < 1e-4f) {
+                return false;
             }
 
-            aimed?.SetAimed(false);
-            aimed = next;
-            aimed?.SetAimed(true);
+            float along = Vector3.Dot(toPhone, eye.forward);
+            float offRay = along > 0f ? Vector3.Cross(eye.forward, toPhone).magnitude : distance;
+            if (offRay > tuning.phoneAimRadius) {
+                return false;
+            }
+
+            return !Physics.Raycast(eye.position, toPhone / distance, distance - PhoneSightMargin, aimMask,
+                QueryTriggerInteraction.Collide);
+        }
+
+        private void SetAim(IAimTarget next) {
+            if (!ReferenceEquals(next, aimed)) {
+                aimed?.SetAimed(false);
+                aimed = next;
+                aimed?.SetAimed(true);
+            }
+
+            // Ui가 조준점 라벨을 고른다.
+            flow.Context.AimTarget = aimed;
         }
 
         // 위에 물건이 얹혀 있어 잡히지 않는다. 손 쪽으로 tugDistance만큼 옆으로 끌려 나오다 멈춘다.

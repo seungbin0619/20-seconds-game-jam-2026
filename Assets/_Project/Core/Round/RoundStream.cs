@@ -12,5 +12,7 @@ namespace MissedCall.Core.Round {
         Modifier = 5,
         /// <summary>던질 때 무작위 회전. 판 중 플레이어 입력에 따라 뽑는 횟수가 달라진다.</summary>
         Throw = 6,
+        /// <summary>폰 진동에 튀는 물건의 무작위 회전. 판 중 시간에 따라 뽑는 횟수가 달라진다.</summary>
+        Vibration = 7,
     }
 }

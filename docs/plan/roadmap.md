@@ -35,7 +35,7 @@ Web 빌드에서 확인한다. 실패하면 문서에 적힌 대안으로 바로
 - [x] `Player`: CharacterController 이동, 둘러보기 (가속/감속, 방향별 속도, 머리 흔들림과 `Stepped` 이벤트, `PlayerStep` 시작 위치, R 재시작. `LayoutStep` 포함. `WalkSandbox`에서 확인. Web 빌드에서 느낌 확인은 남음)
 - [x] `Clutter`: 물건 종류, 더미 생성, 물리 안정화, 풀링 (자리 맞추기, 물리·레이어 설정, `ClutterSandbox`. 시드 100개 검증. Web 안정화 시간 확인은 한 판 조립 때)
 - [x] `Interaction`: 조준, 잡아 던지기 (프로토타입과 다른 조작: 누르면 잡고 휘두르며 떼면 던짐. `ClutterSandbox`에서 확인. 폰 우선 조준, `AimTarget` 기록, 문 열기, 효과음은 Phone·문·오디오 단계에서)
-- [ ] `Phone`: 배치, 덮임 계산, 진동, 집기
+- [x] `Phone`: 배치, 덮임 계산, 진동, 집기 (`PhoneSandbox`에서 확인, 시드 100개 검증. Interaction 폰 우선 조준과 `AimTarget` 기록 포함. 받기 슬라이드는 Ui, 벨소리 연결은 한 판 조립 때)
 - [ ] 회색 박스 집에서 처음부터 끝까지 한 판이 돌아감
 
 ## 3. 집 생성과 UI — 11/13

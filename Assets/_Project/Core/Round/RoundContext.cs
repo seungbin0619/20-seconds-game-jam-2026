@@ -23,6 +23,10 @@ namespace MissedCall.Core.Round {
         public Vector3 PhonePosition { get; set; }
         public int PhoneRoom { get; set; } = -1;
         public int Covers { get; set; }
+        /// <summary>폰 조준 대상. Phone이 판 준비 중에 채우고, Interaction이 물건보다 먼저 조준한다.</summary>
+        public IGrabbable Phone { get; set; }
+        /// <summary>진동 모드 변수. 벨 없이 진동만 난다. Modifiers가 판 준비 중에 정하고 Phone, Ringtone이 읽는다.</summary>
+        public bool VibrationMode { get; set; }
 
         /// <summary>플레이어(듣는 사람). Player가 갱신한다. 판 준비 중에는 시작 위치를 담는다.</summary>
         public Vector3 PlayerPosition { get; set; }
@@ -45,6 +49,8 @@ namespace MissedCall.Core.Round {
             PhonePosition = Vector3.zero;
             PhoneRoom = -1;
             Covers = 0;
+            Phone = null;
+            VibrationMode = false;
             PlayerPosition = Vector3.zero;
             PlayerRoom = -1;
             AimTarget = null;
