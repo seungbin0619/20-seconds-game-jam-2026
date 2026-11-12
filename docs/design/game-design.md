@@ -98,7 +98,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 덮임 수 | 폰 기준 높이 -0.03~+1.1m, 물건 로컬 XZ 범위 + 0.05m 안에 드는 물건 수 |
 | 진동 | 벨 한 주기의 절반마다 폰 반경 0.5m, 높이차 0.6m 안의 물건을 살짝 튀게 한다. 벨이 울리는 판에서는 가까이서만 보이게 약하게(`ringJiggleScale`), 진동 모드 판에서는 원래 세기로 튄다. 소리가 주 단서이고 떨림은 보조 단서다 |
 | 폰 흔들림 | 덮인 물건이 0개일 때만 폰이 좌우로 진동한다 |
-| 받기 | 옆으로 밀기 슬라이드를 끝까지 민다 |
+| 받기 | 폰을 집으면 포인터 잠금이 풀리고 커서가 보인다. 슬라이드 손잡이를 클릭한 채 트랙 끝까지 끈다. 중간에 놓으면 처음 자리로 돌아간다 |
 | 실패 연출 | 카메라가 폰을 향해 돌아가고 폰 화면이 빨갛게 바뀐다 |
 
 타이머는 **실제 시간**으로 줄어든다. 게임 시간 스케일이나 프레임 드랍 보정의 영향을 받지 않는다.
@@ -206,7 +206,9 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | `jiggleRadius` | 0.5 | 폰에서 이 수평 거리(m) 안의 물건을 튀게 한다 |
 | `jiggleHeight` | 0.6 | 폰과 높이 차가 이 값(m) 안인 물건을 튀게 한다 |
 | `jiggleSpin` | (1, 1.5, 1) | 진동 시 무작위 회전 속도 최대값 (rad/s, 축마다 ±) |
-| `slideNeeded` | 210 | 받기 슬라이드 거리(px) |
+| `hintDuration` | 4 | 판 시작 후 힌트 문구를 보여주는 시간(초) |
+| `lowTimeWarning` | 5 | 남은 시간이 이 값(초) 이하면 타이머가 빨갛게 바뀐다 |
+| `resultInputDelay` | 0.6 | 결과가 나온 뒤 이 시간(초) 동안은 클릭으로 새 판을 시작하지 않는다 |
 | `modifierChance` | 0.5 | 판에 변수가 붙을 확률 (잠정) |
 | `roomCount` | 2~4 | 방 개수 범위 |
 
@@ -234,7 +236,8 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 마우스 (포인터 잠금) | 둘러보기 |
 | 클릭 (누르고 있기) | 물건 잡기. 떼면 던진다. 휘두르며 떼면 그 방향으로 세게 날아간다 |
 | 클릭 | 폰 집기, 닫힌 문 열기 |
-| 마우스 가로 이동 (`answer`) | 슬라이드 |
+| 손잡이를 클릭한 채 끌기 (`answer`, 커서 보임) | 슬라이드 |
+| 커서로 버튼 클릭 (`title`, 결과) | Ring It, Try Again. 버튼 밖을 클릭하면 아무 일도 없다 |
 | R | 즉시 새 판 |
 
 데스크톱 브라우저(키보드와 마우스)만 지원한다. 모바일 터치 조작은 만들지 않는다.
@@ -266,7 +269,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 타이틀 하단 | Headphones make the direction much easier to hear. |
 | 플레이 힌트 | Follow the sound and clear the piles |
 | 조준 라벨 | Grab / Grab phone / Open |
-| 받기 화면 | Incoming call / Pick up! / Slide to answer |
+| 받기 화면 | Incoming call / (발신자 이름) / Pick up! / Slide to answer |
 | 성공 | Hello? / Answered in {0.0}s |
 | 실패 | 1 Missed Call / Your phone was {0.0}m away |
 | 재시작 | Try Again / Press R to restart |
@@ -284,4 +287,4 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 실패, 5초 이하 타이머 | `#FF6B57` |
 | 성공, 폰 조준 | `#57D68D` |
 
-폰트: 제목 Black Han Sans(라틴 글리프), 본문 IBM Plex Sans.
+폰트: 제목 Black Han Sans(라틴 글리프), 본문 IBM Plex Sans. 아직 프로젝트에 넣지 않아 지금은 둘 다 LiberationSans를 쓴다 (`GameUiBuilder`의 폰트 경로를 바꾸고 다시 만들면 된다).

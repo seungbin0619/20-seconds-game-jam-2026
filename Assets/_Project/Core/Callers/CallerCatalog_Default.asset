@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b8fe3da30e449e41bee485fb6c5e432, type: 3}
+  m_Name: CallerCatalog_Default
+  m_EditorClassIdentifier: MissedCall.Core::MissedCall.Core.Callers.CallerCatalog
+  callers:
+  - displayName: Mom
+    answeredLine: '"Have you eaten yet?"'
+    missedLine: '1 new text: "Why aren''t you picking up?"'
+  - displayName: Delivery Driver
+    answeredLine: '"I''ll leave it at your door."'
+    missedLine: '"Missed delivery. Returning to sender."'
+  - displayName: Job Interview
+    answeredLine: '"We''d like to offer you the position."'
+    missedLine: '"We couldn''t reach you. We''ve moved on to the next candidate."'
+  - displayName: Fried Chicken Place
+    answeredLine: '"Your address didn''t come through. Which building?"'
+    missedLine: Your chicken is getting cold.
+  - displayName: Unknown Number
+    answeredLine: '"Hello! We have a low-interest loan offer for you."'
+    missedLine: Probably nothing important anyway.

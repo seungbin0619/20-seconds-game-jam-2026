@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using MissedCall.Core;
 using MissedCall.Core.Aim;
+using MissedCall.Core.Round;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,9 +10,13 @@ namespace MissedCall.Feature.Player {
     /// 포인터 잠금과 마우스 둘러보기. 브라우저는 사용자 클릭 안에서만 잠금을 허용하고 Esc로 강제로 푼다.
     /// 그래서 잠기지 않은 상태의 클릭은 잠금 요청에만 쓰고, 그 버튼을 뗄 때까지는 게임 입력으로 넘기지 않는다.
     /// Web에서는 Unity의 Cursor.lockState가 Esc 해제를 반영하지 않으므로 브라우저 상태(jslib)를 기준으로 삼는다.
+    /// <see cref="flow"/>가 있으면 playing에서만 잠근다. 판이 시작되면(시작 버튼, R) 그 입력으로 잠금을 요청하고,
+    /// 그 밖의 상태(타이틀, 받기 슬라이드, 결과)에서는 풀어서 커서로 UI를 누르게 한다.
     /// </summary>
     public sealed class PointerLook : MonoBehaviour, IPointerGate {
         [SerializeField] private GameTuning tuning;
+        [Tooltip("있으면 playing 상태에서만 잠그고 둘러본다. 비우면 항상 클릭으로 잠그고 둘러본다 (샌드박스)")]
+        [SerializeField] private GameFlow flow;
         [Tooltip("좌우 회전(yaw)을 받는 몸통")]
         [SerializeField] private Transform body;
         [Tooltip("상하 회전(pitch)을 받는 머리(카메라)")]
@@ -51,11 +56,30 @@ namespace MissedCall.Feature.Player {
         private void OnEnable() {
             yaw = body.eulerAngles.y;
             pitch = NormalizeAngle(head.localEulerAngles.x);
+            if (flow != null) {
+                flow.StateChanged += OnStateChanged;
+            }
         }
 
         private void OnDisable() {
+            if (flow != null) {
+                flow.StateChanged -= OnStateChanged;
+            }
+
             Unlock();
         }
+
+        // 판 시작은 시작 버튼을 누른 프레임이나 R을 누른 프레임에 일어난다.
+        // 이때 요청하면 Unity가 같은 입력의 다음 브라우저 이벤트(mouseup, keyup)에서 잠근다.
+        private void OnStateChanged(RoundState previous, RoundState next) {
+            if (next == RoundState.Playing) {
+                RequestLock();
+            } else {
+                Unlock();
+            }
+        }
+
+        private bool LockAllowed => flow == null || flow.State == RoundState.Playing;
 
         /// <summary>시선을 정한다(도). 판 시작 위치를 잡을 때 쓴다.</summary>
         public void SetView(float newYaw, float newPitch) {
@@ -63,6 +87,18 @@ namespace MissedCall.Feature.Player {
             pitch = Mathf.Clamp(newPitch, -pitchLimit, pitchLimit);
             body.rotation = Quaternion.Euler(0f, yaw, 0f);
             head.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+        }
+
+        // Unity는 이 요청을 다음 브라우저 입력 이벤트(같은 클릭의 mouseup, 같은 키의 keyup) 안에서 처리한다.
+        // 요청에 쓴 클릭은 뗄 때까지 게임 입력으로 넘기지 않는다.
+        private void RequestLock() {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            swallowClick = true;
+            requested = true;
+            requestTime = Time.unscaledTime;
+            // 잠긴 직후 프레임의 이동량은 커서 위치가 튀는 값이 섞일 수 있어 버린다.
+            settleFrames = 2;
         }
 
         public void Unlock() {
@@ -84,16 +120,14 @@ namespace MissedCall.Feature.Player {
 
             SyncWithBrowser();
 
+            if (!LockAllowed) {
+                return;
+            }
+
             if (!IsLocked) {
+                // Esc로 풀렸거나 브라우저가 거부했으면 다음 클릭에서 다시 잠근다.
                 if (mouse.leftButton.wasPressedThisFrame) {
-                    // Unity는 이 요청을 다음 브라우저 입력 이벤트(같은 클릭의 mouseup) 안에서 처리한다.
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
-                    swallowClick = true;
-                    requested = true;
-                    requestTime = Time.unscaledTime;
-                    // 잠긴 직후 프레임의 이동량은 커서 위치가 튀는 값이 섞일 수 있어 버린다.
-                    settleFrames = 2;
+                    RequestLock();
                 }
 
                 return;
@@ -107,6 +141,7 @@ namespace MissedCall.Feature.Player {
             }
 
             LastDelta = delta;
+
             // lookSpeed는 픽셀당 라디안이다 (프로토타입 기준).
             float degreesPerPixel = tuning.lookSpeed * Mathf.Rad2Deg;
             yaw += delta.x * degreesPerPixel;

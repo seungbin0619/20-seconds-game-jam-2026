@@ -154,7 +154,12 @@ namespace MissedCall.Core {
         [Tooltip("시간이 다 됐을 때 벨 볼륨")]
         public float ringGainEnd = 1.2f;
 
-        [Header("Answer")]
-        public float slideNeeded = 210f;
+        [Header("Ui")]
+        [Tooltip("판 시작 후 힌트 문구를 보여주는 시간(초)")]
+        public float hintDuration = 4f;
+        [Tooltip("남은 시간이 이 값(초) 이하면 타이머가 빨갛게 바뀐다")]
+        public float lowTimeWarning = 5f;
+        [Tooltip("결과가 나온 뒤 이 시간(초) 동안은 클릭으로 새 판을 시작하지 않는다. 마지막 클릭이 결과를 바로 넘기지 않게 한다")]
+        public float resultInputDelay = 0.6f;
     }
 }

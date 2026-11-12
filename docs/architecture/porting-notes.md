@@ -130,7 +130,7 @@ three.js는 오른손, Unity는 왼손 좌표계다. 방이 대칭이 아니므�
 - 진동: `Playing`에서 판 경과 `jiggleDelay`부터 `jiggleInterval`마다, 수평 `jiggleRadius`·높이차 `jiggleHeight` 안의 물건에 위로 `jiggle` 속도를 더하고 회전을 `RoundStream.Vibration`에서 뽑는다. 벨이 울리는 판에서는 속도와 회전에 `ringJiggleScale`(0.4)을 곱하고, `RoundContext.VibrationMode`(Modifiers가 정함)일 때만 원래 세기다. 프로토타입 세기 그대로는 더미가 눈에 띄게 들썩여 소리 없이도 찾을 수 있었다. 확인 (시드 11, 물건 3개): 벨 판 0.22m/s, 진동 모드 0.55m/s. 벨소리 주기를 Phone이 모르므로 간격은 튜닝 값이다 (기본 벨 2초의 절반). 발신자별 벨소리를 넣을 때 주기가 달라지면 맞춘다.
 - 폰 흔들림과 화면: 덮임 0개일 때 시각 요소(`Visual`)만 좌우로 떤다. 화면은 울리는 동안 깜박이고, `Missed`에서 빨간색으로 바뀐다. 받기 화면(`Answer`)에서만 숨기고 매 프레임 상태로 다시 정하므로, 프로토타입처럼 다음 판까지 숨은 채 남지 않는다 (7장).
 - 검증 (11/12, 에디터, 시드 1~100): 숨는 자리 15곳 중 14곳이 뽑혔다. 가구에 박힘, 받침 없이 뜸, 방 번호 불일치, 플레이어와 같은 방에서 시작 0건. 같은 시드를 다시 만들면 위치가 같다. 덮임 수는 1개 1판, 2개 29판, 3개 38판, 4개 32판. 진동 12번 뒤에도 덮임 수가 그대로였다 (더미가 무너지지 않음). 덮인 폰은 조준되지 않고(물건이 조준됨), 덮은 물건을 치우면 덮임 0, 폰 조준, 클릭으로 `Answer` 전환과 폰 숨김을 확인했다.
-- 확인용 씬: `Feature/Phone/Sandbox/PhoneSandbox.unity` (ClutterSandbox 복사본). 받기 슬라이드는 Ui 단계에서 만들므로 클릭이나 Space로 받는다. F는 폰 위치 표시, V는 진동 모드 켜기(Modifiers 전까지 대용), 패널 슬라이더로 `ringJiggleScale`을 바꾼다(에셋을 직접 고침, Reset으로 되돌림). 판이 끝나면 2초 뒤 새 판. 벨소리는 아직 연결하지 않았다 (한 판 조립 때).
+- 확인용 씬: `Feature/Phone/Sandbox/PhoneSandbox.unity` (ClutterSandbox 복사본). 샌드박스에는 받기 슬라이드가 없으므로 클릭이나 Space로 받는다. F는 폰 위치 표시, V는 진동 모드 켜기(Modifiers 전까지 대용), 패널 슬라이더로 `ringJiggleScale`을 바꾼다(에셋을 직접 고침, Reset으로 되돌림). 판이 끝나면 2초 뒤 새 판. 벨소리는 아직 연결하지 않았다 (한 판 조립 때).
 
 ## 4. 플레이어 이동
 
@@ -194,16 +194,24 @@ three.js는 오른손, Unity는 왼손 좌표계다. 방이 대칭이 아니므�
 
 - 커서 잠금은 `Cursor.lockState`를 쓴다. 브라우저는 사용자 제스처 뒤에만 허용하고, Esc로 풀리면 다음 클릭에서 다시 잠근다 (프로토타입의 `pointerdown` 처리와 동일).
   - 구현: `Feature/Player/PointerLook`. 잠기지 않은 상태의 클릭은 잠금 요청에만 쓰고, 버튼을 뗄 때까지 `CanAct`를 false로 둔다 (첫 클릭이 던지기가 되지 않게). 잠긴 직후 2프레임의 이동량은 버린다.
+  - `flow`가 연결되어 있으면(`Main.unity`) playing에서만 잠근다. 판이 시작되면 `StateChanged`에서 바로 잠금을 요청하고(시작 버튼을 누른 프레임, R을 누른 프레임), 그 밖의 상태(타이틀, 받기, 결과)로 바뀌면 풀어서 커서를 보여준다. playing 중 Esc로 풀리면 다음 클릭에서 다시 잠근다. 샌드박스는 `flow`가 비어 있어 예전처럼 아무 클릭으로 잠근다.
   - 확인용 씬: `Feature/Player/Sandbox/PointerSandbox.unity`. 잠금, 해제 횟수, 잠금 클릭과 던지기 수, 이동량을 TMP로 표시한다.
   - Unity의 `Cursor.lockState`는 **Esc로 풀린 것도, 브라우저가 거부한 것도 반영하지 않는다** (Chrome과 앱 내장 브라우저에서 확인). 그래서 `PointerLockWeb.jslib`로 `document.pointerLockElement`를 읽어 실제 잠금 상태로 쓴다. 브라우저가 풀었거나 요청 후 1초 안에 잠그지 않으면 Unity 쪽도 `None`으로 돌려 다음 클릭에서 다시 요청한다.
   - 프레임 하나 안에 눌렀다 뗀 클릭은 `wasPressedThisFrame`이 놓칠 수 있다. 사람의 클릭은 보통 여러 프레임에 걸치므로 문제없지만 저프레임에서 확인한다.
 - 모바일 터치는 지원하지 않는다. 프로토타입의 터치 처리(탭, 길게 눌러 걷기)는 옮기지 않는다.
-- 슬라이드 210px은 화면 픽셀 기준이다. Canvas Scaler 환경에서 `Screen.dpi`나 참조 해상도로 보정한다.
+- 받기 슬라이드는 프로토타입(잠긴 채 마우스 가로 이동 210px)과 다르다. 포인터를 풀고 손잡이를 커서로 끈다 (8장). `slideNeeded`는 없앴다.
 - 탭을 벗어나도 타이머는 계속 흐른다 (`Run In Background` 켬). 포커스를 잃으면 키 입력 상태를 비운다 (프로토타입의 `blur` 처리).
 
 ## 8. UI와 폰트
 
 - uGUI + TextMeshPro로 구현한다. HTML 오버레이의 `handset` 패널이 프리팹 하나에 대응한다.
+  - 구현 (11/12): `Feature/Ui/GameUi.prefab` 하나에 타이틀, HUD(`HudView`), 조준점(`AimView`), 받기(`AnswerSlide`), 결과(`ResultView`)가 들어 있다. `Missed Call/Ui/Build Game Ui` 메뉴(`Ui/Editor/GameUiBuilder`)가 프리팹, 스프라이트(원, 링, 둥근 패널과 테두리 9-slice), 글자 그림자 머티리얼을 다시 만든다. 씬에서는 `GameUi`의 `flow`만 연결한다.
+  - Canvas Scaler는 1280×720 기준, 높이 맞춤이다. 기본 Web 캔버스 높이(600)에서 작아지므로 글자를 프로토타입 CSS보다 1~2pt 키웠다.
+  - 타이틀의 `Ring It`과 결과의 `Try Again`은 커서로 버튼 위를 눌러야 시작한다. 버튼 밖 클릭은 무시한다. 결과 직후 `resultInputDelay` 동안은 막는다. 누름 판정은 `GameUi`가 버튼 이미지 사각형으로 직접 하고, **누르는 순간** 시작한다. uGUI 버튼은 뗄 때 눌린다. 그런데 브라우저는 사용자 입력 이벤트 안에서만 포인터 잠금을 허용하고, Unity는 잠금 요청을 다음 입력 이벤트에서 처리한다. 그래서 누르는 프레임에 시작해야 같은 클릭의 mouseup에서 잠긴다. 이 때문에 EventSystem을 두지 않는다. 커서가 버튼 위에 있으면 버튼이 밝아진다.
+  - 커서: 포인터가 풀린 동안 가운데 조준점과 같은 링 모양 커서(`Sprites/Ui_Cursor.png`, 32px, 어두운 테두리)를 `Cursor.SetCursor`로 쓴다. Web에서는 CSS 커서라 프레임 지연이 없다.
+  - 받기 슬라이드: 폰을 집으면 잠금이 풀린다. 손잡이를 커서로 누른 채 끌면 따라오고, 트랙 끝에 닿으면 받는다. 중간에 놓으면 0.2초에 걸쳐 처음 자리로 돌아간다. 폰을 집은 클릭이 아직 눌려 있어도 새로 눌러야 끈다. 트랙만 누르고 끌면 움직이지 않는다. 에디터에서 입력 이벤트를 넣어 끌기, 놓으면 복귀, 트랙 누름 무시, 끝까지 끌면 `Won`을 확인했다. Chrome에서 실제 감각 확인은 남았다.
+  - 발신자: `Core/Callers/CallerCatalog_Default`에서 `CallerStep`(판 준비 첫 단계)이 `Caller` 스트림으로 고르고 `RoundContext.Caller`에 넣는다. Ui(문구)와 Ringtone(벨소리, 4단계)이 함께 읽으므로 Core에 둔다.
+  - 에디터 확인 팁: Editor가 포커스를 잃으면 Input System이 마우스를 꺼서, 스크립트로 넣은 입력 이벤트가 버려진다. 테스트하는 동안만 `InputSystem.settings`의 복사본에서 `editorInputBehaviorInPlayMode`와 `backgroundBehavior`를 바꾸고 `InputSystem.EnableDevice(Mouse.current)`를 부른다. 플레이 모드가 아닐 때 `StartRound`를 부르면 편집 중인 씬에 집이 생기므로 `EditorApplication.isPlaying`을 먼저 확인한다.
 - 게임 텍스트는 영어만 쓴다. 프로토타입의 한국어 문구를 옮기지 말고 [`game-design.md`](../design/game-design.md)의 영어 문구를 쓴다.
 - Web에는 OS 폰트가 없다. Black Han Sans와 IBM Plex Sans를 프로젝트에 넣고 ASCII 범위의 **정적 TMP 아틀라스**로 만든다. 한글 글리프가 없어 아틀라스가 작다.
   - 검증 (11/11): TMP 기본 LiberationSans로 ASCII 95자 정적 아틀라스(512², SDFAA, 48pt, Mobile Distance Field 셰이더)를 만들어 Web 빌드에서 모든 글자가 표시됨을 확인했다. 에셋은 `Shared/Fonts/UiFont_LiberationSans SDF` (빌드에서 266KB).

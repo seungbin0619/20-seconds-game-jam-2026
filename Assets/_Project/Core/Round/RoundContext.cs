@@ -1,4 +1,5 @@
 using MissedCall.Core.Aim;
+using MissedCall.Core.Callers;
 using MissedCall.Core.Rooms;
 using UnityEngine;
 
@@ -15,6 +16,9 @@ namespace MissedCall.Core.Round {
         public float Elapsed { get; internal set; }
         public float Duration { get; internal set; }
         public float TimeLeft => Mathf.Max(0f, Duration - Elapsed);
+
+        /// <summary>이번 판의 발신자. CallerStep이 판 준비 중에 고른다.</summary>
+        public CallerProfile Caller { get; set; }
 
         /// <summary>집 구조. Layout이 판 준비 중에 채운다.</summary>
         public RoomGraph Graph { get; set; }
@@ -45,6 +49,7 @@ namespace MissedCall.Core.Round {
             State = RoundState.Playing;
             Elapsed = 0f;
             Duration = duration;
+            Caller = null;
             Graph = null;
             PhonePosition = Vector3.zero;
             PhoneRoom = -1;

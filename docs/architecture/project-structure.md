@@ -9,6 +9,7 @@ Assets/_Project/
 ├─ Core/     MissedCall.Core     게임 뼈대와 Feature 간 계약
 │  ├─ Round/                     GameFlow, RoundContext, RoundSeed, RoundStep
 │  ├─ Aim/                       조준 계약(IAimTarget, IThrowable, IGrabbable)
+│  ├─ Callers/                   발신자 데이터(CallerCatalog, CallerProfile)와 CallerStep
 │  ├─ Rooms/                     방 모듈 계약(RoomModule, DoorSocket, HideSpot, 열거형)과 RoomGraph
 │  ├─ Tests/                     EditMode 테스트 (MissedCall.Core.Tests, 에디터 전용)
 │  ├─ Scenes/Main.unity
@@ -48,12 +49,13 @@ Feature ──▶ Core ──▶ Shared
 | 타입 | 책임 |
 |---|---|
 | `Round/GameFlow` | 상태 머신 (`Title / Playing / Answer / Won / Missed`), 판 시작과 준비 단계 실행, 실제 시간 타이머. 입력은 읽지 않는다. Feature가 `StartRound`, `RequestRestart`(R), `PickUp`, `Answer`를 호출하고 `StateChanged`를 구독한다 |
-| `Round/RoundContext` | 판 공용 상태: 시드, 상태, 경과/남은 시간, `RoomGraph`, 폰 위치·방·덮임 수, 진동 모드 여부, 플레이어 위치·방, 조준 대상, 판 통계(던진 수, 받은 시간). `GameFlow.Context`로 얻는다. 판 시작 때 통째로 초기화한다 |
+| `Round/RoundContext` | 판 공용 상태: 시드, 상태, 경과/남은 시간, `RoomGraph`, 발신자, 폰 위치·방·덮임 수, 진동 모드 여부, 플레이어 위치·방, 조준 대상, 판 통계(던진 수, 받은 시간). `GameFlow.Context`로 얻는다. 판 시작 때 통째로 초기화한다 |
 | `Round/RoundSeed`, `RoundStream` | 판 시드 하나에서 용도별(`Layout`, `Phone`, `Clutter`, `Start`, `Caller`, `Modifier`, `Throw`, `Vibration`) `System.Random`을 가른다. 한 기능의 뽑는 횟수가 바뀌어도 다른 기능의 결과는 그대로다. `RoundStream` 값은 바꾸지 않고 끝에만 추가한다 |
 | `Round/RoundStep` | 판 준비 단계의 추상 MonoBehaviour. Feature가 상속하고, `GameFlow` 인스펙터의 순서대로 `Prepare(context)`가 불린다. 이전 판 오브젝트는 여기서 풀에 돌려놓는다 |
 | `Aim/IAimTarget`, `IThrowable`, `IGrabbable`, `AimKind`, `IPointerGate` | Interaction이 Clutter, Phone, Player를 모르고 조준·잡아 던지기·집기를 하기 위한 계약. 끌어오는 속도와 던지는 속도 계산, 집기 조건 판정은 Interaction이 하고 대상은 받은 속도를 적용만 한다. `IPointerGate`는 잠금 클릭을 거르기 위해 PointerLook이 구현한다. 폰(`IGrabbable`)은 콜라이더 없이 `GrabPoint`로 조준하며, Phone이 `RoundContext.Phone`에 넣는다 |
 | `GameTuning` (ScriptableObject) | 튜닝 값. [`game-design.md`](../design/game-design.md)와 일치시킨다 |
 | `Rooms/RoomModule`, `DoorSocket`, `HideSpot` | 방 모듈 프리팹에 붙는 데이터 컴포넌트. Layout(배치, 문), Phone과 Clutter(숨는 자리)가 함께 읽으므로 Room이 아니라 Core에 둔다 |
+| `Callers/CallerCatalog`, `CallerProfile`, `CallerStep` | 발신자 목록과, 판마다 발신자를 고르는 준비 단계. 결과 문구(Ui)와 발신자별 벨소리(Ringtone)가 함께 읽는다. 고른 발신자는 `RoundContext.Caller`에 들어간다 |
 | `Rooms/RoomGraph`, `RoomDoor`, `GraphRoute` | 판의 집 구조와 소리 경로. Layout이 만들고 Ringtone, Player가 읽는다 |
 
 판은 서로 독립이다. 새 판을 시작할 때 `RoundContext`를 통째로 초기화하고, 게임플레이 상태를 다음 판으로 넘기지 않는다. 판 사이에 남는 것은 `Result`의 기록뿐이다.
@@ -73,9 +75,9 @@ Feature ──▶ Core ──▶ Shared
 | `Ringtone` | 발신자별 벨소리, 공간 음향, 벽 먹먹함, 문 쪽 음원, 효과음 | `initAudio`, `scheduleRing`, `oneShot` |
 | `Modifiers` | 판 변수 (미끼 소리, 진동 모드, 정전, 닫힌 문) | 신규 |
 | `Result` | 칭호 판정, 기록 저장과 조회 | 신규 |
-| `Ui` | HUD, 타이틀, 받기 슬라이드, 결과, 기록 화면, 발신자 데이터 | HTML 오버레이, `CALLERS` |
+| `Ui` | HUD, 타이틀, 받기 슬라이드, 결과, 기록 화면 (발신자 데이터는 `Core/Callers`) | HTML 오버레이, `CALLERS` |
 
-에디터 전용 코드(라이트맵 굽기 도구 등)는 해당 기능 폴더의 `Editor/` 하위에 둔다. `MissedCall.Feature.Editor` asmdef는 `Feature/Room/Editor/`에 있다. 다른 기능의 `Editor/` 폴더는 이 asmdef를 가리키는 `.asmref`를 둔다.
+에디터 전용 코드(라이트맵 굽기 도구 등)는 해당 기능 폴더의 `Editor/` 하위에 둔다. `MissedCall.Feature.Editor` asmdef는 `Feature/Room/Editor/`에 있다. 다른 기능의 `Editor/` 폴더는 이 asmdef를 가리키는 `.asmref`를 둔다 (예: `Ui/Editor`).
 
 ## 네이밍
 
