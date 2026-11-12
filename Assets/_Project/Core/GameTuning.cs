@@ -38,10 +38,65 @@ namespace MissedCall.Core {
         [Tooltip("흔들림이 속도를 따라가는 빠르기(1/s). 멈출 때 흔들림이 가라앉는 속도")]
         public float bobResponse = 8f;
 
+        [Header("Clutter")]
+        [Tooltip("방마다 바닥에 흩뿌리는 물건 수 범위 (양 끝 포함)")]
+        public Vector2Int scatterPerRoom = new(2, 3);
+        [Tooltip("판 시작 전 물건 더미를 가라앉히는 물리 스텝 수 (1/60초 단위)")]
+        public int settleSteps = 90;
+        public float itemLinearDamping = 0.22f;
+        public float itemAngularDamping = 0.45f;
+        [Tooltip("이 운동 에너지(질량당) 아래로 내려가면 물건이 잠든다. 0.5 × 속도² 이므로 0.016 ≈ 0.18m/s")]
+        public float itemSleepThreshold = 0.016f;
+
+        [Header("Hold")]
+        [Tooltip("잡은 물건을 두는 거리. 카메라 앞 이 거리(m)")]
+        public float holdDistance = 0.9f;
+        [Tooltip("잡는 점의 높이. 눈높이에서 위(+)/아래(-)로 이만큼(m)")]
+        public float holdHeight = -0.25f;
+        [Tooltip("잡는 점을 따라가는 빠르기(1/s). 떨어진 거리 × 이 값이 따라가는 속도다")]
+        public float holdResponse = 16f;
+        [Tooltip("끌려오고 따라가는 최대 속도(m/s)")]
+        public float holdMaxSpeed = 10f;
+        [Tooltip("잡힌 동안의 회전 감쇠. 클수록 손에서 빨리 멈춘다")]
+        public float holdAngularDamping = 6f;
+        [Tooltip("잡는 점에 이만큼(m) 다가오면 손에 들어온 것으로 본다")]
+        public float holdArriveDistance = 0.25f;
+        [Tooltip("손에 들어온 뒤 잡는 점에서 이만큼(m) 멀어지면 (가구에 걸리면) 놓친다")]
+        public float holdBreakDistance = 0.9f;
+        [Tooltip("잡은 뒤 이 시간(초) 안에 손에 들어오지 않으면 놓친다")]
+        public float holdPullTimeout = 0.6f;
+        [Tooltip("물건 윗면 위로 이 높이(m) 안에 다른 물건이 있으면 깔린 것으로 본다")]
+        public float buriedCheckHeight = 0.015f;
+        [Tooltip("위 물건의 중심이 윗면 밖에 있을 때, 윗면(격자 3×3)의 이 비율 이상을 덮어야 깔린 것으로 본다")]
+        [Range(0f, 1f)] public float buriedCoverage = 0.5f;
+        [Tooltip("깔림 판정 상자를 윗면보다 이 비율만큼 좁힌다 (0.15면 가로세로 85%). 가장자리에 걸치기만 한 물건은 세지 않는다")]
+        public float buriedCheckInset = 0.15f;
+        [Tooltip("깔린 물건을 잡으면 손 쪽으로 이만큼(m) 끌려 나오다 만다")]
+        public float tugDistance = 0.06f;
+        [Tooltip("깔린 물건이 끌려 나오다 멈추기까지 시간(초)")]
+        public float tugTime = 0.1f;
+        [Tooltip("눈과 잡는 점 사이에 벽이나 가구가 있으면 잡는 점을 그 표면에서 이만큼(m) 앞으로 당긴다")]
+        public float holdWallMargin = 0.2f;
+        [Tooltip("바구니처럼 둘러싸인 자리의 물건은 먼저 이만큼(m) 수직으로 들어 올린 뒤 끌어온다")]
+        public float enclosedLift = 0.6f;
+
         [Header("Throw")]
-        public float throwForward = 4.6f;
-        public float throwUp = 3.6f;
+        [Tooltip("휘두르지 않고 놓아도 앞으로 툭 던지는 수평 속도. 휘두른 속도에 더해진다")]
+        public float tapThrowForward = 2f;
+        [Tooltip("놓을 때 기본으로 주는 위쪽 속도")]
+        public float tapThrowUp = 1.8f;
+        [Tooltip("휘두른 속도(잡는 점의 이동 속도)에 곱하는 배율")]
+        public float flickScale = 0.6f;
+        [Tooltip("휘두른 속도를 재는 구간(초). 놓기 직전 이 시간 동안의 평균이다")]
+        public float flickWindow = 0.08f;
+        [Tooltip("던지는 최대 속도(m/s)")]
+        public float maxThrowSpeed = 9f;
+        [Tooltip("놓은 뒤 다음 물건을 잡기까지 간격(초)")]
         public float throwCooldown = 0.1f;
+        [Tooltip("던질 때 무작위 회전 속도 최대값 (rad/s, x y z 각각 ±)")]
+        public Vector3 throwSpin = new(9f, 6f, 9f);
+
+        [Header("Vibration")]
         public float jiggle = 0.55f;
 
         [Header("Sound")]

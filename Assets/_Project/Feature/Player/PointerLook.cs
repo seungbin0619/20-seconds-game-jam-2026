@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using MissedCall.Core;
+using MissedCall.Core.Aim;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,7 +10,7 @@ namespace MissedCall.Feature.Player {
     /// 그래서 잠기지 않은 상태의 클릭은 잠금 요청에만 쓰고, 그 버튼을 뗄 때까지는 게임 입력으로 넘기지 않는다.
     /// Web에서는 Unity의 Cursor.lockState가 Esc 해제를 반영하지 않으므로 브라우저 상태(jslib)를 기준으로 삼는다.
     /// </summary>
-    public sealed class PointerLook : MonoBehaviour {
+    public sealed class PointerLook : MonoBehaviour, IPointerGate {
         [SerializeField] private GameTuning tuning;
         [Tooltip("좌우 회전(yaw)을 받는 몸통")]
         [SerializeField] private Transform body;

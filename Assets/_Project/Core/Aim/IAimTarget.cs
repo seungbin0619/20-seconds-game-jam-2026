@@ -5,5 +5,8 @@ namespace MissedCall.Core.Aim {
     /// </summary>
     public interface IAimTarget {
         AimKind Kind { get; }
+
+        /// <summary>조준되었는지 보여준다 (강조 표시). Interaction이 조준이 바뀔 때 부른다.</summary>
+        void SetAimed(bool aimed);
     }
 }

@@ -89,8 +89,12 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 흩뿌림 | 방마다 바닥에 물건을 몇 개 흩뿌린다 |
 | 안정화 | 시작 전에 물리를 90스텝 돌려 더미를 가라앉힌다 |
 | 폰 집기 | 도달 거리 안, 화면 중심 레이와 폰의 거리 0.17m 이내, 사이에 가림막 없음 |
-| 물건 던지기 | 조준한 물건을 시선 수평 방향으로 던진다. 좌우로 ±0.28 비율의 무작위 편차 |
-| 바구니처럼 벽이 있는 곳의 물건 | 걸리지 않도록 전방 1.6 / 위 6.2로 띄운다 |
+| 물건 잡기 | 누르면 조준한 물건을 카메라 앞 잡는 점(0.9m 앞, 눈높이 -0.25m)으로 끌어온다 (약 0.1초). 잡은 채로 걷고 둘러볼 수 있다 |
+| 깔린 물건 | 위에 다른 물건이 얹혀 있으면 잡히지 않는다. 손 쪽으로 옆으로 6cm쯤 끌려 나오다 멈춘다. 더미는 위에서부터 치워야 한다 |
+| 물건 던지기 | 떼면 시선 수평 방향 2.0, 위 1.8의 기본 토스에 휘두른 속도(잡는 점의 최근 0.08초 이동 속도) × 0.6을 더해 던진다. 최대 9m/s. 시선을 휙 돌리며 떼면 그 방향으로 날아간다 |
+| 놓치기 | 가구에 걸려 잡는 점에서 0.9m 넘게 멀어지거나 0.6초 안에 손에 들어오지 않으면 그 자리에 떨어뜨린다 |
+| 벽 앞에서 잡기 | 눈과 잡는 점 사이에 벽이나 가구가 있으면 잡는 점을 그 앞으로 당긴다. 물건이 문틀을 돌아 옆방으로 끌려가지 않는다 |
+| 바구니처럼 벽이 있는 곳의 물건 | 먼저 0.6m 수직으로 들어 올리고, 손에 들어올 때까지 그 높이 아래로 내리지 않는다 |
 | 덮임 수 | 폰 기준 높이 -0.03~+1.1m, 물건 로컬 XZ 범위 + 0.05m 안에 드는 물건 수 |
 | 진동 | 벨 한 주기의 절반마다 폰 반경 0.5m, 높이차 0.6m 안의 물건을 살짝 튀게 한다 |
 | 폰 흔들림 | 덮인 물건이 0개일 때만 폰이 좌우로 진동한다 |
@@ -147,9 +151,33 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | `bobResponse` | 8 | 흔들림이 속도를 따라가는 빠르기(1/s) |
 | `lookSpeed` | 0.0023 | 마우스 감도(rad/px) |
 | `reach` | 3.1 | 손이 닿는 거리(m) |
-| `throwForward` | 4.6 | 던지는 수평 속도 |
-| `throwUp` | 3.6 | 던지는 위쪽 속도 |
-| `throwCooldown` | 0.1 | 던지기 간격(초) |
+| `scatterPerRoom` | 2~3 | 방마다 바닥에 흩뿌리는 물건 수 |
+| `settleSteps` | 90 | 판 시작 전 더미를 가라앉히는 물리 스텝 수 (1/60초) |
+| `itemLinearDamping` | 0.22 | 물건 이동 감쇠 (프로토타입 값, 플레이하며 재조정) |
+| `itemAngularDamping` | 0.45 | 물건 회전 감쇠 |
+| `itemSleepThreshold` | 0.016 | 물건이 잠드는 질량당 운동 에너지 (약 0.18m/s) |
+| `holdDistance` | 0.9 | 잡은 물건을 두는 거리, 카메라 앞(m) |
+| `holdHeight` | -0.25 | 잡는 점의 높이, 눈높이 기준(m) |
+| `holdResponse` | 16 | 잡는 점을 따라가는 빠르기(1/s) |
+| `holdMaxSpeed` | 10 | 끌려오고 따라가는 최대 속도(m/s) |
+| `holdAngularDamping` | 6 | 잡힌 동안의 회전 감쇠 |
+| `holdArriveDistance` | 0.25 | 이만큼 다가오면 손에 들어온 것으로 본다(m) |
+| `holdBreakDistance` | 0.9 | 손에 들어온 뒤 이만큼 멀어지면 놓친다(m) |
+| `holdPullTimeout` | 0.6 | 이 시간 안에 손에 들어오지 않으면 놓친다(초) |
+| `buriedCheckHeight` | 0.015 | 물건 윗면 위로 이 높이(m) 안에 닿은 물건만 깔림 후보로 본다 |
+| `buriedCheckInset` | 0.15 | 깔림 판정 영역을 윗면보다 좁히는 비율 (가로세로 85%) |
+| `buriedCoverage` | 0.5 | 위 물건의 중심이 윗면 밖이면, 윗면의 이 비율 이상을 덮어야 깔린 것으로 본다 |
+| `tugDistance` | 0.06 | 깔린 물건이 끌려 나오다 마는 거리(m) |
+| `tugTime` | 0.1 | 깔린 물건이 끌려 나오다 멈추기까지 시간(초) |
+| `holdWallMargin` | 0.2 | 벽이나 가구 앞으로 당길 때 표면과의 간격(m) |
+| `enclosedLift` | 0.6 | 둘러싸인 자리의 물건을 먼저 들어 올리는 높이(m) |
+| `tapThrowForward` | 2.0 | 놓을 때 기본으로 주는 수평 속도 |
+| `tapThrowUp` | 1.8 | 놓을 때 기본으로 주는 위쪽 속도 |
+| `flickScale` | 0.6 | 휘두른 속도에 곱하는 배율 |
+| `flickWindow` | 0.08 | 휘두른 속도를 재는 구간(초) |
+| `maxThrowSpeed` | 9 | 던지는 최대 속도(m/s) |
+| `throwCooldown` | 0.1 | 놓은 뒤 다음 물건을 잡기까지 간격(초) |
+| `throwSpin` | (9, 6, 9) | 던질 때 무작위 회전 속도 최대값 (rad/s, 축마다 ±) |
 | `clearCutoff` | 7000 | 덮이지 않았을 때 고음 한계(Hz) |
 | `coveredCutoff` | 420 | 많이 덮였을 때 고음 한계(Hz) |
 | `maxCovers` | 4 | 이 개수부터 가장 먹먹함 |
@@ -188,7 +216,8 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 |---|---|
 | WASD / 방향키 | 걷기 |
 | 마우스 (포인터 잠금) | 둘러보기 |
-| 클릭 / Space | 물건 던지기, 폰 집기, 닫힌 문 열기 |
+| 클릭 (누르고 있기) | 물건 잡기. 떼면 던진다. 휘두르며 떼면 그 방향으로 세게 날아간다 |
+| 클릭 | 폰 집기, 닫힌 문 열기 |
 | 마우스 가로 이동 (`answer`) | 슬라이드 |
 | R | 즉시 새 판 |
 
@@ -216,11 +245,11 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 |---|---|
 | 타이틀 | Missed Call |
 | 타이틀 설명 | Your phone is ringing somewhere. Find it and pick up before it stops. |
-| 조작 안내 | WASD: Walk / Mouse: Look around / Click: Throw items, grab phone |
+| 조작 안내 | WASD: Walk / Mouse: Look around / Hold click: Grab, swing and release to throw |
 | 시작 버튼 | Ring It |
 | 타이틀 하단 | Headphones make the direction much easier to hear. |
 | 플레이 힌트 | Follow the sound and clear the piles |
-| 조준 라벨 | Throw / Grab phone / Open |
+| 조준 라벨 | Grab / Grab phone / Open |
 | 받기 화면 | Incoming call / Pick up! / Slide to answer |
 | 성공 | Hello? / Answered in {0.0}s |
 | 실패 | 1 Missed Call / Your phone was {0.0}m away |

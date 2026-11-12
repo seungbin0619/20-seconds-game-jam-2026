@@ -49,9 +49,9 @@ Feature ──▶ Core ──▶ Shared
 |---|---|
 | `Round/GameFlow` | 상태 머신 (`Title / Playing / Answer / Won / Missed`), 판 시작과 준비 단계 실행, 실제 시간 타이머. 입력은 읽지 않는다. Feature가 `StartRound`, `RequestRestart`(R), `PickUp`, `Answer`를 호출하고 `StateChanged`를 구독한다 |
 | `Round/RoundContext` | 판 공용 상태: 시드, 상태, 경과/남은 시간, `RoomGraph`, 폰 위치·방·덮임 수, 플레이어 위치·방, 조준 대상, 판 통계(던진 수, 받은 시간). `GameFlow.Context`로 얻는다. 판 시작 때 통째로 초기화한다 |
-| `Round/RoundSeed`, `RoundStream` | 판 시드 하나에서 용도별(`Layout`, `Phone`, `Clutter`, `Start`, `Caller`, `Modifier`) `System.Random`을 가른다. 한 기능의 뽑는 횟수가 바뀌어도 다른 기능의 결과는 그대로다. `RoundStream` 값은 바꾸지 않고 끝에만 추가한다 |
+| `Round/RoundSeed`, `RoundStream` | 판 시드 하나에서 용도별(`Layout`, `Phone`, `Clutter`, `Start`, `Caller`, `Modifier`, `Throw`) `System.Random`을 가른다. 한 기능의 뽑는 횟수가 바뀌어도 다른 기능의 결과는 그대로다. `RoundStream` 값은 바꾸지 않고 끝에만 추가한다 |
 | `Round/RoundStep` | 판 준비 단계의 추상 MonoBehaviour. Feature가 상속하고, `GameFlow` 인스펙터의 순서대로 `Prepare(context)`가 불린다. 이전 판 오브젝트는 여기서 풀에 돌려놓는다 |
-| `Aim/IAimTarget`, `IThrowable`, `IGrabbable`, `AimKind` | Interaction이 Clutter, Phone을 모르고 조준·던지기·집기를 하기 위한 계약. 속도 계산과 집기 조건 판정은 Interaction이 한다 |
+| `Aim/IAimTarget`, `IThrowable`, `IGrabbable`, `AimKind`, `IPointerGate` | Interaction이 Clutter, Phone, Player를 모르고 조준·잡아 던지기·집기를 하기 위한 계약. 끌어오는 속도와 던지는 속도 계산, 집기 조건 판정은 Interaction이 하고 대상은 받은 속도를 적용만 한다. `IPointerGate`는 잠금 클릭을 거르기 위해 PointerLook이 구현한다 |
 | `GameTuning` (ScriptableObject) | 튜닝 값. [`game-design.md`](../design/game-design.md)와 일치시킨다 |
 | `Rooms/RoomModule`, `DoorSocket`, `HideSpot` | 방 모듈 프리팹에 붙는 데이터 컴포넌트. Layout(배치, 문), Phone과 Clutter(숨는 자리)가 함께 읽으므로 Room이 아니라 Core에 둔다 |
 | `Rooms/RoomGraph`, `RoomDoor`, `GraphRoute` | 판의 집 구조와 소리 경로. Layout이 만들고 Ringtone, Player가 읽는다 |
@@ -68,7 +68,7 @@ Feature ──▶ Core ──▶ Shared
 | `Room` | 방 모듈 프리팹, 가구, 조명, 라이트맵 굽기와 복원, 회색 박스 생성 도구 | `block`, `noWalk`, `SPOTS` |
 | `Player` | 걷기, 둘러보기, 입력 처리 | `walk`, `blocked`, 포인터 입력 |
 | `Clutter` | 물건 종류, 더미 생성, 물리, 풀링 | `KINDS`, `addItem`, `buildPile` |
-| `Interaction` | 화면 중심 조준, 던지기, 문 열기 | `updateTarget`, `act` |
+| `Interaction` | 화면 중심 조준, 잡아 던지기, 문 열기 | `updateTarget`, `act` (조작은 다름) |
 | `Phone` | 폰 배치, 덮임 계산, 진동, 집기 | `countCovers`, `vibrate`, `grabPhone` |
 | `Ringtone` | 발신자별 벨소리, 공간 음향, 벽 먹먹함, 문 쪽 음원, 효과음 | `initAudio`, `scheduleRing`, `oneShot` |
 | `Modifiers` | 판 변수 (미끼 소리, 진동 모드, 정전, 닫힌 문) | 신규 |

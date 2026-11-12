@@ -24,13 +24,37 @@ MonoBehaviour:
   walkDeceleration: 18
   eyeHeight: 1.52
   stepLength: 1
-  bobHeight: 0.035
-  swayWidth: 0.02
-  swayRoll: 0.5
+  bobHeight: 0.04
+  swayWidth: 0.03
+  swayRoll: 0.6
   bobResponse: 8
-  throwForward: 4.6
-  throwUp: 3.6
+  scatterPerRoom: {x: 2, y: 3}
+  settleSteps: 90
+  itemLinearDamping: 0.22
+  itemAngularDamping: 0.45
+  itemSleepThreshold: 0.016
+  holdDistance: 0.9
+  holdHeight: -0.25
+  holdResponse: 16
+  holdMaxSpeed: 10
+  holdAngularDamping: 6
+  holdArriveDistance: 0.25
+  holdBreakDistance: 0.9
+  holdPullTimeout: 0.6
+  buriedCheckHeight: 0.015
+  buriedCoverage: 0.5
+  buriedCheckInset: 0.15
+  tugDistance: 0.06
+  tugTime: 0.1
+  holdWallMargin: 0.2
+  enclosedLift: 0.6
+  tapThrowForward: 2
+  tapThrowUp: 1.8
+  flickScale: 0.6
+  flickWindow: 0.08
+  maxThrowSpeed: 9
   throwCooldown: 0.1
+  throwSpin: {x: 9, y: 6, z: 9}
   jiggle: 0.55
   clearCutoff: 7000
   coveredCutoff: 420
