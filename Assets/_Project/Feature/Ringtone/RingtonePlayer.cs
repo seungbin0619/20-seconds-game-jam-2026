@@ -60,6 +60,9 @@ namespace MissedCall.Feature.Ringtone {
         public void StartVoice(int voice) => backend.StartVoice(voices[voice].BackendId);
         public void StopVoice(int voice) => backend.StopVoice(voices[voice].BackendId);
 
+        /// <summary>일시정지 메뉴가 열리고 닫힐 때. 벨과 효과음을 모두 멈춘다.</summary>
+        public void SetPaused(bool paused) => backend.SetPaused(paused);
+
         /// <param name="route">같은 방이면 <see cref="SoundPath.Direct"/>, 다른 방이면 <see cref="SoundPath.ThroughDoor"/></param>
         /// <param name="clear">받기 화면처럼 먹먹함 없이 들려야 할 때</param>
         public void SetVoice(int voice, SoundRoute route, int covers, float elapsed01, bool clear = false) {

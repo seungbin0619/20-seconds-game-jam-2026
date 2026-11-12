@@ -112,12 +112,25 @@ namespace MissedCall.Feature.Interaction {
 
         private void OnEnable() {
             flow.StateChanged += OnStateChanged;
+            flow.PausedChanged += OnPausedChanged;
         }
 
         private void OnDisable() {
             flow.StateChanged -= OnStateChanged;
+            flow.PausedChanged -= OnPausedChanged;
             LetGo();
             SetAim(null);
+        }
+
+        // 멈추면 든 물건을 그 자리에 놓는다. 메뉴를 누르고 떼는 클릭이 던지기가 되지 않게 한다.
+        // 재개할 때 눌려 있던 버튼으로는 잡지 않는다.
+        private void OnPausedChanged(bool paused) {
+            if (paused) {
+                LetGo();
+                SetAim(null);
+            } else {
+                wasDown = IsDown();
+            }
         }
 
         private void OnStateChanged(RoundState previous, RoundState next) {
@@ -138,7 +151,7 @@ namespace MissedCall.Feature.Interaction {
         }
 
         private void LateUpdate() {
-            if (flow.State != RoundState.Playing) {
+            if (flow.State != RoundState.Playing || flow.IsPaused) {
                 return;
             }
 

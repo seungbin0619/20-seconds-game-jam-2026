@@ -31,6 +31,7 @@ namespace MissedCall.Feature.Player {
         private int settleFrames;
         private bool requested;
         private float requestTime;
+        private bool wasLocked;
 
         /// <summary>실제로 잠겨 있는지. Web에서는 브라우저의 잠금 상태다.</summary>
         public bool IsLocked => Cursor.lockState == CursorLockMode.Locked && BrowserLocked();
@@ -58,15 +59,26 @@ namespace MissedCall.Feature.Player {
             pitch = NormalizeAngle(head.localEulerAngles.x);
             if (flow != null) {
                 flow.StateChanged += OnStateChanged;
+                flow.PausedChanged += OnPausedChanged;
             }
         }
 
         private void OnDisable() {
             if (flow != null) {
                 flow.StateChanged -= OnStateChanged;
+                flow.PausedChanged -= OnPausedChanged;
             }
 
             Unlock();
+        }
+
+        // 재개는 일시정지 메뉴의 Resume을 누른 프레임에 일어나므로 그 클릭으로 다시 잠근다.
+        private void OnPausedChanged(bool paused) {
+            if (paused) {
+                Unlock();
+            } else if (flow.State == RoundState.Playing) {
+                RequestLock();
+            }
         }
 
         // 판 시작은 시작 버튼을 누른 프레임이나 R을 누른 프레임에 일어난다.
@@ -79,7 +91,7 @@ namespace MissedCall.Feature.Player {
             }
         }
 
-        private bool LockAllowed => flow == null || flow.State == RoundState.Playing;
+        private bool LockAllowed => flow == null || (flow.State == RoundState.Playing && !flow.IsPaused);
 
         /// <summary>시선을 정한다(도). 판 시작 위치를 잡을 때 쓴다.</summary>
         public void SetView(float newYaw, float newPitch) {
@@ -101,9 +113,16 @@ namespace MissedCall.Feature.Player {
             settleFrames = 2;
         }
 
+        // Web에서 Cursor.visible = true는 캔버스 커서를 기본 화살표로 되돌리므로(전용 커서가 지워짐) 바뀔 때만 건드린다.
         public void Unlock() {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            if (Cursor.lockState != CursorLockMode.None) {
+                Cursor.lockState = CursorLockMode.None;
+            }
+
+            if (!Cursor.visible) {
+                Cursor.visible = true;
+            }
+
             requested = false;
         }
 
@@ -119,6 +138,14 @@ namespace MissedCall.Feature.Player {
             }
 
             SyncWithBrowser();
+
+            // playing 중 잠금을 잃으면(Esc, 탭 전환, 창 전환) 판을 멈춘다. 잠금을 얻기 전(요청 중, 거부됨)은 해당하지 않는다.
+            bool locked = IsLocked;
+            if (wasLocked && !locked && flow != null && flow.State == RoundState.Playing) {
+                flow.Pause();
+            }
+
+            wasLocked = locked;
 
             if (!LockAllowed) {
                 return;

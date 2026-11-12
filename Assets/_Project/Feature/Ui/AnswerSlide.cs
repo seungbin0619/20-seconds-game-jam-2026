@@ -41,6 +41,11 @@ namespace MissedCall.Feature.Ui {
                 return;
             }
 
+            if (flow.IsPaused) {
+                dragging = false;
+                return;
+            }
+
             Mouse mouse = Mouse.current;
             if (mouse == null) {
                 return;

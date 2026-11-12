@@ -19,5 +19,8 @@ namespace MissedCall.Feature.Ringtone {
         void SetVoice(int voice, Vector3 position, float cutoff, float gain);
         void SetListener(Vector3 position, Vector3 forward);
         void PlayOneShot(in OneShot shot);
+
+        /// <summary>일시정지. 벨 박자를 멈추고 소리를 끈다. 풀면 벨 패턴을 처음부터 다시 울린다.</summary>
+        void SetPaused(bool paused);
     }
 }

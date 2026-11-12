@@ -18,16 +18,31 @@ namespace MissedCall.Core.Round {
         private System.Random seedSource;
         private double startTime;
 
+        private double pausedAt;
+
         /// <summary>상태가 바뀐 뒤 (이전 상태, 새 상태)로 호출된다. 새 판 시작은 Playing으로의 전환이다.</summary>
         public event Action<RoundState, RoundState> StateChanged;
+
+        /// <summary>
+        /// 일시정지가 바뀐 뒤 (멈췄는가)로 호출된다. 일시정지는 상태가 아니라 playing, answer 위에 얹히는 플래그다.
+        /// 상태를 바꾸지 않으므로 Playing 전환을 새 판으로 보는 구독자가 재개를 새 판으로 착각하지 않는다.
+        /// </summary>
+        public event Action<bool> PausedChanged;
 
         public RoundContext Context => context;
         public RoundState State => context.State;
         public GameTuning Tuning => tuning;
 
+        /// <summary>일시정지 메뉴가 열려 있는가. 이 동안 타이머가 멈추고 Time.timeScale은 0이다.</summary>
+        public bool IsPaused { get; private set; }
+
         private void Awake() {
             context.State = RoundState.Title;
             seedSource = new System.Random(unchecked((int)DateTime.UtcNow.Ticks));
+        }
+
+        private void OnDestroy() {
+            Time.timeScale = 1f;
         }
 
         /// <summary>새 시드로 판을 준비하고 시작한다. 타이틀의 시작 버튼, 결과 화면, R에서 호출한다.</summary>
@@ -35,6 +50,7 @@ namespace MissedCall.Core.Round {
 
         /// <summary>정해진 시드로 판을 시작한다. 같은 시드는 같은 판을 만든다.</summary>
         public void StartRound(RoundSeed seed) {
+            ClearPause();
             RoundState previous = context.State;
             context.Reset(seed, tuning.duration);
             foreach (RoundStep step in steps) {
@@ -72,8 +88,50 @@ namespace MissedCall.Core.Round {
             SetState(RoundState.Won);
         }
 
+        /// <summary>
+        /// 판을 멈춘다 (playing, answer에서만). 타이머, 물리(Time.timeScale), 벨소리가 멈춘다.
+        /// playing 중 포인터 잠금이 풀렸을 때(Esc, 탭 전환)와 받기 화면의 Esc에서 호출한다.
+        /// </summary>
+        public void Pause() {
+            if (IsPaused || !IsRunning(context.State)) {
+                return;
+            }
+
+            Tick();
+            IsPaused = true;
+            pausedAt = Now;
+            Time.timeScale = 0f;
+            PausedChanged?.Invoke(true);
+        }
+
+        /// <summary>일시정지를 푼다. 멈춰 있던 시간은 판 시간에서 뺀다.</summary>
+        public void Resume() {
+            if (!IsPaused) {
+                return;
+            }
+
+            startTime += Now - pausedAt;
+            ClearPause();
+        }
+
+        /// <summary>판을 버리고 타이틀로 돌아간다. 일시정지 메뉴의 Title에서 호출한다.</summary>
+        public void ReturnToTitle() {
+            ClearPause();
+            SetState(RoundState.Title);
+        }
+
+        private void ClearPause() {
+            if (!IsPaused) {
+                return;
+            }
+
+            IsPaused = false;
+            Time.timeScale = 1f;
+            PausedChanged?.Invoke(false);
+        }
+
         private void Update() {
-            if (!IsRunning(context.State)) {
+            if (!IsRunning(context.State) || IsPaused) {
                 return;
             }
 

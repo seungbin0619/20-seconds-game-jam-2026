@@ -86,8 +86,15 @@ namespace MissedCall.Feature.Ui.Editor {
             GameObject title = BuildTitle(parent, out TMP_Text titleClock, out Image startButton);
             AnswerSlide answer = BuildAnswer(parent);
             ResultView result = BuildResult(parent, out TMP_Text resultClock, out Image retryButton);
+            GameObject pause = BuildPause(parent, out TMP_Text pauseTime, out Image resume, out Image restart, out Image titleButton);
 
             var so = new SerializedObject(ui);
+            so.FindProperty("pauseScreen").objectReferenceValue = pause;
+            so.FindProperty("resumeHint").objectReferenceValue = BuildResumeHint(parent);
+            so.FindProperty("pauseTime").objectReferenceValue = pauseTime;
+            so.FindProperty("resumeButton").objectReferenceValue = resume;
+            so.FindProperty("restartButton").objectReferenceValue = restart;
+            so.FindProperty("titleButton").objectReferenceValue = titleButton;
             so.FindProperty("startButton").objectReferenceValue = startButton;
             so.FindProperty("retryButton").objectReferenceValue = retryButton;
             so.FindProperty("cursor").objectReferenceValue = cursorTexture;
@@ -182,6 +189,31 @@ namespace MissedCall.Feature.Ui.Editor {
             return view;
         }
 
+        private static GameObject BuildPause(Transform parent, out TMP_Text time, out Image resume, out Image restart, out Image title) {
+            RectTransform rect = Stretch(Node("Pause", parent));
+            Backdrop(rect, new Color(8f / 255f, 11f / 255f, 14f / 255f, 0.6f));
+            RectTransform handset = Handset(rect);
+            Text(handset, "LockTime", "On hold", 15f, UiPalette.Muted, bodyFont);
+            Text(handset, "Heading", "Paused", 40f, UiPalette.Ring, displayFont);
+            time = Text(handset, "Time", "20.0s left", 17f, UiPalette.Paper, bodyFont);
+            resume = Pill(handset, "Resume", "Resume");
+            restart = Pill(handset, "Restart", "Restart", false);
+            title = Pill(handset, "Title", "Title", false);
+            Text(handset, "Note", "Press R to restart", 15f, UiPalette.Muted, bodyFont);
+            return rect.gameObject;
+        }
+
+        // 일시정지 중 Esc를 누르면 메뉴 대신 보이는 안내. 화면 아무 곳이나 클릭하면 재개한다.
+        private static GameObject BuildResumeHint(Transform parent) {
+            RectTransform rect = Stretch(Node("ResumeHint", parent));
+            Backdrop(rect, new Color(8f / 255f, 11f / 255f, 14f / 255f, 0.45f));
+            TMP_Text head = Text(rect, "Heading", "Click to resume", 40f, UiPalette.Ring, displayFont, displayShadow);
+            Place(head.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 10f), new Vector2(900f, 60f), new Vector2(0.5f, 0f));
+            TMP_Text note = Text(rect, "Note", "Esc for menu", 17f, UiPalette.Paper, bodyFont, bodyShadow);
+            Place(note.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -6f), new Vector2(900f, 30f));
+            return rect.gameObject;
+        }
+
         // ---------- 부품 ----------
 
         private static RectTransform Handset(Transform parent) {
@@ -211,10 +243,12 @@ namespace MissedCall.Feature.Ui.Editor {
         }
 
         // 프로토타입의 button. 누름 판정은 GameUi가 이 이미지의 사각형으로 한다.
-        private static Image Pill(Transform parent, string name, string label) {
-            Image pill = Img(parent, name, circle, UiPalette.Ring, Image.Type.Sliced);
-            pill.gameObject.AddComponent<LayoutElement>().preferredHeight = 50f;
-            TMP_Text text = Text(pill.rectTransform, "Label", label, 19f, UiPalette.Night, bodyFont, null, FontStyles.Bold);
+        // primary는 노란 바탕(Ring It, Try Again, Resume), 아니면 반투명 바탕(Restart, Title).
+        private static Image Pill(Transform parent, string name, string label, bool primary = true) {
+            Image pill = Img(parent, name, circle, primary ? UiPalette.Ring : UiPalette.Secondary, Image.Type.Sliced);
+            pill.gameObject.AddComponent<LayoutElement>().preferredHeight = primary ? 50f : 44f;
+            TMP_Text text = Text(pill.rectTransform, "Label", label, primary ? 19f : 17f, primary ? UiPalette.Night : UiPalette.Paper,
+                bodyFont, null, FontStyles.Bold);
             Stretch(text.rectTransform);
             return pill;
         }

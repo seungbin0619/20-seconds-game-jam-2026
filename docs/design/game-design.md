@@ -38,6 +38,8 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 
 `answer` 중에도 타이머는 계속 흐른다. R은 `title`을 제외한 모든 상태에서 즉시 새 판을 시작한다.
 
+**일시정지**는 상태가 아니라 `playing`, `answer` 위에 얹히는 플래그다. `playing` 중 포인터 잠금이 풀리면(Esc, 탭이나 창 전환) 자동으로 멈추고, `answer`에서는 Esc로 멈춘다. 멈춘 동안 타이머, 물리, 벨소리가 모두 멈추고 들고 있던 물건은 그 자리에 놓인다. 메뉴는 Resume(다시 잠그고 이어서), Restart(새 판), Title이다. 메뉴에서 Esc를 다시 누르면 재개한다. 단 `playing`에서는 브라우저가 Esc 키 안에서 포인터 잠금을 허용하지 않으므로, 메뉴를 닫고 "Click to resume"을 띄운 뒤 다음 클릭에서 재개한다 (그동안 타이머는 계속 멈춰 있다. 여기서 Esc는 메뉴로 돌아간다). `answer`에서는 Esc로 바로 재개한다. 멈춰 있던 시간은 판 시간에서 뺀다. 벨은 재개하면 패턴 처음부터 다시 울린다.
+
 ## 무작위 요소
 
 | 요소 | 내용 | 우선순위 |
@@ -237,7 +239,8 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 클릭 (누르고 있기) | 물건 잡기. 떼면 던진다. 휘두르며 떼면 그 방향으로 세게 날아간다 |
 | 클릭 | 폰 집기, 닫힌 문 열기 |
 | 손잡이를 클릭한 채 끌기 (`answer`, 커서 보임) | 슬라이드 |
-| 커서로 버튼 클릭 (`title`, 결과) | Ring It, Try Again. 버튼 밖을 클릭하면 아무 일도 없다 |
+| 커서로 버튼 클릭 (`title`, 결과, 일시정지) | Ring It, Try Again, Resume, Restart, Title. 버튼 밖을 클릭하면 아무 일도 없다 |
+| Esc | 일시정지 (`playing`에서는 브라우저가 포인터 잠금을 푸는 것으로 감지). 일시정지 중에는 재개 (`playing`은 클릭 대기를 거침) |
 | R | 즉시 새 판 |
 
 데스크톱 브라우저(키보드와 마우스)만 지원한다. 모바일 터치 조작은 만들지 않는다.
@@ -273,6 +276,8 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 성공 | Hello? / Answered in {0.0}s |
 | 실패 | 1 Missed Call / Your phone was {0.0}m away |
 | 재시작 | Try Again / Press R to restart |
+| 일시정지 | On hold / Paused / {0.0}s left / Resume / Restart / Title / Press R to restart |
+| 재개 대기 (일시정지 중 Esc) | Click to resume / Esc for menu |
 | 기록 | Best / Answered / Missed / Callers / Titles (화면 구성은 UI 단계에서 정한다) |
 
 ### 색

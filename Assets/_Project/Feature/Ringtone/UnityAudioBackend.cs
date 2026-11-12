@@ -83,7 +83,13 @@ namespace MissedCall.Feature.Ringtone {
             oneShotSource.PlayOneShot(clip, MasterGain);
         }
 
+        // 에디터 근사치. 벨 클립은 멈춘 자리에서 이어서 울린다 (Web은 처음부터 다시).
+        public void SetPaused(bool paused) {
+            AudioListener.pause = paused;
+        }
+
         public void Dispose() {
+            AudioListener.pause = false;
             foreach (Voice v in voices) {
                 if (v.Source != null) {
                     Object.Destroy(v.Source.clip);

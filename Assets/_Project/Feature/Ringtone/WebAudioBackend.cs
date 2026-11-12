@@ -14,6 +14,7 @@ namespace MissedCall.Feature.Ringtone {
         [DllImport("__Internal")] private static extern void MC_Audio_SetListener(float px, float py, float pz, float fx, float fy, float fz);
         [DllImport("__Internal")] private static extern void MC_Audio_OneShot(int wave, float frequency, float length, float level, float delay);
         [DllImport("__Internal")] private static extern void MC_Audio_Shutdown();
+        [DllImport("__Internal")] private static extern void MC_Audio_SetPaused(int paused);
 
         public bool IsReady => MC_Audio_State() == 2;
 
@@ -48,6 +49,8 @@ namespace MissedCall.Feature.Ringtone {
 
         public void PlayOneShot(in OneShot shot) =>
             MC_Audio_OneShot((int)shot.Wave, shot.Frequency, shot.Length, shot.Level, shot.Delay);
+
+        public void SetPaused(bool paused) => MC_Audio_SetPaused(paused ? 1 : 0);
 
         public void Dispose() => MC_Audio_Shutdown();
     }

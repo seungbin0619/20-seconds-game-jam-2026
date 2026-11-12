@@ -41,11 +41,17 @@ namespace MissedCall.Feature.Ringtone {
 
         private void OnEnable() {
             flow.StateChanged += OnStateChanged;
+            flow.PausedChanged += OnPausedChanged;
         }
 
         private void OnDisable() {
             flow.StateChanged -= OnStateChanged;
+            flow.PausedChanged -= OnPausedChanged;
             Stop();
+        }
+
+        private void OnPausedChanged(bool paused) {
+            player.SetPaused(paused);
         }
 
         private void OnStateChanged(RoundState previous, RoundState next) {

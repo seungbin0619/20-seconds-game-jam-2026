@@ -6,6 +6,8 @@ var MissedCallAudioLib = {
   $MCA: {
     ctx: null,
     master: null,
+    masterLevel: 0.85,
+    paused: false,
     voices: [],
     rolloff: 2.2,
     timer: 0,
@@ -66,7 +68,7 @@ var MissedCallAudioLib = {
     // 박자 예약은 Unity 프레임이 아니라 이 타이머가 맡는다. 프레임이 끊겨도 박자가 흔들리지 않는다.
     tick: function () {
       var ctx = MCA.ctx;
-      if (!ctx || ctx.state !== 'running') return;
+      if (!ctx || ctx.state !== 'running' || MCA.paused) return;
       var now = ctx.currentTime;
       for (var i = 0; i < MCA.voices.length; i++) {
         var v = MCA.voices[i];
@@ -114,7 +116,7 @@ var MissedCallAudioLib = {
     MCA.ctx = new Ctx();
     MCA.rolloff = rolloff;
     MCA.master = MCA.ctx.createGain();
-    MCA.master.gain.value = 0.85;
+    MCA.master.gain.value = MCA.paused ? 0 : MCA.masterLevel;
     MCA.master.connect(MCA.ctx.destination);
 
     // 브라우저는 사용자 입력 이벤트 안에서만 오디오를 시작시킨다.
@@ -226,6 +228,27 @@ var MissedCallAudioLib = {
     amp.connect(MCA.master);
     osc.start(t);
     osc.stop(t + length + 0.02);
+  },
+
+  // 일시정지. AudioContext.suspend()는 쓰지 않는다: 위의 resume 리스너가 메뉴 클릭에서 다시 켜 버린다.
+  // 대신 박자 예약을 멈추고 마스터 볼륨을 내린다. 이미 예약된 음(lookahead 안)은 볼륨으로 가린다.
+  MC_Audio_SetPaused: function (paused) {
+    MCA.paused = !!paused;
+    var ctx = MCA.ctx;
+    if (!ctx) return;
+    var now = ctx.currentTime;
+    MCA.master.gain.cancelScheduledValues(now);
+    MCA.master.gain.setTargetAtTime(MCA.paused ? 0 : MCA.masterLevel, now, 0.015);
+    if (!MCA.paused) {
+      // 재개하면 벨 패턴을 처음부터 다시 울린다.
+      for (var i = 0; i < MCA.voices.length; i++) {
+        var v = MCA.voices[i];
+        if (v && v.running) {
+          v.next = now + 0.05;
+          v.index = 0;
+        }
+      }
+    }
   },
 
   MC_Audio_Shutdown: function () {
