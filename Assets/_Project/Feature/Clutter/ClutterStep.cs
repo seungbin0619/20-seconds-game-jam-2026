@@ -253,6 +253,10 @@ namespace MissedCall.Feature.Clutter {
 
             Physics.simulationMode = previous;
             LastSettleMs = watch.Elapsed.TotalMilliseconds;
+            // Web(단일 스레드 PhysX)에서 안정화 시간을 보기 위해 개발 빌드에서만 남긴다.
+            if (UnityEngine.Debug.isDebugBuild && !Application.isEditor) {
+                UnityEngine.Debug.Log($"[ClutterStep] Settle {LastSettleMs:0.0} ms, items {Count}");
+            }
         }
 
         private static float MaxAbs(float a, float b) => Mathf.Abs(b) > Mathf.Abs(a) ? b : a;
