@@ -359,9 +359,9 @@ namespace MissedCall.Feature.Room.Editor {
                 Transform socketT = Child(sockets, "Socket" + side);
                 socketT.localPosition = normal * distance + right * offset;
                 socketT.localRotation = Quaternion.LookRotation(normal, Vector3.up);
-                // 막힘 조각은 소켓 아래에 둔다. 굽기에서 제외하므로 GI 정적 플래그를 주지 않는다.
+                // 막힘 조각은 소켓 아래에 둔다. 굽기 씬은 소켓을 모두 막고 구우므로, 함께 구워야 옆 벽과 밝기가 같다.
                 GameObject closed = Cube(socketT, "Closed", new Vector3(0f, DoorHeight * 0.5f, 0f),
-                    new Vector3(DoorWidth, DoorHeight, WallThickness), wallMat, false, true);
+                    new Vector3(DoorWidth, DoorHeight, WallThickness), wallMat, true, true);
                 DoorSocket socket = socketT.gameObject.AddComponent<DoorSocket>();
                 socket.EditorSetup(side, offset, DoorWidth, null, closed);
                 socketList.Add(socket);
