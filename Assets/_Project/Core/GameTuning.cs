@@ -161,5 +161,31 @@ namespace MissedCall.Core {
         public float lowTimeWarning = 5f;
         [Tooltip("결과가 나온 뒤 이 시간(초) 동안은 클릭으로 새 판을 시작하지 않는다. 마지막 클릭이 결과를 바로 넘기지 않게 한다")]
         public float resultInputDelay = 0.6f;
+
+        [Header("Screen Fx")]
+        [Tooltip("외곽선 두께 (1080p 기준 px). 화면 높이에 비례한다")]
+        public float fxOutlineWidth = 2f;
+        [Tooltip("이웃 깊이와의 차이가 가운데 깊이의 이 비율 이상이면 경계")]
+        public float fxOutlineDepthThreshold = 0.1f;
+        [Tooltip("이웃 노멀과의 차이(1 - 내적)가 이 값 이상이면 경계")]
+        public float fxOutlineNormalThreshold = 0.4f;
+        [Tooltip("이 거리(m)부터 외곽선을 흐리게 한다. 두 배 거리에서 사라진다")]
+        public float fxOutlineFadeDistance = 12f;
+        [Tooltip("밝기 단계 수. 0이면 끊지 않는다")]
+        public int fxShadeBands = 3;
+        [Tooltip("남은 시간이 이 값(초) 이하면 화면이 조여 오기 시작한다")]
+        public float fxTenseStart = 10f;
+        [Tooltip("0초일 때 비네트 세기")]
+        [Range(0f, 1f)] public float fxVignetteMax = 0.45f;
+        [Tooltip("0초일 때 채도를 빼는 비율")]
+        [Range(0f, 1f)] public float fxDesaturateMax = 0.5f;
+        [Tooltip("마지막 lowTimeWarning초 동안 붉은 맥박의 최대 세기. 박자는 진동(jiggleDelay, jiggleInterval)과 같다")]
+        [Range(0f, 1f)] public float fxPulseStrength = 0.4f;
+        [Tooltip("0초일 때 가장자리 색수차 (화면 높이 비율)")]
+        public float fxAberrationMax = 0.004f;
+        [Tooltip("마지막 lowTimeWarning초 동안 외곽선이 떨리는 폭 (1080p 기준 px)")]
+        public float fxOutlineJitter = 1f;
+        [Tooltip("0초일 때 외곽선 두께에 더하는 비율. 0.5면 1.5배")]
+        public float fxOutlineThicken = 0.5f;
     }
 }

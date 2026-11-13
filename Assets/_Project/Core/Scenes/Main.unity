@@ -303,6 +303,58 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 563e0d000cc97e54fa65d6fbaad5c6cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MissedCall.Feature::MissedCall.Feature.Phone.PhoneDevice
+--- !u!1 &702847830
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 702847832}
+  - component: {fileID: 702847831}
+  m_Layer: 0
+  m_Name: ScreenFx
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &702847831
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 702847830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15ef5721153bbdc4cb6831f19de06d1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MissedCall.Feature::MissedCall.Feature.ScreenFx.ScreenFxDriver
+  flow: {fileID: 754834954}
+  outline: 1
+  outlineColor: {r: 0.063, g: 0.086, b: 0.11, a: 1}
+  pulseColor: {r: 1, g: 0.42, b: 0.341, a: 1}
+  releaseRate: 4
+  missFlashDecay: 3
+  jitterRate: 12
+  previewTimeLeft: -1
+--- !u!4 &702847832
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 702847830}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &754834953
 GameObject:
   m_ObjectHideFlags: 0
@@ -1621,3 +1673,4 @@ SceneRoots:
   - {fileID: 365298210}
   - {fileID: 832575519}
   - {fileID: 1702959553}
+  - {fileID: 702847832}
