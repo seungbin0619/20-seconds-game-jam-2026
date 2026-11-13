@@ -147,6 +147,11 @@ namespace MissedCall.Feature.Player {
 
             wasLocked = locked;
 
+            if (flow != null && flow.State == RoundState.Missed) {
+                TurnTowardPhone();
+                return;
+            }
+
             if (!LockAllowed) {
                 return;
             }
@@ -173,6 +178,28 @@ namespace MissedCall.Feature.Player {
             float degreesPerPixel = tuning.lookSpeed * Mathf.Rad2Deg;
             yaw += delta.x * degreesPerPixel;
             pitch = Mathf.Clamp(pitch - delta.y * degreesPerPixel, -pitchLimit, pitchLimit);
+            body.rotation = Quaternion.Euler(0f, yaw, 0f);
+            head.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+        }
+
+        // 실패 연출: 시선을 폰 쪽으로 천천히 돌린다 (프로토타입 aimAtPhone). 남은 각도의 일정 비율씩 줄인다.
+        private void TurnTowardPhone() {
+            RoundContext context = flow.Context;
+            if (context.Phone == null) {
+                return;
+            }
+
+            Vector3 to = context.PhonePosition - head.position;
+            float flat = new Vector2(to.x, to.z).magnitude;
+            if (flat < 0.01f) {
+                return;
+            }
+
+            float wantYaw = Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg;
+            float wantPitch = Mathf.Clamp(-Mathf.Atan2(to.y, flat) * Mathf.Rad2Deg, -pitchLimit, pitchLimit);
+            float k = Mathf.Min(1f, Time.unscaledDeltaTime * tuning.missedTurnRate);
+            yaw += Mathf.DeltaAngle(yaw, wantYaw) * k;
+            pitch += (wantPitch - pitch) * k;
             body.rotation = Quaternion.Euler(0f, yaw, 0f);
             head.localRotation = Quaternion.Euler(pitch, 0f, 0f);
         }

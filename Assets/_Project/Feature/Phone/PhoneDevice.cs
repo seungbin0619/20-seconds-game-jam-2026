@@ -24,6 +24,8 @@ namespace MissedCall.Feature.Phone {
         [Tooltip("받지 못했을 때 화면 색 (프로토타입 0xff6b57)")]
         [SerializeField] private Color missedColor = new(1f, 0.42f, 0.34f);
         [SerializeField] private Color idleColor = new(0.08f, 0.1f, 0.12f);
+        [Tooltip("받지 못했을 때만 켜는 빨간 빛. 더미에 덮인 폰도 틈으로 화면 빛이 보이게 한다. 없어도 된다")]
+        [SerializeField] private Light missedGlow;
         [Tooltip("덮임을 세고 진동으로 튀게 할 물건 레이어")]
         [SerializeField] private LayerMask clutterMask;
 
@@ -97,6 +99,10 @@ namespace MissedCall.Feature.Phone {
             RoundState state = context.State;
             // 받기 화면에서만 숨긴다. 결과 화면에서는 폰이 다시 보인다.
             SetVisible(state != RoundState.Answer);
+            if (missedGlow != null) {
+                missedGlow.enabled = state == RoundState.Missed;
+            }
+
             if (!GameFlow.IsRunning(state)) {
                 visual.localPosition = Vector3.zero;
                 SetScreen(state == RoundState.Missed ? missedColor : idleColor);

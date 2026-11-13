@@ -161,5 +161,11 @@ namespace MissedCall.Core {
         public float lowTimeWarning = 5f;
         [Tooltip("결과가 나온 뒤 이 시간(초) 동안은 클릭으로 새 판을 시작하지 않는다. 마지막 클릭이 결과를 바로 넘기지 않게 한다")]
         public float resultInputDelay = 0.6f;
+
+        [Header("Missed")]
+        [Tooltip("받지 못했을 때 시선이 폰을 향해 돌아가는 빠르기(1/s). 매 프레임 남은 각도의 dt × 이 값만큼 돈다 (프로토타입 4)")]
+        public float missedTurnRate = 4f;
+        [Tooltip("받지 못했을 때 결과 화면을 띄우기 전에 폰 쪽을 보여주는 시간(초)")]
+        public float missedResultDelay = 1.2f;
     }
 }
