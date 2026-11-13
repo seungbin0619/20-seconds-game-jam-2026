@@ -15,9 +15,17 @@ namespace MissedCall.Feature.Clutter {
     /// </summary>
     public sealed class ClothDrape {
         public enum Pin {
+            /// <summary>가운데 2 x 2 점을 물건 중심에 붙인다 (잡혔거나 날아가는 동안).</summary>
             Hard,
+            /// <summary>가운데를 물건 쪽으로 약하게만 당긴다 (떨어진 뒤).</summary>
             Soft,
+            /// <summary>가운데 두 줄을 봉 위에 붙인다 (봉에 반으로 넌 수건).</summary>
+            Edge,
         }
+
+        // 걸린 옷의 어깨선 길이 (천 폭 비율)
+        // 봉에 넌 천: 봉 폭의 절반(m, 옷걸이 봉 상자 폭 0.1m). 가운데 두 줄이 봉 양쪽 위 모서리에 걸친다.
+        private const float BarRadius = 0.055f;
 
         public const int N = 12;
         private const int R = (N - 1) * 2 + 1;
@@ -32,6 +40,9 @@ namespace MissedCall.Feature.Clutter {
         private const int SettleSteps = 20;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[6];
+        // 천 크기별로 미리 계산한 걸린 모양 (물건 로컬)
+        private static readonly Dictionary<Vector3, Vector3[]> HangingShapes = new();
+        private bool skipCollision;
         private static int collisionMask;
 
         private readonly Vector3[] position = new Vector3[N * N];
@@ -44,6 +55,8 @@ namespace MissedCall.Feature.Clutter {
         private readonly float[] restLength;
         private readonly int[] pins = { Index(N / 2 - 1, N / 2 - 1), Index(N / 2, N / 2 - 1), Index(N / 2 - 1, N / 2), Index(N / 2, N / 2) };
         private readonly bool[] pinned = new bool[N * N];
+        private readonly bool[] edge = new bool[N * N];
+        private readonly int[] edgePins = new int[N * 2];
 
         // 그리기용 보간 격자
         private static readonly int[,] SampleIndex = BuildSampleIndex(out SampleWeight);
@@ -72,6 +85,14 @@ namespace MissedCall.Feature.Clutter {
         public ClothDrape() {
             foreach (int p in pins) {
                 pinned[p] = true;
+            }
+
+            // 봉에 넌 천: 가운데 두 줄(N / 2 - 1, N / 2)을 봉 위에 붙인다.
+            for (int i = 0; i < N; i++) {
+                edgePins[i] = Index(i, N / 2 - 1);
+                edgePins[N + i] = Index(i, N / 2);
+                edge[edgePins[i]] = true;
+                edge[edgePins[N + i]] = true;
             }
 
             // 가로세로(구조), 대각선(전단), 한 칸 건너(굽힘) 제약. 두 칸 건너까지 넣으면 너무 빳빳해서 늘어지지 않았다.
@@ -240,7 +261,8 @@ namespace MissedCall.Feature.Clutter {
             accumulator = Mathf.Min(accumulator + dt, FixedStep * MaxSteps);
             Vector3 gravity = Physics.gravity * (FixedStep * FixedStep);
             Vector3 carried = itemVelocity * FixedStep;
-            bool hard = pin == Pin.Hard;
+            bool[] fixedSet = pin == Pin.Hard ? pinned : pin == Pin.Edge ? edge : null;
+            int[] targets = pin == Pin.Edge ? edgePins : pins;
             while (accumulator >= FixedStep) {
                 accumulator -= FixedStep;
                 for (int k = 0; k < position.Length; k++) {
@@ -253,14 +275,16 @@ namespace MissedCall.Feature.Clutter {
                 }
 
                 for (int iteration = 0; iteration < iterations; iteration++) {
-                    SolveDistances(hard);
-                    foreach (int p in pins) {
-                        Vector3 target = item.TransformPoint(restLocal[p]);
-                        position[p] = hard ? target : Vector3.Lerp(position[p], target, SoftPull);
+                    SolveDistances(fixedSet);
+                    foreach (int p in targets) {
+                        Vector3 target = item.TransformPoint(PinLocal(p, pin));
+                        position[p] = fixedSet != null ? target : Vector3.Lerp(position[p], target, SoftPull);
                     }
                 }
 
-                Collide(self, hitDynamic);
+                if (!skipCollision) {
+                    Collide(self, hitDynamic);
+                }
 
                 float maxMove = 0f;
                 for (int k = 0; k < position.Length; k++) {
@@ -271,7 +295,65 @@ namespace MissedCall.Feature.Clutter {
             }
         }
 
-        private void SolveDistances(bool hard) {
+        // 봉에 넌 천: 가운데 두 줄을 봉의 양쪽 위 모서리에 붙인다. 로컬 x가 봉 방향이다.
+        private Vector3 PinLocal(int p, Pin pin) {
+            Vector3 rest = restLocal[p];
+            if (pin != Pin.Edge) {
+                return rest;
+            }
+
+            float side = p / N < N / 2 ? -1f : 1f;
+            return new Vector3(rest.x, 0f, side * BarRadius);
+        }
+
+        /// <summary>
+        /// 봉에 반으로 접어 넌 모양을 미리 만들어 굳힌다. item 원점이 봉 위 가운데이고, 로컬 x가 봉 방향이다.
+        /// 가운데 두 줄을 봉 위에 붙이고 양쪽 절반을 steps 스텝 동안 늘어뜨린다. 주변과 부딪히지 않으므로 모양은 천 크기에만
+        /// 달려 있어서, 크기마다 처음 한 번만 계산해 두고 다시 쓴다 (판마다 계산하면 판 시작이 0.5초 넘게 걸렸다).
+        /// </summary>
+        public void Hang(Transform item, Vector3 size, float sheetThickness, int steps, float damping, int iterations) {
+            Begin(item, size, sheetThickness);
+            if (!HangingShapes.TryGetValue(size, out Vector3[] shape)) {
+                // 처음부터 봉 양쪽으로 늘어진 모양으로 놓는다 (수평에서 떨어뜨리면 흔들리며 꼬였다).
+                float half = (N - 1) * 0.5f;
+                for (int j = 0; j < N; j++) {
+                    for (int i = 0; i < N; i++) {
+                        int k = Index(i, j);
+                        float along = (j - half) / (N - 1f) * size.z;
+                        float side = Mathf.Sign(along);
+                        float drop = Mathf.Max(0f, Mathf.Abs(along) - size.z / (N - 1f) * 0.5f);
+                        var local = new Vector3(restLocal[k].x, -drop, side * BarRadius + Mathf.Sin(i * 1.3f + j * 0.7f) * 0.003f);
+                        position[k] = item.TransformPoint(local);
+                        previous[k] = position[k];
+                    }
+                }
+
+                skipCollision = true;
+                for (int s = 0; s < steps; s++) {
+                    Simulate(FixedStep, item, Pin.Edge, Vector3.zero, damping, iterations, null, false);
+                }
+
+                skipCollision = false;
+                shape = new Vector3[position.Length];
+                for (int k = 0; k < position.Length; k++) {
+                    shape[k] = item.InverseTransformPoint(position[k]);
+                }
+
+                HangingShapes[size] = shape;
+            }
+
+            for (int k = 0; k < position.Length; k++) {
+                position[k] = item.TransformPoint(shape[k]);
+                previous[k] = position[k];
+            }
+
+            Write(item);
+            Freeze(item);
+        }
+
+        private void SolveDistances(bool[] fixedSet) {
+            bool hard = fixedSet != null;
+            bool[] pinned = fixedSet;
             for (int c = 0; c < constraintA.Length; c++) {
                 int a = constraintA[c];
                 int b = constraintB[c];

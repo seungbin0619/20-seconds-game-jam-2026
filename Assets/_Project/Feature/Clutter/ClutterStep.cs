@@ -139,14 +139,39 @@ namespace MissedCall.Feature.Clutter {
         private void PlaceProp(PropSpot prop, System.Random rng) {
             Transform t = prop.transform;
             ClutterCatalog.Kind kind = catalog.Get(prop.Kind);
-            Quaternion rotation = t.rotation * Quaternion.Euler(0f, Range(rng, -prop.Spin, prop.Spin), 0f);
-            Vector3 center = CenterOn(t.position, t.position.y, kind);
-            if (!TryFitOrStraighten(kind.size, ref center, ref rotation, t.rotation)) {
-                PropMisfits++;
-                return;
-            }
+            switch (prop.Placement) {
+                case PropSpot.Pose.Hanging: {
+                    // 봉 위의 점에 그대로 건다. 봉과 겹치므로 자리 맞추기를 하지 않는다.
+                    ClutterItem item = Spawn(kind, t.position, t.rotation, false, rng);
+                    item.Hang();
+                    return;
+                }
+                case PropSpot.Pose.Standing: {
+                    // 책처럼 세운다: 가장 긴 변(z)이 위, 두께(y)가 자리의 x, 폭(x)이 자리의 앞뒤.
+                    Quaternion upright = Quaternion.LookRotation(Vector3.up, Vector3.right);
+                    Quaternion rotation = t.rotation * Quaternion.Euler(0f, Range(rng, -prop.Spin, prop.Spin), 0f) * upright;
+                    Vector3 center = t.position + Vector3.up * (kind.size.z * 0.5f + Gap * 0.5f);
+                    if (!TryFitOrStraighten(kind.size, ref center, ref rotation, t.rotation * upright)) {
+                        PropMisfits++;
+                        return;
+                    }
 
-            Spawn(kind, center, rotation, false, rng);
+                    // 판 준비의 안정화에서 줄줄이 넘어지지 않게 잠든 채로 둔다. 건드리면 깬다.
+                    Spawn(kind, center, rotation, false, rng).Body.Sleep();
+                    return;
+                }
+                default: {
+                    Quaternion rotation = t.rotation * Quaternion.Euler(0f, Range(rng, -prop.Spin, prop.Spin), 0f);
+                    Vector3 center = CenterOn(t.position, t.position.y, kind);
+                    if (!TryFitOrStraighten(kind.size, ref center, ref rotation, t.rotation)) {
+                        PropMisfits++;
+                        return;
+                    }
+
+                    Spawn(kind, center, rotation, false, rng);
+                    return;
+                }
+            }
         }
 
         private void Scatter(Rect footprint, System.Random rng) {
@@ -257,12 +282,14 @@ namespace MissedCall.Feature.Clutter {
             return false;
         }
 
-        private void Spawn(ClutterCatalog.Kind kind, Vector3 center, Quaternion rotation, bool enclosed, System.Random rng) {
+        private ClutterItem Spawn(ClutterCatalog.Kind kind, Vector3 center, Quaternion rotation, bool enclosed, System.Random rng) {
             Mesh mesh = look.PickMesh(kind, rng);
             Material material = look.PickMaterial(kind, rng);
-            pool.Take().Spawn(kind, mesh, material, center, rotation, enclosed, tuning);
+            ClutterItem item = pool.Take();
+            item.Spawn(kind, mesh, material, center, rotation, enclosed, tuning);
             // 다음 물건의 겹침 검사가 방금 놓은 물건을 보게 한다.
             Physics.SyncTransforms();
+            return item;
         }
 
         // 프로토타입처럼 시작 전에 물리를 돌려 더미를 가라앉힌다. 그동안 다른 물체(플레이어)는 움직이지 않는다.

@@ -60,7 +60,7 @@ namespace MissedCall.Core {
         [Tooltip("잡힌 동안의 회전 감쇠. 클수록 손에서 빨리 멈춘다")]
         public float holdAngularDamping = 6f;
         [Tooltip("천 시뮬레이션: 스텝마다 남기는 속도 비율. 낮을수록 공기 저항이 커서 덜 펄럭인다")]
-        [Range(0.8f, 1f)] public float clothDamping = 0.9f;
+        [Range(0.8f, 1f)] public float clothDamping = 0.85f;
         [Tooltip("천 시뮬레이션: 거리 제약 반복 횟수. 많을수록 덜 늘어나고 빳빳하다")]
         public int clothIterations = 12;
         [Tooltip("천이 떨어진 뒤 아직 움직여도 이 시간(초)이 지나면 그 모양으로 굳힌다")]

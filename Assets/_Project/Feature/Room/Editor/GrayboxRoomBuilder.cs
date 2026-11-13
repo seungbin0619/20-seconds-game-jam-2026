@@ -785,35 +785,76 @@ namespace MissedCall.Feature.Room.Editor {
                 Part(g, "TvScreen", Shrink(Outside(tv, front, 0.004f), wallSide, 0.04f), accents[4]);
             }
 
-            /// <summary>열린 선반: 옆판, 뒤판, 칸막이 선반과 그 위의 책(또는 개킨 옷). 충돌체는 통짜 상자.</summary>
+            /// <summary>
+            /// 열린 선반: 옆판, 뒤판, 칸막이 선반. 판마다 충돌체가 있어 물건이 칸 안에 들어간다.
+            /// books면 칸마다 책을 세워 꽂는다 (만질 수 있는 물건, PropSpot Standing). 아니면 개킨 옷을 장식으로 둔다.
+            /// </summary>
             public void OpenShelf(string groupName, B b, WallSide front, Material mat, int shelves, bool books) {
                 Transform g = Group(groupName);
-                Solid(g, "Collider", b);
                 WallSide back = Opposite(front);
                 const float board = 0.03f;
-                Part(g, "Back", b.Slice(back, 0.02f), mat);
+                B backPanel = b.Slice(back, 0.02f);
+                Solid(g, "BackCollider", backPanel);
+                Part(g, "Back", backPanel, mat);
                 bool alongX = front == WallSide.North || front == WallSide.South;
                 float width = alongX ? b.Size.x : b.Size.z;
                 float sideFrac = board / width;
-                Part(g, "SideA", b.Span(alongX, 0f, sideFrac), mat);
-                Part(g, "SideB", b.Span(alongX, 1f - sideFrac, 1f), mat);
+                B sideA = b.Span(alongX, 0f, sideFrac);
+                B sideB = b.Span(alongX, 1f - sideFrac, 1f);
+                Solid(g, "SideACollider", sideA);
+                Solid(g, "SideBCollider", sideB);
+                Part(g, "SideA", sideA, mat);
+                Part(g, "SideB", sideB, mat);
+                // 맨 아래 받침(바닥에서 첫 판까지)
+                B plinth = b.WithY(b.Y0, b.Y0 + 0.04f);
+                Solid(g, "PlinthCollider", plinth);
+                Part(g, "Plinth", plinth, mat);
                 for (int s = 0; s <= shelves; s++) {
                     float y = Mathf.Lerp(b.Y0 + 0.04f, b.Y1 - board, (float)s / shelves);
-                    Part(g, "Board" + s, b.WithY(y, y + board), mat);
+                    B boardBox = b.WithY(y, y + board);
+                    Solid(g, "BoardCollider" + s, boardBox);
+                    Part(g, "Board" + s, boardBox, mat);
                     if (s == shelves) {
                         break;
                     }
 
                     float nextY = Mathf.Lerp(b.Y0 + 0.04f, b.Y1 - board, (float)(s + 1) / shelves);
-                    FillShelf(g, b.Cut(back, 0.02f), alongX, sideFrac, y + board, nextY - 0.02f, books, s);
+                    B row = b.Cut(back, 0.02f);
+                    if (books) {
+                        PlaceBooks(groupName, row, front, alongX, sideFrac, y + board, s);
+                    } else {
+                        FillShelf(g, row, alongX, sideFrac, y + board, nextY - 0.02f, s);
+                    }
                 }
             }
 
-            private void FillShelf(Transform g, B row, bool alongX, float sideFrac, float y0, float yMax, bool books, int shelf) {
+            // 칸 하나에 책을 세워 꽂는다. 칸 폭의 55~80%를 채우고, 묶음 사이에 틈을 둔다. 책 두께는 물건 종류(Book)의 두께다.
+            private void PlaceBooks(string groupName, B row, WallSide front, bool alongX, float sideFrac, float y, int shelf) {
+                const float bookThickness = 0.05f;
+                const float gap = 0.006f;
+                float width = alongX ? row.Size.x : row.Size.z;
+                float step = (bookThickness + gap) / width;
+                float start = sideFrac + 0.01f + Next(0f, 0.15f);
+                float end = start + Next(0.55f, 0.8f);
+                Quaternion facing = Facing(Opposite(front));
+                int i = 0;
+                for (float a = start + step * 0.5f; a < Mathf.Min(end, 1f - sideFrac - step * 0.5f); a += step) {
+                    // 가끔 한 권 빼 둔다.
+                    if (Next(0f, 1f) < 0.12f) {
+                        continue;
+                    }
+
+                    B slot = row.Span(alongX, a, a);
+                    Prop($"Book_{groupName}_{shelf}_{i++}", new Vector3(slot.Center.x, y, slot.Center.z), facing, ItemKind.Book,
+                        PropSpot.Pose.Standing, 3f);
+                }
+            }
+
+            private void FillShelf(Transform g, B row, bool alongX, float sideFrac, float y0, float yMax, int shelf) {
                 float a = sideFrac + 0.02f;
                 int i = 0;
                 while (a < 1f - sideFrac - 0.05f) {
-                    float w = books ? Next(0.025f, 0.05f) : Next(0.18f, 0.26f);
+                    float w = Next(0.18f, 0.26f);
                     float width = alongX ? row.Size.x : row.Size.z;
                     float frac = w / width;
                     if (a + frac > 1f - sideFrac - 0.01f) {
@@ -826,40 +867,32 @@ namespace MissedCall.Feature.Room.Editor {
                         continue;
                     }
 
-                    float h = books ? Next(0.6f, 0.95f) * (yMax - y0) : Next(0.05f, 0.14f);
+                    float h = Next(0.05f, 0.14f);
                     B item = row.Span(alongX, a, a + frac).WithY(y0, y0 + Mathf.Min(h, yMax - y0));
                     // 앞뒤로만 조금 들여 선반 앞 모서리보다 안쪽에 둔다.
-                    float m = books ? 0.03f : 0.02f;
+                    const float m = 0.02f;
                     item = alongX
                         ? new B(item.X0, item.X1, item.Z0 + m, item.Z1 - m, item.Y0, item.Y1)
                         : new B(item.X0 + m, item.X1 - m, item.Z0, item.Z1, item.Y0, item.Y1);
                     Part(g, $"Item_{shelf}_{i++}", item, accents[decorRandom.Next(accents.Length)]);
-                    a += frac + (books ? 0.004f : 0.03f);
+                    a += frac + 0.03f;
                 }
             }
 
+            /// <summary>
+            /// 옷걸이 봉. 수건(셔츠 크기 천) 한 장을 반으로 접어 널어 둔다 (만질 수 있는 물건, PropSpot Hanging).
+            /// 수건의 로컬 x가 봉 방향이다. 셔츠 여러 벌은 어수선했고, 두 장은 붙어서 봉을 다 덮었다 (11/13).
+            /// </summary>
             public void HangingRail(string groupName, B b) {
                 Transform g = Group(groupName);
                 Solid(g, "Collider", b);
                 Part(g, "Rail", b, metal);
                 bool alongX = b.AlongX;
-                float length = alongX ? b.Size.x : b.Size.z;
-                int count = Mathf.FloorToInt(length / 0.11f);
-                for (int i = 0; i < count; i++) {
-                    if (Next(0f, 1f) < 0.2f) {
-                        continue;
-                    }
-
-                    float a = (i + 0.5f) / count;
-                    B slot = b.Span(alongX, a - 0.015f / length, a + 0.015f / length);
-                    Vector3 c = slot.Center;
-                    float half = Next(0.2f, 0.26f);
-                    float drop = Next(0.45f, 0.75f);
-                    // 옷은 봉에 직각으로 걸린 얇은 판
-                    B cloth = alongX
-                        ? new B(slot.X0, slot.X1, c.z - half, c.z + half, b.Y0 - drop, b.Y0)
-                        : new B(c.x - half, c.x + half, slot.Z0, slot.Z1, b.Y0 - drop, b.Y0);
-                    Part(g, "Cloth" + i, cloth, accents[decorRandom.Next(accents.Length)]);
+                Quaternion along = Quaternion.LookRotation(alongX ? Vector3.forward : Vector3.right, Vector3.up);
+                float[] places = { 0.35f };
+                for (int i = 0; i < places.Length; i++) {
+                    Vector3 c = b.Span(alongX, places[i], places[i]).Center;
+                    Prop($"Towel_{groupName}_{i}", new Vector3(c.x, b.Y1, c.z), along, ItemKind.Shirt, PropSpot.Pose.Hanging, 0f);
                 }
             }
 
@@ -954,12 +987,13 @@ namespace MissedCall.Feature.Room.Editor {
                 spotList.Add(spot);
             }
 
-            private void Prop(string propName, Vector3 position, Quaternion rotation, ItemKind itemKind) {
+            private void Prop(string propName, Vector3 position, Quaternion rotation, ItemKind itemKind,
+                PropSpot.Pose pose = PropSpot.Pose.Lying, float spin = 15f) {
                 Transform t = Child(spots, propName);
                 t.localPosition = position;
                 t.localRotation = rotation;
                 PropSpot prop = t.gameObject.AddComponent<PropSpot>();
-                prop.EditorSetup(itemKind, 15f);
+                prop.EditorSetup(itemKind, spin, pose);
                 propList.Add(prop);
             }
 
@@ -1165,7 +1199,8 @@ namespace MissedCall.Feature.Room.Editor {
         }
 
         private static PhysicsMaterial SoftPhysics() {
-            string path = MaterialFolder + "/PhysicsMaterial_Soft.physicsMaterial";
+            // 코드로 만드는 물리 머티리얼은 .asset이어야 한다. .physicsMaterial로 만들면 알 수 없는 파일(DefaultAsset)로 읽혀 적용되지 않았다.
+            string path = MaterialFolder + "/PhysicsMaterial_Soft.asset";
             var physics = AssetDatabase.LoadAssetAtPath<PhysicsMaterial>(path);
             if (physics == null) {
                 physics = new PhysicsMaterial("Soft");

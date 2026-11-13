@@ -50,6 +50,12 @@ namespace MissedCall.Feature.Clutter {
         public bool Enclosed { get; private set; }
 
         public bool Held { get; private set; }
+
+        /// <summary>옷걸이 봉에 걸려 있는지. 잡으면 false가 된다.</summary>
+        public bool Hanging { get; private set; }
+
+        // 펼친 천 두께: 갠 겹 하나 정도
+        private float ClothThickness => Mathf.Clamp(Size.y * 0.4f, 0.018f, 0.03f);
         public Vector3 Center => body.worldCenterOfMass;
         public bool Alive => gameObject.activeInHierarchy;
 
@@ -74,6 +80,8 @@ namespace MissedCall.Feature.Clutter {
             bendVelocity = 0f;
             drape?.Clear();
             airborne = false;
+            Hanging = false;
+            body.isKinematic = false;
             meshFilter.sharedMesh = mesh;
             meshRenderer.sharedMaterial = material;
             SetAimed(false);
@@ -184,7 +192,33 @@ namespace MissedCall.Feature.Clutter {
             }
         }
 
+        /// <summary>
+        /// 봉에 반으로 접어 널어 둔다 (천 종류만). 물건 원점이 봉 위 가운데이고 로컬 x가 봉 방향이다.
+        /// 잡기 전까지 움직이지 않으며(키네마틱), 충돌체는 봉 아래로 늘어진 양쪽 절반을 감싸는 판이라 조준할 수 있다.
+        /// </summary>
+        public void Hang() {
+            if (!soft || Item == ItemKind.Cushion) {
+                return;
+            }
+
+            Hanging = true;
+            body.isKinematic = true;
+            box.center = new Vector3(0f, -Size.z * 0.22f, 0f);
+            box.size = new Vector3(Size.x, Size.z * 0.45f, 0.1f);
+            drape ??= new ClothDrape();
+            drape.Hang(transform, Size, ClothThickness, 150, tuning.clothDamping, tuning.clothIterations);
+            meshFilter.sharedMesh = drape.Mesh;
+        }
+
         public void BeginHold() {
+            if (Hanging) {
+                // 봉에서 빼낸다. 충돌체를 원래 상자로 되돌리고 물리를 켠다. 천은 걸린 모양에서 이어 간다.
+                Hanging = false;
+                box.center = Vector3.zero;
+                box.size = Size;
+                body.isKinematic = false;
+            }
+
             Held = true;
             Enclosed = false;
             body.useGravity = false;
@@ -250,7 +284,7 @@ namespace MissedCall.Feature.Clutter {
                     drape.Resume(transform);
                 } else {
                     // 갠 천을 펼친 한 장. 두께는 갠 겹 하나 정도.
-                    drape.Begin(transform, Size, Mathf.Clamp(Size.y * 0.4f, 0.018f, 0.03f));
+                    drape.Begin(transform, Size, ClothThickness);
                 }
             }
 
