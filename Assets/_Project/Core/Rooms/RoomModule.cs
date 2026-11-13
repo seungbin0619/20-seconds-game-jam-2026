@@ -12,6 +12,8 @@ namespace MissedCall.Core.Rooms {
         [SerializeField] private Vector2 size;
         [SerializeField] private DoorSocket[] sockets = new DoorSocket[0];
         [SerializeField] private HideSpot[] hideSpots = new HideSpot[0];
+        [Tooltip("가구 위에 낱개로 놓는 소품 자리 (베개, 쿠션)")]
+        [SerializeField] private PropSpot[] propSpots = new PropSpot[0];
         [Tooltip("이 방의 메인 조명. 플레이어가 이 방에 있을 때만 실시간 그림자를 켠다")]
         [SerializeField] private Light mainLight;
 
@@ -20,6 +22,7 @@ namespace MissedCall.Core.Rooms {
         public Vector2 Size => size;
         public DoorSocket[] Sockets => sockets;
         public HideSpot[] HideSpots => hideSpots;
+        public PropSpot[] PropSpots => propSpots;
         public Light MainLight => mainLight;
 
         /// <summary>모든 문 소켓을 막는다. 풀에서 꺼낼 때 초기 상태로 되돌린다.</summary>
@@ -31,12 +34,13 @@ namespace MissedCall.Core.Rooms {
 
 #if UNITY_EDITOR
         public void EditorSetup(RoomKind roomKind, RoomSize roomSize, Vector2 outerSize,
-            DoorSocket[] doorSockets, HideSpot[] spots, Light light) {
+            DoorSocket[] doorSockets, HideSpot[] spots, PropSpot[] props, Light light) {
             kind = roomKind;
             sizeClass = roomSize;
             size = outerSize;
             sockets = doorSockets;
             hideSpots = spots;
+            propSpots = props;
             mainLight = light;
         }
 

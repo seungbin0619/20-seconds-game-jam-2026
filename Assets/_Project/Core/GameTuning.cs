@@ -59,6 +59,21 @@ namespace MissedCall.Core {
         public float holdMaxSpeed = 10f;
         [Tooltip("잡힌 동안의 회전 감쇠. 클수록 손에서 빨리 멈춘다")]
         public float holdAngularDamping = 6f;
+        [Tooltip("천 시뮬레이션: 스텝마다 남기는 속도 비율. 낮을수록 공기 저항이 커서 덜 펄럭인다")]
+        [Range(0.8f, 1f)] public float clothDamping = 0.9f;
+        [Tooltip("천 시뮬레이션: 거리 제약 반복 횟수. 많을수록 덜 늘어나고 빳빳하다")]
+        public int clothIterations = 12;
+        [Tooltip("천이 떨어진 뒤 아직 움직여도 이 시간(초)이 지나면 그 모양으로 굳힌다")]
+        public float clothSettleTime = 2.5f;
+        [Tooltip("쿠션을 잡았을 때 휘는 정도")]
+        [Range(0f, 1f)] public float cushionHoldBend = 0.3f;
+        [Tooltip("던져서 날아가는 동안 휘는 정도 (잡았을 때 값에 곱한다)")]
+        [Range(0f, 1f)] public float airBendScale = 0.5f;
+        [Tooltip("휘는 정도가 따라가는 스프링 세기. 낮을수록 늘어지고 출렁이는 게 느리다")]
+        public float bendStiffness = 60f;
+        public float bendDamping = 8f;
+        [Tooltip("움직이는 반대쪽 가장자리가 더 늘어지는 정도 (펄럭임)")]
+        public float bendFlutter = 0.5f;
         [Tooltip("잡는 점에 이만큼(m) 다가오면 손에 들어온 것으로 본다")]
         public float holdArriveDistance = 0.25f;
         [Tooltip("손에 들어온 뒤 잡는 점에서 이만큼(m) 멀어지면 (가구에 걸리면) 놓친다")]

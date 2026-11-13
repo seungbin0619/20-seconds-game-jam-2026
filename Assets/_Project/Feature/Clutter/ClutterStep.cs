@@ -41,6 +41,9 @@ namespace MissedCall.Feature.Clutter {
         /// <summary>자리가 맞지 않아 대체 물건을 깔거나 빠뜨린 수. 방 모듈 데이터 확인용.</summary>
         public int Misfits { get; private set; }
 
+        /// <summary>자리가 맞지 않아 빠뜨린 베개, 쿠션 소품 수. 방 모듈 데이터 확인용.</summary>
+        public int PropMisfits { get; private set; }
+
         /// <summary>마지막 안정화에 걸린 시간(ms). 성능 확인용.</summary>
         public double LastSettleMs { get; private set; }
 
@@ -66,6 +69,7 @@ namespace MissedCall.Feature.Clutter {
             look ??= new ClutterLook(catalog);
             pool.ReleaseAll();
             Misfits = 0;
+            PropMisfits = 0;
 
             RoomGraph graph = context.Graph;
             if (graph == null) {
@@ -78,6 +82,13 @@ namespace MissedCall.Feature.Clutter {
             for (int room = 0; room < graph.Rooms.Count; room++) {
                 foreach (HideSpot spot in graph.Rooms[room].HideSpots) {
                     BuildPile(spot, rng);
+                }
+            }
+
+            // 베개와 쿠션은 더미를 쌓은 뒤 놓는다. 더미와 겹치면 옆으로 밀리거나 그 위에 얹힌다.
+            for (int room = 0; room < graph.Rooms.Count; room++) {
+                foreach (PropSpot prop in graph.Rooms[room].PropSpots) {
+                    PlaceProp(prop, rng);
                 }
             }
 
@@ -123,6 +134,19 @@ namespace MissedCall.Feature.Clutter {
                 Spawn(kind, itemCenter, rotation, spot.Enclosed, rng);
                 y = itemCenter.y + kind.size.y * 0.5f + Gap;
             }
+        }
+
+        private void PlaceProp(PropSpot prop, System.Random rng) {
+            Transform t = prop.transform;
+            ClutterCatalog.Kind kind = catalog.Get(prop.Kind);
+            Quaternion rotation = t.rotation * Quaternion.Euler(0f, Range(rng, -prop.Spin, prop.Spin), 0f);
+            Vector3 center = CenterOn(t.position, t.position.y, kind);
+            if (!TryFitOrStraighten(kind.size, ref center, ref rotation, t.rotation)) {
+                PropMisfits++;
+                return;
+            }
+
+            Spawn(kind, center, rotation, false, rng);
         }
 
         private void Scatter(Rect footprint, System.Random rng) {

@@ -163,6 +163,14 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | `holdResponse` | 16 | 잡는 점을 따라가는 빠르기(1/s) |
 | `holdMaxSpeed` | 10 | 끌려오고 따라가는 최대 속도(m/s) |
 | `holdAngularDamping` | 6 | 잡힌 동안의 회전 감쇠 |
+| `clothDamping` | 0.9 | 천 시뮬레이션(셔츠, 담요를 잡거나 던졌을 때 겉모습만): 스텝마다 남기는 속도 비율. 0.97은 너무 펄럭였다 |
+| `clothIterations` | 12 | 천 시뮬레이션 거리 제약 반복 횟수. 많을수록 빳빳하다 |
+| `clothSettleTime` | 2.5 | 천이 떨어진 뒤 아직 움직여도 이 시간(초)이 지나면 닿은 모양 그대로 굳힌다 |
+| `cushionHoldBend` | 0.3 | 쿠션을 잡았을 때 휘는 정도 (원호로 굽힘) |
+| `airBendScale` | 0.5 | 쿠션을 던져서 날아가는 동안 휘는 정도 (잡았을 때 값에 곱한다) |
+| `bendStiffness` | 60 | 쿠션 휘는 정도가 따라가는 스프링 세기 |
+| `bendDamping` | 8 | 위 스프링의 감쇠 |
+| `bendFlutter` | 0.5 | 쿠션이 움직이는 반대쪽 가장자리가 더 늘어지는 정도 |
 | `holdArriveDistance` | 0.25 | 이만큼 다가오면 손에 들어온 것으로 본다(m) |
 | `holdBreakDistance` | 0.9 | 손에 들어온 뒤 이만큼 멀어지면 놓친다(m) |
 | `holdPullTimeout` | 0.6 | 이 시간 안에 손에 들어오지 않으면 놓친다(초) |

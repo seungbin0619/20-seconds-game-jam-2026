@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MissedCall.Core;
 using MissedCall.Core.Aim;
 using MissedCall.Core.Rooms;
@@ -23,6 +24,19 @@ namespace MissedCall.Feature.Clutter {
         private static readonly Collider[] Overlaps = new Collider[8];
 
         private GameTuning tuning;
+
+        // 부드러운 물건(천, 쿠션)을 잡거나 던졌을 때 휘게 하는 상태. 원본 메시는 공유하므로 휘는 동안만 자기 메시를 쓴다.
+        private static readonly Dictionary<Mesh, Vector3[]> BaseVertices = new();
+        private static readonly Dictionary<Mesh, int[]> BaseTriangles = new();
+        private bool soft;
+        private Mesh sourceMesh;
+        private Mesh bentMesh;
+        private Mesh bentSource;
+        private Vector3[] bentVertices;
+        private float bend;
+        private float bendVelocity;
+        private ClothDrape drape;
+        private float clothSettle;
 
         public ItemKind Item { get; private set; }
         public Vector3 Size { get; private set; }
@@ -52,6 +66,11 @@ namespace MissedCall.Feature.Clutter {
             Size = kind.size;
             Enclosed = enclosed;
             Held = false;
+            soft = kind.soft;
+            sourceMesh = mesh;
+            bend = 0f;
+            bendVelocity = 0f;
+            drape?.Clear();
             meshFilter.sharedMesh = mesh;
             meshRenderer.sharedMaterial = material;
             SetAimed(false);
@@ -182,6 +201,155 @@ namespace MissedCall.Feature.Clutter {
             body.WakeUp();
             body.linearVelocity = velocity;
             body.angularVelocity = angularVelocity;
+        }
+
+        private void OnDestroy() {
+            if (bentMesh != null) {
+                Destroy(bentMesh);
+            }
+
+            if (drape != null) {
+                Destroy(drape.Mesh);
+            }
+        }
+
+        private void LateUpdate() {
+            if (!soft || tuning == null) {
+                return;
+            }
+
+            if (Item == ItemKind.Cushion) {
+                UpdateCushionBend();
+            } else {
+                UpdateCloth();
+            }
+        }
+
+        /// <summary>
+        /// 천(셔츠, 담요): 잡거나 날아가는 동안 펼친 천 한 장으로 바꿔 시뮬레이션한다(<see cref="ClothDrape"/>).
+        /// 잡힌 동안과 날아가는 동안은 가운데를 물건에 붙여 늘어진다. 떨어지면 가운데를 풀어 가구, 바닥, 다른 물건 위에
+        /// 닿은 모양대로 걸치게 두고, 가라앉으면(또는 clothSettleTime이 지나면) 그 모양을 굳힌다. 다시 집으면 그 모양에서 이어 간다.
+        /// 새 판에서 다시 쓰이기 전까지 갠 모양으로 돌아가지 않는다.
+        /// </summary>
+        private void UpdateCloth() {
+            bool flying = !Held && !body.IsSleeping() && body.linearVelocity.sqrMagnitude > 0.8f * 0.8f;
+            bool moving = Held || flying;
+            if (!moving && (drape == null || !drape.Active)) {
+                // 안 건드렸으면 갠 모양, 굳힌 뒤면 그 모양 그대로 (메시가 물건 로컬이라 물건을 따라다닌다).
+                return;
+            }
+
+            drape ??= new ClothDrape();
+            if (!drape.Active) {
+                if (drape.HasShape) {
+                    drape.Resume(transform);
+                } else {
+                    // 갠 천을 펼친 한 장. 두께는 갠 겹 하나 정도.
+                    drape.Begin(transform, Size, Mathf.Clamp(Size.y * 0.4f, 0.018f, 0.03f));
+                }
+            }
+
+            clothSettle = moving ? 0f : clothSettle + Time.deltaTime;
+            // 들고 있거나 날아가는 동안은 가운데를 물건에 붙이고, 떨어진 뒤에는 풀어서 닿은 곳 모양대로 늘어지게 둔다.
+            drape.Simulate(Time.deltaTime, transform, moving, tuning.clothDamping, tuning.clothIterations, box);
+            drape.Write(transform);
+            meshFilter.sharedMesh = drape.Mesh;
+            if (!moving && (drape.Settled || clothSettle >= tuning.clothSettleTime)) {
+                drape.Freeze(transform);
+            }
+        }
+
+        /// <summary>
+        /// 쿠션: 잡으면 잡힌 곳(중심)에서 멀수록 중력 쪽으로 조금 휘고, 던지면 덜 휘며 움직이는 반대쪽이 더 늘어진다.
+        /// 놓이면 스프링으로 출렁이며 펴진다. 길이를 지키도록 가장자리를 원호로 굽힌다.
+        /// </summary>
+        private void UpdateCushionBend() {
+            float hold = tuning.cushionHoldBend;
+            Vector3 velocity = body.linearVelocity;
+            bool flying = !Held && !body.IsSleeping() && velocity.sqrMagnitude > 0.8f * 0.8f;
+            float target = Held ? hold : flying ? hold * tuning.airBendScale : 0f;
+
+            float dt = Mathf.Min(Time.deltaTime, 1f / 30f);
+            bendVelocity += (tuning.bendStiffness * (target - bend) - tuning.bendDamping * bendVelocity) * dt;
+            bend = Mathf.Clamp(bend + bendVelocity * dt, -0.25f, 1f);
+
+            bool resting = !Held && Mathf.Abs(bend) < 0.002f && Mathf.Abs(bendVelocity) < 0.01f && target == 0f;
+            if (resting) {
+                bend = 0f;
+                bendVelocity = 0f;
+                if (meshFilter.sharedMesh != sourceMesh) {
+                    meshFilter.sharedMesh = sourceMesh;
+                }
+
+                return;
+            }
+
+            Bend(velocity);
+        }
+
+        private void Bend(Vector3 velocity) {
+            Vector3[] source = SourceVertices(sourceMesh);
+            if (bentMesh == null) {
+                bentMesh = new Mesh { name = "BentClutter" };
+                bentMesh.MarkDynamic();
+            }
+
+            if (bentSource != sourceMesh) {
+                bentSource = sourceMesh;
+                bentMesh.Clear();
+                bentMesh.vertices = source;
+                bentMesh.triangles = BaseTriangles[sourceMesh];
+                if (bentVertices == null || bentVertices.Length != source.Length) {
+                    bentVertices = new Vector3[source.Length];
+                }
+            }
+
+            meshFilter.sharedMesh = bentMesh;
+
+            Quaternion rotation = transform.rotation;
+            Quaternion inverse = Quaternion.Inverse(rotation);
+            float reach = Mathf.Max(Size.x, Size.z) * 0.5f;
+            // bend 1이면 가장자리(reach)가 90도 꺾여 똑바로 아래를 향한다.
+            float curvature = bend * (Mathf.PI * 0.5f) / Mathf.Max(0.05f, reach);
+            Vector3 trail = -new Vector3(velocity.x, 0f, velocity.z);
+            float flutter = tuning.bendFlutter * Mathf.Clamp01(trail.magnitude / 4f);
+            if (trail.sqrMagnitude > 1e-6f) {
+                trail.Normalize();
+            }
+
+            for (int i = 0; i < source.Length; i++) {
+                Vector3 w = rotation * source[i];
+                float h = w.y;
+                Vector3 flat = new(w.x, 0f, w.z);
+                float d = flat.magnitude;
+                float k = d > 1e-4f ? curvature * (1f + flutter * Vector3.Dot(flat / d, trail)) : 0f;
+                if (Mathf.Abs(k) < 1e-4f) {
+                    bentVertices[i] = source[i];
+                    continue;
+                }
+
+                Vector3 u = flat / d;
+                float theta = k * d;
+                float sin = Mathf.Sin(theta);
+                float cos = Mathf.Cos(theta);
+                // 원호 위의 점 + 두께(h)는 꺾인 면의 법선 방향으로
+                Vector3 p = u * (sin / k) - Vector3.up * ((1f - cos) / k) + (Vector3.up * cos + u * sin) * h;
+                bentVertices[i] = inverse * p;
+            }
+
+            bentMesh.vertices = bentVertices;
+            bentMesh.RecalculateNormals();
+            bentMesh.RecalculateBounds();
+        }
+
+        private static Vector3[] SourceVertices(Mesh mesh) {
+            if (!BaseVertices.TryGetValue(mesh, out Vector3[] vertices)) {
+                vertices = mesh.vertices;
+                BaseVertices[mesh] = vertices;
+                BaseTriangles[mesh] = mesh.triangles;
+            }
+
+            return vertices;
         }
     }
 }

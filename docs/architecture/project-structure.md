@@ -54,7 +54,7 @@ Feature ──▶ Core ──▶ Shared
 | `Round/RoundStep` | 판 준비 단계의 추상 MonoBehaviour. Feature가 상속하고, `GameFlow` 인스펙터의 순서대로 `Prepare(context)`가 불린다. 이전 판 오브젝트는 여기서 풀에 돌려놓는다 |
 | `Aim/IAimTarget`, `IThrowable`, `IGrabbable`, `AimKind`, `IPointerGate` | Interaction이 Clutter, Phone, Player를 모르고 조준·잡아 던지기·집기를 하기 위한 계약. 끌어오는 속도와 던지는 속도 계산, 집기 조건 판정은 Interaction이 하고 대상은 받은 속도를 적용만 한다. `IPointerGate`는 잠금 클릭을 거르기 위해 PointerLook이 구현한다. 폰(`IGrabbable`)은 콜라이더 없이 `GrabPoint`로 조준하며, Phone이 `RoundContext.Phone`에 넣는다 |
 | `GameTuning` (ScriptableObject) | 튜닝 값. [`game-design.md`](../design/game-design.md)와 일치시킨다 |
-| `Rooms/RoomModule`, `DoorSocket`, `HideSpot` | 방 모듈 프리팹에 붙는 데이터 컴포넌트. Layout(배치, 문), Phone과 Clutter(숨는 자리)가 함께 읽으므로 Room이 아니라 Core에 둔다 |
+| `Rooms/RoomModule`, `DoorSocket`, `HideSpot`, `PropSpot` | 방 모듈 프리팹에 붙는 데이터 컴포넌트. Layout(배치, 문), Phone과 Clutter(숨는 자리, 베개 같은 낱개 소품 자리)가 함께 읽으므로 Room이 아니라 Core에 둔다 |
 | `Callers/CallerCatalog`, `CallerProfile`, `CallerStep` | 발신자 목록과, 판마다 발신자를 고르는 준비 단계. 결과 문구(Ui)와 발신자별 벨소리(Ringtone)가 함께 읽는다. 고른 발신자는 `RoundContext.Caller`에 들어간다 |
 | `Rooms/RoomGraph`, `RoomDoor`, `GraphRoute` | 판의 집 구조와 소리 경로. Layout이 만들고 Ringtone, Player가 읽는다 |
 
