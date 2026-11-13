@@ -24,6 +24,8 @@ Shader "Hidden/MissedCall/ScreenFx" {
             static const half3 Paper = half3(0.914, 0.925, 0.918);
             // 시간이 다 됐을 때 종이에 곱하는 색. 어둡고 푸르다.
             static const half3 PaperDusk = half3(0.68, 0.74, 0.84);
+            // 화면을 잠식하는 물감(sRGB, 종이에 곱한다). 어두운 남색 먹물.
+            static const half3 WashInk = half3(0.24, 0.28, 0.36);
             // 선이 다시 그려지는 횟수(1/s). 판이 끝나 갈수록 빨라진다.
             static const float BoilRate = 6;
             // 선이 흔들리는 폭(1080p 기준 px)
@@ -140,7 +142,7 @@ Shader "Hidden/MissedCall/ScreenFx" {
                 return lerp(srgb, ink, cover * 0.85);
             }
 
-            // 붉은 맥박 대신: 가장자리부터 붉은 물감이 화면을 잠식한다. 남은 시간에만 따라 넓어지고
+            // 붉은 맥박 대신: 가장자리부터 어두운 물감이 화면을 잠식한다. 남은 시간에만 따라 넓어지고
             // 물러나지 않는다. 벨 박자(맥박)는 번진 끝을 조금 밀어 넣고 고인 안료를 진하게 할 뿐이다.
             // creep: 10초부터 조금씩, 마지막 5초에 크게 번져 0초에는 가운데만 남는다.
             half3 RedWash(half3 srgb, ScreenPixel p, float t, half creep) {
@@ -161,7 +163,8 @@ Shader "Hidden/MissedCall/ScreenFx" {
                 // 번진 끝에 안료가 고여 진한 띠가 생긴다.
                 half rim = smoothstep(0.025, 0, abs(shape - front - 0.01));
 
-                half3 pigment = LinearToSRGB(_McFxPulseColor.rgb);
+                // 붉은색은 피처럼 보여서 어두운 남색 먹물로 바꿨다 (11/13).
+                half3 pigment = WashInk;
                 srgb *= lerp(1, pigment, wash * (0.75 + 0.25 * creep));
                 srgb *= lerp(1, pigment * 0.55, depth * 0.6 * creep);
                 return srgb * lerp(1, pigment * 0.6, rim * (0.35 + 0.3 * pulse));
