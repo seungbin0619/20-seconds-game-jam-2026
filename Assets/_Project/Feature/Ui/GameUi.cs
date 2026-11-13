@@ -42,9 +42,7 @@ namespace MissedCall.Feature.Ui {
         [Tooltip("커서가 버튼 위에 있을 때 버튼 색을 밝히는 비율")]
         [SerializeField] private float hoverBrighten = 0.12f;
 
-        // 결과 카드가 나타나는 시각. 받지 못한 판은 실패 연출(missedResultDelay)이 끝난 뒤다.
         private float endedAt;
-        private bool resultShown;
         private int shownMinute = -1;
         private bool cursorApplied;
         private float pausedAt;
@@ -80,8 +78,7 @@ namespace MissedCall.Feature.Ui {
                     break;
                 case RoundState.Won:
                 case RoundState.Missed:
-                    // 받지 못했으면 시선이 폰 쪽으로 돌아가는 동안 카드를 띄우지 않는다 (카드가 화면 가운데를 가린다).
-                    endedAt = Time.unscaledTime + (next == RoundState.Missed ? flow.Tuning.missedResultDelay : 0f);
+                    endedAt = Time.unscaledTime;
                     result.Show(flow.Context, next == RoundState.Won);
                     break;
             }
@@ -106,8 +103,7 @@ namespace MissedCall.Feature.Ui {
             hud.gameObject.SetActive(GameFlow.IsRunning(state));
             aim.gameObject.SetActive(state == RoundState.Playing && !paused);
             answer.gameObject.SetActive(state == RoundState.Answer && !paused);
-            resultShown = state is RoundState.Won or RoundState.Missed && Time.unscaledTime >= endedAt;
-            result.gameObject.SetActive(resultShown);
+            result.gameObject.SetActive(state is RoundState.Won or RoundState.Missed);
             pauseScreen.SetActive(paused && !awaitingClick);
             resumeHint.SetActive(paused && awaitingClick);
             shownMinute = -1;
@@ -130,14 +126,6 @@ namespace MissedCall.Feature.Ui {
                     break;
                 case RoundState.Won:
                 case RoundState.Missed:
-                    if (!resultShown) {
-                        if (Time.unscaledTime < endedAt) {
-                            break;
-                        }
-
-                        Show();
-                    }
-
                     UpdateLockClocks();
                     // 결과 직후에는 슬라이드나 던지기의 마지막 클릭이 버튼을 누르지 않게 잠시 막는다.
                     if (Time.unscaledTime - endedAt >= flow.Tuning.resultInputDelay && Clicked(retryButton, true)) {

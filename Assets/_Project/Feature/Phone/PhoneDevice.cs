@@ -24,10 +24,6 @@ namespace MissedCall.Feature.Phone {
         [Tooltip("받지 못했을 때 화면 색 (프로토타입 0xff6b57)")]
         [SerializeField] private Color missedColor = new(1f, 0.42f, 0.34f);
         [SerializeField] private Color idleColor = new(0.08f, 0.1f, 0.12f);
-        [Tooltip("받지 못했을 때만 켜는 빨간 빛. 더미에 덮인 폰도 틈으로 화면 빛이 보이게 한다. 없어도 된다")]
-        [SerializeField] private Light missedGlow;
-        [Tooltip("받지 못했을 때만 켜는 형상. 폰이 누운 그대로 벽과 물건 위에 일렁이는 단색으로 그린다 (PhoneXRay 셰이더)")]
-        [SerializeField] private Renderer[] xray = new Renderer[0];
         [Tooltip("덮임을 세고 진동으로 튀게 할 물건 레이어")]
         [SerializeField] private LayerMask clutterMask;
 
@@ -55,14 +51,7 @@ namespace MissedCall.Feature.Phone {
         public int LastJiggled { get; private set; }
 
         private void Awake() {
-            // 형상(xray)은 숨기기·보이기와 따로 켜고 끈다.
-            var list = new System.Collections.Generic.List<Renderer>(GetComponentsInChildren<Renderer>(true));
-            foreach (Renderer r in xray) {
-                list.Remove(r);
-                r.enabled = false;
-            }
-
-            renderers = list.ToArray();
+            renderers = GetComponentsInChildren<Renderer>(true);
             block = new MaterialPropertyBlock();
         }
 
@@ -108,15 +97,6 @@ namespace MissedCall.Feature.Phone {
             RoundState state = context.State;
             // 받기 화면에서만 숨긴다. 결과 화면에서는 폰이 다시 보인다.
             SetVisible(state != RoundState.Answer);
-            bool missed = state == RoundState.Missed;
-            if (missedGlow != null) {
-                missedGlow.enabled = missed;
-            }
-
-            foreach (Renderer r in xray) {
-                r.enabled = missed;
-            }
-
             if (!GameFlow.IsRunning(state)) {
                 visual.localPosition = Vector3.zero;
                 SetScreen(state == RoundState.Missed ? missedColor : idleColor);
