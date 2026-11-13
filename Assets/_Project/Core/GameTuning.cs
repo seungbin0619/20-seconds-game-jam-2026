@@ -167,7 +167,5 @@ namespace MissedCall.Core {
         public float missedTurnRate = 4f;
         [Tooltip("받지 못했을 때 결과 화면을 띄우기 전에 폰 쪽을 보여주는 시간(초)")]
         public float missedResultDelay = 1.2f;
-        [Tooltip("받지 못했을 때 벽 너머로 비춰 보이는 폰 형상의 크기 배율. 형상은 플레이어를 향해 세운다")]
-        public float missedXRayScale = 2.5f;
     }
 }

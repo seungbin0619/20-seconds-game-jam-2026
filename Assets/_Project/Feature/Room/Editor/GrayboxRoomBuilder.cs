@@ -46,7 +46,8 @@ namespace MissedCall.Feature.Room.Editor {
             Debug.Log("[GrayboxRoomBuilder] Built 9 graybox room modules in " + Root);
         }
 
-        // 소켓 앞 통로(문 폭 + 양쪽 0.25m, 벽에서 0.8m)에는 가구를 두지 않는다. 좌표는 모두 모듈 로컬.
+        // 소켓 앞 통로(문 폭 + 양쪽 0.25m, 벽에서 0.8m)에는 가구를 두지 않는다. 가구 사이 통로는 0.6m 이상 둔다
+        // (플레이어 캡슐 지름 0.52m + 스킨). 좁으면 방이 둘로 갈려 문 하나로는 반대편에 갈 수 없다. 좌표는 모두 모듈 로컬.
 
         // S 3 x 3. 문 소켓은 남, 서. 욕조는 동쪽 벽, 세면대와 변기는 북쪽 벽.
         private static void BuildBathroomB() {
@@ -96,7 +97,6 @@ namespace MissedCall.Feature.Room.Editor {
             b.Box("Nightstand", -1.25f, -0.8f, 1.2f, 1.65f, 0f, 0.5f, woodMat);
             b.Box("Dresser", -1.6f, -0.4f, -1.65f, -1.2f, 0f, 0.9f, woodMat);
             b.Box("Desk", 0.6f, 1.8f, -1.65f, -1.05f, 0f, 0.75f, woodMat);
-            b.Box("Chair", 0.9f, 1.3f, -1.0f, -0.75f, 0f, 0.45f, woodMat);
             b.Hollow("LaundryBasket", 1.25f, 1.85f, 1.05f, 1.65f, 0.32f, 0.04f, woodMat);
             b.Rug("Rug", -0.9f, 0.9f, -1.0f, -0.4f, fabricMat);
 
@@ -117,14 +117,14 @@ namespace MissedCall.Feature.Room.Editor {
 
             b.Box("Fridge", -1.9f, -1.25f, 1.0f, 1.65f, 0f, 1.8f, whiteMat);
             b.Box("Counter", -1.2f, 1.9f, 1.05f, 1.65f, 0f, 0.9f, woodMat);
-            b.Box("Table", -0.7f, 0.7f, -0.8f, 0f, 0f, 0.75f, woodMat);
-            b.Box("Chair", -0.2f, 0.2f, 0.1f, 0.5f, 0f, 0.45f, woodMat);
+            b.Box("Table", -0.6f, 0.6f, -0.7f, 0f, 0f, 0.75f, woodMat);
+            b.Box("Chair", -0.2f, 0.2f, 0.1f, 0.45f, 0f, 0.45f, woodMat);
             b.Hollow("Bin", 1.25f, 1.85f, -1.6f, -1.0f, 0.5f, 0.04f, whiteMat);
 
             b.Spot("Spot_CounterLeft", -0.4f, 0.9f, 1.35f, ItemKind.SmallShirt, false);
             b.Spot("Spot_CounterRight", 1.4f, 0.9f, 1.35f, ItemKind.Book, false);
-            b.Spot("Spot_Table", 0.3f, 0.75f, -0.4f, ItemKind.Shirt, false);
-            b.Spot("Spot_Chair", 0f, 0.45f, 0.3f, ItemKind.Cushion, false);
+            b.Spot("Spot_Table", 0.25f, 0.75f, -0.35f, ItemKind.Shirt, false);
+            b.Spot("Spot_Chair", 0f, 0.45f, 0.27f, ItemKind.Cushion, false);
             b.Spot("Spot_Bin", 1.55f, 0.02f, -1.3f, ItemKind.SmallShirt, true);
             b.Spot("Spot_FloorCorner", -1.5f, 0f, -1.3f, ItemKind.Carton, false);
             b.Save();
@@ -202,13 +202,13 @@ namespace MissedCall.Feature.Room.Editor {
             b.Box("NightstandL", -1.4f, -0.9f, 1.2f, 1.65f, 0f, 0.5f, woodMat);
             b.Box("NightstandR", 0.9f, 1.4f, 1.2f, 1.65f, 0f, 0.5f, woodMat);
             b.Box("Wardrobe", -1.9f, -1.45f, 0.75f, 1.65f, 0f, 2.0f, woodMat);
-            b.Box("Desk", 0.8f, 1.9f, -1.65f, -0.95f, 0f, 0.75f, woodMat);
+            b.Box("Desk", 0.9f, 1.9f, -1.65f, -1.1f, 0f, 0.75f, woodMat);
             b.Rug("Rug", -1.0f, 1.0f, -1.2f, -0.45f, fabricMat);
 
             b.Spot("Spot_BedLeft", -0.4f, 0.45f, 0.5f, ItemKind.Shirt, false);
             b.Spot("Spot_BedRight", 0.4f, 0.45f, 0.1f, ItemKind.Shirt, false);
             b.Spot("Spot_Nightstand", 1.15f, 0.5f, 1.42f, ItemKind.SmallShirt, false);
-            b.Spot("Spot_Desk", 1.35f, 0.75f, -1.3f, ItemKind.Shirt, false);
+            b.Spot("Spot_Desk", 1.4f, 0.75f, -1.375f, ItemKind.Shirt, false);
             b.Spot("Spot_FloorCorner", -1.4f, 0f, -1.2f, ItemKind.Blanket, false);
             b.Save();
         }
