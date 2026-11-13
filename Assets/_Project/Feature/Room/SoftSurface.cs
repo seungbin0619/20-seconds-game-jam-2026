@@ -27,6 +27,14 @@ namespace MissedCall.Feature.Room {
         [SerializeField, Range(0f, 1f)] private float absorb = 0.3f;
         [Tooltip("윗면을 나누는 칸 수 (가로세로 각각)")]
         [SerializeField] private int subdivisions = 14;
+        [Tooltip("숨는 자리 위치 (이 충돌체 로컬). 처음부터 오목하게 눌러 둔다")]
+        [SerializeField] private Vector3[] pockets = new Vector3[0];
+        [Tooltip("자리를 눌러 두는 깊이(m). 겉면이 충돌체보다 높은 만큼 + 조금")]
+        [SerializeField] private float pocketDepth;
+
+        // 폰(0.22 x 0.14)과 자리 흔들림(±0.06)을 덮는 평평한 바닥 반경, 그 바깥으로 완만하게 올라오는 반경(m)
+        private const float PocketInner = 0.17f;
+        private const float PocketOuter = 0.3f;
 
         private sealed class Surface {
             public MeshFilter Filter;
@@ -60,6 +68,11 @@ namespace MissedCall.Feature.Room {
             maxDepth = depth;
             stiffness = stiff;
             damping = damp;
+        }
+
+        public void EditorSetPockets(Vector3[] localPockets, float depth) {
+            pockets = localPockets;
+            pocketDepth = depth;
         }
 #endif
 
@@ -279,8 +292,43 @@ namespace MissedCall.Feature.Room {
                     s.Weight[i] = h * h;
                 }
 
+                PressPockets(s);
                 surfaces.Add(s);
             }
+        }
+
+        // 숨는 자리는 처음부터 오목하게 눌러 둔다. 겉면이 충돌체보다 높아서(방 빌더의 SoftSink) 그대로 두면
+        // 자리 표면(충돌체 윗면)에 놓이는 폰이 쿠션 속에 묻혀 보이지 않았다 (11/13, 시드 1269263595).
+        private void PressPockets(Surface s) {
+            if (pockets.Length == 0 || pocketDepth <= 0f) {
+                return;
+            }
+
+            Transform mesh = s.Filter.transform;
+            float toLocal = 1f / Mathf.Max(0.001f, mesh.lossyScale.y);
+            for (int i = 0; i < s.Base.Length; i++) {
+                if (s.Weight[i] <= 0f) {
+                    continue;
+                }
+
+                // 충돌체 기준 좌표에서 가장 가까운 자리까지의 수평 거리
+                Vector3 local = transform.InverseTransformPoint(mesh.TransformPoint(s.Base[i]));
+                float nearest = float.MaxValue;
+                foreach (Vector3 pocket in pockets) {
+                    float dx = local.x - pocket.x;
+                    float dz = local.z - pocket.z;
+                    nearest = Mathf.Min(nearest, dx * dx + dz * dz);
+                }
+
+                float press = pocketDepth * (1f - Mathf.SmoothStep(0f, 1f,
+                    Mathf.InverseLerp(PocketInner, PocketOuter, Mathf.Sqrt(nearest))));
+                s.Base[i].y -= press * s.Weight[i] * toLocal;
+                s.Current[i] = s.Base[i];
+            }
+
+            s.Mesh.vertices = s.Base;
+            s.Mesh.RecalculateNormals();
+            s.Mesh.RecalculateBounds();
         }
 
         /// <summary>

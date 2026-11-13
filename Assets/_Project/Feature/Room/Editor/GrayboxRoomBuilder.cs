@@ -255,7 +255,8 @@ namespace MissedCall.Feature.Room.Editor {
             b.TvStand("TvStand", new B(-2.2f, -1.0f, 1.45f, 1.9f, 0f, 0.5f), WallSide.South);
             b.Cabinet("Cabinet", new B(1.0f, 2.2f, 1.55f, 1.9f, 0f, 0.9f), WallSide.South, wood, wood, 3, 1);
             b.Beanbag("Beanbag", new B(1.4f, 2.1f, -1.7f, -1.0f, 0f, 0.35f), fabricRose);
-            b.Hollow("ToyBox", 0.9f, 1.3f, -1.85f, -1.25f, 0.4f, 0.04f, accents[0]);
+            // 폭 0.4m는 안쪽이 좁아 폰(0.22m)이 비스듬히 놓이면 옆벽을 뚫었다 (11/13). 빈백(x 1.4~)과 닿지 않게 넓힌다.
+            b.Hollow("ToyBox", 0.82f, 1.38f, -1.85f, -1.25f, 0.4f, 0.04f, accents[0]);
             b.Rug("Rug", -1.6f, 0.3f, -0.9f, 0.4f, rugRed);
 
             b.Window(WallSide.South, -1.65f, 0.9f);
@@ -629,7 +630,8 @@ namespace MissedCall.Feature.Room.Editor {
                 }
 
                 // 등받이는 충돌 없이 겉모습만. 의자 자리 더미가 등받이에 걸리지 않게 한다.
-                Part(g, "Back", b.Slice(back, 0.04f).WithY(b.Y1, b.Y1 + 0.42f), wood);
+                // 좌석 바깥에 붙인다. 좌석 위에 두면 의자 자리의 폰이 등받이 판에 묻힐 수 있었다 (11/13).
+                Part(g, "Back", Outside(b, back, 0.04f).WithY(b.Y1 - 0.04f, b.Y1 + 0.42f), wood);
             }
 
             /// <summary>침대: 프레임, 푹신한 매트리스, 발치 쪽 이불, 헤드보드, 머리맡 베개 두 개(물리 소품).</summary>
@@ -998,6 +1000,7 @@ namespace MissedCall.Feature.Room.Editor {
             }
 
             public void Save() {
+                PressSoftPockets();
                 RoomModule module = root.AddComponent<RoomModule>();
                 module.EditorSetup(kind, sizeClass, size, socketList.ToArray(), spotList.ToArray(), propList.ToArray(), mainLight);
                 module.CloseAllSockets();
@@ -1005,6 +1008,28 @@ namespace MissedCall.Feature.Room.Editor {
                 string path = Root + "/" + name + ".prefab";
                 PrefabUtility.SaveAsPrefabAsset(root, path);
                 Object.DestroyImmediate(root);
+            }
+
+            // 푹신한 가구 윗면에 있는 숨는 자리를 SoftSurface에 알려, 그 자리만 처음부터 오목하게 눌러 두게 한다.
+            // 겉면이 충돌체보다 SoftSink만큼 높아서 그대로 두면 폰이 쿠션 속에 묻힌다.
+            private void PressSoftPockets() {
+                foreach (SoftSurface surface in root.GetComponentsInChildren<SoftSurface>()) {
+                    var box = surface.GetComponent<BoxCollider>();
+                    // 충돌체의 모듈 로컬 중심 (부모들은 회전 없이 옮기기만 한다)
+                    Vector3 center = Offset(surface.transform);
+                    Vector3 half = box.size * 0.5f;
+                    var pockets = new List<Vector3>();
+                    foreach (HideSpot spot in spotList) {
+                        Vector3 p = spot.transform.localPosition;
+                        Vector3 d = p - center;
+                        bool onTop = Mathf.Abs(d.y - half.y) < 0.03f;
+                        if (onTop && Mathf.Abs(d.x) <= half.x + 0.05f && Mathf.Abs(d.z) <= half.z + 0.05f) {
+                            pockets.Add(d);
+                        }
+                    }
+
+                    surface.EditorSetPockets(pockets.ToArray(), SoftSink + 0.006f);
+                }
             }
 
             private void AddLight(Color color) {
