@@ -31,6 +31,12 @@ namespace MissedCall.Feature.Clutter {
         private const float PenetrationTolerance = 0.001f;
 
         private readonly Collider[] overlaps = new Collider[16];
+        private readonly System.Collections.Generic.List<ClutterItem> draped = new();
+        // 이번 판의 숨는 자리 표면 위치. 폰이 들어갈 수 있는 곳이라 천을 폰 높이만큼 띄운다.
+        private readonly System.Collections.Generic.List<Vector3> spotPoints = new();
+        // 폰(두께 2cm)을 덮을 만큼 숨는 자리 위 천을 띄우는 높이(m)와 반경(m, 폰 반 대각선 0.13 + 자리 흔들림 0.08. 0.17은 모서리가 삐져나왔다)
+        private const float PhonePadHeight = 0.024f;
+        private const float PhonePadRadius = 0.22f;
         private ClutterPool pool;
         private ClutterLook look;
         private BoxCollider probe;
@@ -46,6 +52,9 @@ namespace MissedCall.Feature.Clutter {
 
         /// <summary>마지막 안정화에 걸린 시간(ms). 성능 확인용.</summary>
         public double LastSettleMs { get; private set; }
+
+        /// <summary>마지막 판 준비에서 천을 흘러내리게 하는 데 걸린 시간(ms). 성능 확인용.</summary>
+        public double LastDrapeMs { get; private set; }
 
         /// <summary>이번 판의 물건 (앞에서부터 <see cref="Count"/>개).</summary>
         public ClutterPool Pool => pool;
@@ -68,6 +77,7 @@ namespace MissedCall.Feature.Clutter {
             pool ??= new ClutterPool(prefab, root != null ? root : transform, prewarm);
             look ??= new ClutterLook(catalog);
             pool.ReleaseAll();
+            spotPoints.Clear();
             Misfits = 0;
             PropMisfits = 0;
 
@@ -82,6 +92,7 @@ namespace MissedCall.Feature.Clutter {
             for (int room = 0; room < graph.Rooms.Count; room++) {
                 foreach (HideSpot spot in graph.Rooms[room].HideSpots) {
                     BuildPile(spot, rng);
+                    spotPoints.Add(spot.transform.position);
                 }
             }
 
@@ -97,6 +108,51 @@ namespace MissedCall.Feature.Clutter {
             }
 
             Settle();
+
+            DrapeCloths();
+        }
+
+        // 숨는 자리 위에서는 폰(판 준비의 다음 단계에서 자리 표면에 놓인다)을 덮도록 천을 띄운다.
+        // 모든 자리에 똑같이 하므로 불룩한 모양으로 폰 위치가 드러나지 않는다.
+        private float PhonePad(Vector3 world) {
+            float top = float.MinValue;
+            foreach (Vector3 spot in spotPoints) {
+                float dx = world.x - spot.x;
+                float dz = world.z - spot.z;
+                // 천이 기울어 놓이면 펼친 판의 점이 자리보다 낮게 시작할 수 있어 높이 조건을 넉넉히 둔다 (시드 76).
+                if (dx * dx + dz * dz < PhonePadRadius * PhonePadRadius && world.y > spot.y - 0.25f) {
+                    top = Mathf.Max(top, spot.y + PhonePadHeight);
+                }
+            }
+
+            return top;
+        }
+
+        // 가라앉은 뒤 천을 아래 모양에 맞춰 흘러내리게 한다 (갠 판 대신). 아래 천부터 하고, 위의 천은 먼저 흘러내린 천 위에 얹는다.
+        // 그러지 않으면 같은 물건 위의 천 두 장이 같은 자리로 흘러내려 겹쳐 보였다.
+        private void DrapeCloths() {
+            var watch = Stopwatch.StartNew();
+            draped.Clear();
+            for (int i = 0; i < pool.Used; i++) {
+                if (pool.Items[i].IsCloth) {
+                    draped.Add(pool.Items[i]);
+                }
+            }
+
+            draped.Sort((a, b) => a.transform.position.y.CompareTo(b.transform.position.y));
+            for (int i = 0; i < draped.Count; i++) {
+                int done = i;
+                draped[i].DrapeInPlace(world => {
+                    float top = float.MinValue;
+                    for (int j = 0; j < done; j++) {
+                        top = Mathf.Max(top, draped[j].ClothSurfaceAt(world));
+                    }
+
+                    return Mathf.Max(top, PhonePad(world));
+                });
+            }
+
+            LastDrapeMs = watch.Elapsed.TotalMilliseconds;
         }
 
         private void BuildPile(HideSpot spot, System.Random rng) {

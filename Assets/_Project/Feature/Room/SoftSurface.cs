@@ -19,14 +19,12 @@ namespace MissedCall.Feature.Room {
         [SerializeField] private float impactPerSpeed = 0.12f;
         [Tooltip("부딪힌 자리 둘레에서 함께 꺼지는 반경(m)")]
         [SerializeField] private float impactRadius = 0.16f;
-        [Tooltip("놓인 물건 1kg당 꺼지는 깊이(m)")]
-        [SerializeField] private float restDepthPerKg = 0.045f;
         [SerializeField] private float stiffness = 140f;
         [SerializeField] private float damping = 11f;
         [Tooltip("부딪힌 물건에 남기는 속도 비율. 낮을수록 푹 꺼지듯 멈춘다")]
         [SerializeField, Range(0f, 1f)] private float absorb = 0.3f;
         [Tooltip("윗면을 나누는 칸 수 (가로세로 각각)")]
-        [SerializeField] private int subdivisions = 14;
+        [SerializeField] private int subdivisions = 22;
         [Tooltip("숨는 자리 위치 (이 충돌체 로컬). 처음부터 오목하게 눌러 둔다")]
         [SerializeField] private Vector3[] pockets = new Vector3[0];
         [Tooltip("자리를 눌러 두는 깊이(m). 겉면이 충돌체보다 높은 만큼 + 조금")]
@@ -51,6 +49,8 @@ namespace MissedCall.Feature.Room {
             public Vector3[] World;
             // 다른 겉면 아래에 깔린 정점. 처짐과 오목한 자리를 더 깊게 해 위 메시를 뚫고 나오지 않게 한다.
             public bool[] Covered;
+            // 이 메시 윗면을 충돌체 윗면 조금 아래까지 내리는 깊이(m). 메시마다 높이가 달라서(이불은 매트리스보다 높다) 따로 잰다.
+            public float LoadDepth;
         }
 
         private readonly List<Surface> surfaces = new();
@@ -59,6 +59,16 @@ namespace MissedCall.Feature.Room {
         private readonly List<ContactPoint> contacts = new();
         // 이번 프레임 처짐 계산에 쓰는 놓인 물건 (중심 XZ, 반경, 깊이). 정점마다 GetComponent하지 않게 모아 둔다.
         private readonly List<Vector4> loads = new();
+        private readonly List<Vector4> previousLoads = new();
+        // 놓인 물건 범위 바깥으로 누름이 줄어드는 거리(m)
+        private const float LoadFalloff = 0.12f;
+        // 눌린 겉면을 충돌체 윗면보다 이만큼(m) 더 내린다
+        private const float LoadMargin = 0.008f;
+        // 놓인 물건 범위 바깥으로 가득 누르는 여유(m)
+        private const float LoadPad = 0.08f;
+        // 마지막으로 물건이 떨어진 뒤 이 시간(초) 동안은 쉬지 않는다 (천이 퍼지는 시간, clothSettleTime보다 길게)
+        private const float SpreadWindow = 3f;
+        private float lastLanding = -100f;
         private BoxCollider box;
         private bool built;
         // 움직이는 중인지. 가라앉으면 정점 계산을 건너뛴다 (컴포넌트를 끄면 OnDisable이 처짐을 지우므로 끄지 않는다).
@@ -104,6 +114,7 @@ namespace MissedCall.Feature.Room {
 
             resting.Add(body);
             active = true;
+            lastLanding = Time.time;
             // 판 준비 중 안정화(스크립트 시뮬레이션)의 충돌은 처짐만 남기고 출렁임은 주지 않는다.
             if (Physics.simulationMode == SimulationMode.Script) {
                 return;
@@ -150,8 +161,8 @@ namespace MissedCall.Feature.Room {
             }
 
             DropStale();
-            CollectLoads();
-            bool moving = false;
+            // 떨어진 천은 물건(충돌 상자)이 멈춘 뒤에도 몇 초 동안 퍼지므로, 그동안은 쉬지 않고 누름을 따라간다.
+            bool moving = CollectLoads() || Time.time - lastLanding < SpreadWindow;
             foreach (Surface s in surfaces) {
                 RefreshWorld(s);
                 for (int i = 0; i < s.Base.Length; i++) {
@@ -159,10 +170,10 @@ namespace MissedCall.Feature.Room {
                         continue;
                     }
 
-                    float target = RestDepth(s.World[i]);
+                    float target = RestDepth(s.World[i]) * s.LoadDepth;
                     float accel = stiffness * (target - s.Offset[i]) - damping * s.Velocity[i];
                     s.Velocity[i] += accel * dt;
-                    s.Offset[i] = Mathf.Clamp(s.Offset[i] + s.Velocity[i] * dt, -maxDepth * 0.3f, maxDepth);
+                    s.Offset[i] = Mathf.Clamp(s.Offset[i] + s.Velocity[i] * dt, -maxDepth * 0.3f, Mathf.Max(maxDepth, s.LoadDepth * DentScaleAt(s, i)));
                     if (Mathf.Abs(s.Velocity[i]) > 0.002f || Mathf.Abs(target - s.Offset[i]) > 0.0005f) {
                         moving = true;
                     }
@@ -177,28 +188,48 @@ namespace MissedCall.Feature.Room {
             }
         }
 
-        // 위에 놓인 물건들의 무게로 이 지점이 꺼질 깊이.
+
+        // 위에 놓인 물건들이 이 지점을 누르는 정도(0~1). 물건이 보이는 범위(사각형) 안은 1, 바깥은 LoadFalloff에 걸쳐 줄어든다.
+        // 1이면 메시의 LoadDepth만큼 눌려 겉면이 충돌체 윗면 아래로 내려가, 충돌체 위에 놓인 물건이나 천을 뚫고 나오지 않는다.
         private float RestDepth(Vector3 world) {
             float depth = 0f;
             foreach (Vector4 load in loads) {
-                float dx = world.x - load.x;
-                float dz = world.z - load.y;
-                depth += load.w * Mathf.Exp(-(dx * dx + dz * dz) / (load.z * load.z));
+                // 물건 범위보다 LoadPad만큼 넓게 가득 누른다. 쿠션 격자 한 칸(약 7cm)보다 넓어야 가장자리에서 겉면이 비스듬히 올라와 천을 뚫지 않는다.
+                float dx = Mathf.Max(0f, Mathf.Abs(world.x - load.x) - load.z - LoadPad);
+                float dz = Mathf.Max(0f, Mathf.Abs(world.z - load.y) - load.w - LoadPad);
+                float falloff = Mathf.Exp(-(dx * dx + dz * dz) / (LoadFalloff * LoadFalloff));
+                depth = Mathf.Max(depth, falloff);
             }
 
-            return Mathf.Min(depth, maxDepth * 0.8f);
+            return depth;
         }
 
-        private void CollectLoads() {
+        // 놓인 물건마다 (중심 x, 중심 z, 반폭 x, 반폭 z). 보이는 범위(렌더러)를 쓴다: 펼쳐진 천은 충돌 상자보다 훨씬 넓다.
+        private bool CollectLoads() {
+            previousLoads.Clear();
+            previousLoads.AddRange(loads);
             loads.Clear();
             foreach (Rigidbody body in resting) {
+                Renderer view = body.GetComponent<Renderer>();
                 Collider collider = body.GetComponent<Collider>();
-                Bounds b = collider != null ? collider.bounds : new Bounds(body.position, Vector3.one * 0.2f);
-                float radius = Mathf.Max(b.extents.x, b.extents.z) + 0.04f;
-                float depth = Mathf.Min(body.mass * restDepthPerKg, maxDepth * 0.7f);
-                loads.Add(new Vector4(b.center.x, b.center.z, radius, depth));
+                Bounds b = view != null ? view.bounds : collider != null ? collider.bounds : new Bounds(body.position, Vector3.one * 0.2f);
+                loads.Add(new Vector4(b.center.x, b.center.z, b.extents.x, b.extents.z));
             }
+
+            // 물건이 놓인 뒤에도 천이 퍼지거나 물건이 밀리면 누름을 따라 갱신한다.
+            if (previousLoads.Count != loads.Count) {
+                return true;
+            }
+
+            for (int i = 0; i < loads.Count; i++) {
+                if ((loads[i] - previousLoads[i]).sqrMagnitude > 0.003f * 0.003f) {
+                    return true;
+                }
+            }
+
+            return false;
         }
+
 
         private void Kick(Vector3 point, float speed) {
             float r2 = impactRadius * impactRadius;
@@ -300,6 +331,7 @@ namespace MissedCall.Feature.Room {
                 surfaces.Add(s);
             }
 
+            MeasureLoadDepth();
             MarkCovered();
             foreach (Surface s in surfaces) {
                 PressPockets(s);
@@ -336,6 +368,16 @@ namespace MissedCall.Feature.Room {
             }
         }
 
+        // 메시마다 윗면이 충돌체 윗면보다 얼마나 높은지 재서, 놓인 물건 아래에서 그만큼 + LoadMargin 눌리게 한다.
+        // 같은 깊이로 누르면 매트리스보다 1.2cm 높은 이불이 눌린 뒤에도 충돌체 위에 남아 천 바닥을 뚫었다 (11/13).
+        private void MeasureLoadDepth() {
+            float colliderTop = box.bounds.max.y;
+            foreach (Surface s in surfaces) {
+                float lift = s.Filter.GetComponent<Renderer>().bounds.max.y - colliderTop;
+                s.LoadDepth = lift > 0.001f ? lift + LoadMargin : maxDepth * 0.5f;
+            }
+        }
+
         private static float DentScaleAt(Surface s, int i) => s.Covered != null && s.Covered[i] ? CoveredDentScale : 1f;
 
         // 숨는 자리는 처음부터 오목하게 눌러 둔다. 겉면이 충돌체보다 높아서(방 빌더의 SoftSink) 그대로 두면
@@ -362,7 +404,7 @@ namespace MissedCall.Feature.Room {
                 }
 
                 float extra = s.Covered != null && s.Covered[i] ? CoveredPocketExtra : 0f;
-                float press = (pocketDepth + extra) * (1f - Mathf.SmoothStep(0f, 1f,
+                float press = (s.LoadDepth + extra) * (1f - Mathf.SmoothStep(0f, 1f,
                     Mathf.InverseLerp(PocketInner, PocketOuter, Mathf.Sqrt(nearest))));
                 s.Base[i].y -= press * s.Weight[i] * toLocal;
                 s.Current[i] = s.Base[i];

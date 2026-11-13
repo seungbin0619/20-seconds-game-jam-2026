@@ -65,6 +65,10 @@ namespace MissedCall.Core {
         public int clothIterations = 12;
         [Tooltip("천이 떨어진 뒤 아직 움직여도 이 시간(초)이 지나면 그 모양으로 굳힌다")]
         public float clothSettleTime = 2.5f;
+        [Tooltip("만지지 않은 천(갠 셔츠, 담요)이 이 속도(m/s)보다 빠르게 움직이면 펼쳐서 천 시뮬레이션을 시작한다")]
+        public float clothKnockSpeed = 1.2f;
+        [Tooltip("봉에 널린 수건이 날아온 물건에 이 상대 속도(m/s)보다 세게 맞으면 떨어진다")]
+        public float towelUnhangSpeed = 1.5f;
         [Tooltip("쿠션을 잡았을 때 휘는 정도")]
         [Range(0f, 1f)] public float cushionHoldBend = 0.3f;
         [Tooltip("던져서 날아가는 동안 휘는 정도 (잡았을 때 값에 곱한다)")]

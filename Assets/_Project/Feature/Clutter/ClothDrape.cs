@@ -28,6 +28,8 @@ namespace MissedCall.Feature.Clutter {
         private const float BarRadius = 0.055f;
 
         public const int N = 12;
+        // SurfaceAt에서 아래 천의 점을 찾는 반경(m). 천 격자 한 칸(약 5~9cm)보다 조금 크게.
+        public const float SampleRadius = 0.07f;
         private const int R = (N - 1) * 2 + 1;
         private const float FixedStep = 1f / 60f;
         private const int MaxSteps = 3;
@@ -57,6 +59,14 @@ namespace MissedCall.Feature.Clutter {
         private readonly bool[] pinned = new bool[N * N];
         private readonly bool[] edge = new bool[N * N];
         private readonly int[] edgePins = new int[N * 2];
+        // 미리 흘러내리기(DrapeInPlace)용
+        private readonly float[] below = new float[N * N];
+        private readonly float[] reach = new float[N * N];
+        private readonly int[] source = new int[N * N];
+        private readonly Vector3[] shaped = new Vector3[N * N];
+        // 흘러내린 모양의 수평 범위 (SurfaceAt에서 빨리 거르기용)
+        private Vector3 shapeMin;
+        private Vector3 shapeMax;
 
         // 그리기용 보간 격자
         private static readonly int[,] SampleIndex = BuildSampleIndex(out SampleWeight);
@@ -349,6 +359,178 @@ namespace MissedCall.Feature.Clutter {
 
             Write(item);
             Freeze(item);
+        }
+
+        /// <summary>
+        /// 판 시작 때 놓인 천을 아래 모양에 맞춰 미리 흘러내린 모양으로 만들어 굳힌다 (시뮬레이션 없이 레이만 쓴다).
+        /// 천의 점마다 아래로 레이를 쏘아 바로 밑의 높이를 재고, 받쳐 주는 곳은 그 위에 얹고, 받침이 없는 곳은 받침에서
+        /// 떨어진 거리만큼 아래로 늘어뜨리며 그만큼 받침 쪽으로 당긴다 (길이를 대강 지킨다). 다시 잡으면 이 모양에서 이어 간다.
+        /// 천마다 레이 N x N개라, 판마다 천이 수십 개여도 판 시작 시간이 크게 늘지 않는다.
+        /// </summary>
+        public void DrapeInPlace(Transform item, Vector3 size, float sheetThickness, Collider self,
+            System.Func<Vector3, float> clothBelow = null) {
+            if (collisionMask == 0) {
+                collisionMask = Physics.DefaultRaycastLayers & ~LayerMask.GetMask("Player");
+            }
+
+            Begin(item, size, sheetThickness);
+            float lift = thickness * 0.5f + 0.003f;
+            float step = size.x / (N - 1f);
+            float stepZ = size.z / (N - 1f);
+            float diagonal = Mathf.Sqrt(step * step + stepZ * stepZ);
+            bool anySupport = false;
+            for (int k = 0; k < position.Length; k++) {
+                Vector3 p = position[k];
+                below[k] = p.y - 3f;
+                int count = Physics.RaycastNonAlloc(p + Vector3.up * 0.3f, Vector3.down, Hits, 3.3f, collisionMask,
+                    QueryTriggerInteraction.Ignore);
+                float best = float.MaxValue;
+                for (int h = 0; h < count; h++) {
+                    if (Hits[h].collider == self || Hits[h].distance >= best) {
+                        continue;
+                    }
+
+                    best = Hits[h].distance;
+                    below[k] = Hits[h].point.y;
+                }
+
+                // 먼저 흘러내린 천(아래 천)이 있으면 그 위에 얹는다. 천 겉모습에는 충돌체가 없어 레이가 보지 못한다.
+                if (clothBelow != null) {
+                    below[k] = Mathf.Max(below[k], clothBelow(p));
+                }
+
+                // 판 높이보다 조금만 아래에 무언가 있으면 받쳐 주는 점이다.
+                bool supported = below[k] >= p.y - (thickness + 0.025f);
+                reach[k] = supported ? 0f : float.MaxValue;
+                source[k] = k;
+                anySupport |= supported;
+            }
+
+            if (!anySupport) {
+                // 받침이 없으면(가는 모서리에 걸침) 가운데가 받쳐 준다고 본다.
+                foreach (int p in pins) {
+                    reach[p] = 0f;
+                }
+            }
+
+            // 받침까지의 거리 (격자 위 최단 거리). 가장 가까운 받침 점도 기억한다.
+            for (int pass = 0; pass < N * 2; pass++) {
+                bool changed = false;
+                for (int j = 0; j < N; j++) {
+                    for (int i = 0; i < N; i++) {
+                        int k = Index(i, j);
+                        for (int dj = -1; dj <= 1; dj++) {
+                            for (int di = -1; di <= 1; di++) {
+                                int ni = i + di;
+                                int nj = j + dj;
+                                if ((di == 0 && dj == 0) || ni < 0 || nj < 0 || ni >= N || nj >= N) {
+                                    continue;
+                                }
+
+                                int n = Index(ni, nj);
+                                float d = reach[n] + (di != 0 && dj != 0 ? diagonal : di != 0 ? step : stepZ);
+                                if (d < reach[k]) {
+                                    reach[k] = d;
+                                    source[k] = source[n];
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!changed) {
+                    break;
+                }
+            }
+
+            for (int k = 0; k < position.Length; k++) {
+                Vector3 p = position[k];
+                float floor = below[k] + lift;
+                if (reach[k] <= 0f) {
+                    // 받침 위에 얹는다 (울퉁불퉁한 더미를 따라간다).
+                    p.y = Mathf.Max(floor, Mathf.Min(p.y, floor + 0.02f));
+                } else {
+                    // 받침에서 멀수록 아래로 늘어지고, 내려간 만큼 받침 쪽으로 당겨진다.
+                    float drop = Mathf.Min(reach[k] * 0.9f, Mathf.Max(0f, p.y - floor));
+                    Vector3 anchor = position[source[k]];
+                    var horizontal = new Vector3(p.x - anchor.x, 0f, p.z - anchor.z);
+                    float keep = Mathf.Sqrt(Mathf.Max(0f, reach[k] * reach[k] - drop * drop)) / reach[k];
+                    p = new Vector3(anchor.x + horizontal.x * keep, p.y - drop, anchor.z + horizontal.z * keep);
+                    // 당겨진 자리 아래에 다른 받침이 있으면 그 위에 멈춘다. 아래 천과 폰 자리는 당겨진 위치에서 다시 잰다
+                    // (당기기 전 위치로 재면 당겨져 들어간 폰 자리를 몰라 폰이 천을 뚫었다, 시드 76).
+                    p.y = Mathf.Max(p.y, floor);
+                    if (clothBelow != null) {
+                        p.y = Mathf.Max(p.y, clothBelow(p) + lift);
+                    }
+                }
+
+                shaped[k] = p;
+            }
+
+            // 한 번 부드럽게 다듬는다 (받침 경계의 계단을 없앤다).
+            for (int j = 0; j < N; j++) {
+                for (int i = 0; i < N; i++) {
+                    int k = Index(i, j);
+                    Vector3 sum = Vector3.zero;
+                    int count = 0;
+                    for (int dj = -1; dj <= 1; dj++) {
+                        for (int di = -1; di <= 1; di++) {
+                            int ni = i + di;
+                            int nj = j + dj;
+                            if (ni < 0 || nj < 0 || ni >= N || nj >= N) {
+                                continue;
+                            }
+
+                            sum += shaped[Index(ni, nj)];
+                            count++;
+                        }
+                    }
+
+                    Vector3 smoothed = Vector3.Lerp(shaped[k], sum / count, 0.5f);
+                    float minY = below[k] + lift;
+                    if (clothBelow != null) {
+                        minY = Mathf.Max(minY, clothBelow(smoothed) + lift);
+                    }
+
+                    position[k] = new Vector3(smoothed.x, Mathf.Max(smoothed.y, minY), smoothed.z);
+                    previous[k] = position[k];
+                }
+            }
+
+            shapeMin = position[0];
+            shapeMax = position[0];
+            foreach (Vector3 p in position) {
+                shapeMin = Vector3.Min(shapeMin, p);
+                shapeMax = Vector3.Max(shapeMax, p);
+            }
+
+            Write(item);
+            Freeze(item);
+        }
+
+        /// <summary>
+        /// 이 천의 윗면 높이 (world 점 바로 아래, 반경 radius 안의 점 중 가장 높은 것). 그 점보다 아래에 있는 천만 본다.
+        /// 위에 놓인 천을 흘러내릴 때 이 천을 받침으로 쓰기 위한 것이다. 없으면 float.MinValue.
+        /// </summary>
+        public float SurfaceAt(Vector3 world, float radius) {
+            if (!HasShape || world.x < shapeMin.x - radius || world.x > shapeMax.x + radius
+                || world.z < shapeMin.z - radius || world.z > shapeMax.z + radius) {
+                return float.MinValue;
+            }
+
+            float r2 = radius * radius;
+            float top = float.MinValue;
+            for (int k = 0; k < position.Length; k++) {
+                Vector3 p = position[k];
+                float dx = p.x - world.x;
+                float dz = p.z - world.z;
+                if (dx * dx + dz * dz <= r2 && p.y < world.y + 0.02f) {
+                    top = Mathf.Max(top, p.y + thickness * 0.5f);
+                }
+            }
+
+            return top;
         }
 
         private void SolveDistances(bool[] fixedSet) {

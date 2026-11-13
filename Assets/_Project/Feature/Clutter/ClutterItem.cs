@@ -54,6 +54,7 @@ namespace MissedCall.Feature.Clutter {
         /// <summary>옷걸이 봉에 걸려 있는지. 잡으면 false가 된다.</summary>
         public bool Hanging { get; private set; }
 
+
         // 펼친 천 두께: 갠 겹 하나 정도
         private float ClothThickness => Mathf.Clamp(Size.y * 0.4f, 0.018f, 0.03f);
         public Vector3 Center => body.worldCenterOfMass;
@@ -210,13 +211,40 @@ namespace MissedCall.Feature.Clutter {
             meshFilter.sharedMesh = drape.Mesh;
         }
 
+        /// <summary>
+        /// 판 준비 끝에 부른다. 천(셔츠, 담요)이면 갠 모양 대신, 놓인 자리 아래 모양을 따라 미리 흘러내린 천으로 바꿔 둔다.
+        /// 더미 위에서는 아래 물건을 덮고 가장자리가 흘러내린다. 잡거나 맞으면 이 모양에서 시뮬레이션을 이어 간다.
+        /// </summary>
+        /// clothBelow는 먼저 흘러내린 천들의 윗면 높이 (위아래로 겹친 천이 같은 자리에 겹치지 않게 아래 천 위에 얹는다).
+        public void DrapeInPlace(System.Func<Vector3, float> clothBelow) {
+            if (!IsCloth) {
+                return;
+            }
+
+            drape ??= new ClothDrape();
+            drape.DrapeInPlace(transform, Size, ClothThickness, box, clothBelow);
+            meshFilter.sharedMesh = drape.Mesh;
+        }
+
+        /// <summary>흘러내린 천이면 그 윗면 높이 (world 점 아래). 아니면 float.MinValue.</summary>
+        public float ClothSurfaceAt(Vector3 world) =>
+            drape != null && drape.HasShape ? drape.SurfaceAt(world, ClothDrape.SampleRadius) : float.MinValue;
+
+        /// <summary>판 시작 때 흘러내리게 할 천인지 (셔츠, 담요. 쿠션과 널린 수건은 아니다).</summary>
+        public bool IsCloth => soft && Item != ItemKind.Cushion && !Hanging;
+
+        // 봉에서 빼낸다. 충돌체를 원래 상자로 되돌리고 물리를 켠다. 천은 걸린 모양에서 이어 간다.
+        private void Unhang() {
+            Hanging = false;
+            box.center = Vector3.zero;
+            box.size = Size;
+            body.isKinematic = false;
+            body.WakeUp();
+        }
+
         public void BeginHold() {
             if (Hanging) {
-                // 봉에서 빼낸다. 충돌체를 원래 상자로 되돌리고 물리를 켠다. 천은 걸린 모양에서 이어 간다.
-                Hanging = false;
-                box.center = Vector3.zero;
-                box.size = Size;
-                body.isKinematic = false;
+                Unhang();
             }
 
             Held = true;
@@ -272,6 +300,12 @@ namespace MissedCall.Feature.Clutter {
         private void UpdateCloth() {
             // 던진 뒤 처음 무언가에 닿을 때까지만 '날아가는 중'이다. 그 뒤에 물건이 튀거나 미끄러져도 다시 붙이지 않는다
             // (붙이면 천 가운데가 물건 중심으로 홱 끌려가 발작하듯 보였다).
+            // 만지지 않은 천도 빠르게 움직이면(더미가 무너지거나 다른 물건에 맞으면) 펼쳐서 시뮬레이션한다.
+            if (!Held && !Hanging && !airborne && (drape == null || !drape.Active)
+                && body.linearVelocity.sqrMagnitude > tuning.clothKnockSpeed * tuning.clothKnockSpeed) {
+                airborne = true;
+            }
+
             bool moving = Held || airborne;
             if (!moving && (drape == null || !drape.Active)) {
                 // 안 건드렸으면 갠 모양, 굳힌 뒤면 그 모양 그대로 (메시가 물건 로컬이라 물건을 따라다닌다).
@@ -303,6 +337,11 @@ namespace MissedCall.Feature.Clutter {
 
         private void OnCollisionEnter(Collision collision) {
             airborne = false;
+            // 널린 수건은 날아온 물건에 세게 맞으면 봉에서 떨어진다.
+            if (Hanging && collision.rigidbody != null && collision.relativeVelocity.sqrMagnitude > tuning.towelUnhangSpeed * tuning.towelUnhangSpeed) {
+                Unhang();
+                drape?.Resume(transform);
+            }
         }
 
         // 무언가에 닿은 채로 놓았으면 Enter가 오지 않으므로 Stay에서도 끝낸다.
