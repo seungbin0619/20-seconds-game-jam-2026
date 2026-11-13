@@ -26,6 +26,10 @@ namespace MissedCall.Feature.Phone {
         [SerializeField] private Color idleColor = new(0.08f, 0.1f, 0.12f);
         [Tooltip("받지 못했을 때만 켜는 빨간 빛. 더미에 덮인 폰도 틈으로 화면 빛이 보이게 한다. 없어도 된다")]
         [SerializeField] private Light missedGlow;
+        [Tooltip("받지 못했을 때만 켜는 형상. 벽과 물건 위에 단색으로 그린다 (PhoneXRay 셰이더)")]
+        [SerializeField] private Renderer[] xray = new Renderer[0];
+        [Tooltip("형상의 부모. 원점이 폰 중심이다. 받지 못했을 때 플레이어 쪽으로 세우고 키운다")]
+        [SerializeField] private Transform xrayRoot;
         [Tooltip("덮임을 세고 진동으로 튀게 할 물건 레이어")]
         [SerializeField] private LayerMask clutterMask;
 
@@ -53,7 +57,14 @@ namespace MissedCall.Feature.Phone {
         public int LastJiggled { get; private set; }
 
         private void Awake() {
-            renderers = GetComponentsInChildren<Renderer>(true);
+            // 형상(xray)은 숨기기·보이기와 따로 켜고 끈다.
+            var list = new System.Collections.Generic.List<Renderer>(GetComponentsInChildren<Renderer>(true));
+            foreach (Renderer r in xray) {
+                list.Remove(r);
+                r.enabled = false;
+            }
+
+            renderers = list.ToArray();
             block = new MaterialPropertyBlock();
         }
 
@@ -99,8 +110,17 @@ namespace MissedCall.Feature.Phone {
             RoundState state = context.State;
             // 받기 화면에서만 숨긴다. 결과 화면에서는 폰이 다시 보인다.
             SetVisible(state != RoundState.Answer);
+            bool missed = state == RoundState.Missed;
             if (missedGlow != null) {
-                missedGlow.enabled = state == RoundState.Missed;
+                missedGlow.enabled = missed;
+            }
+
+            foreach (Renderer r in xray) {
+                r.enabled = missed;
+            }
+
+            if (missed) {
+                FaceXRayToPlayer();
             }
 
             if (!GameFlow.IsRunning(state)) {
@@ -197,6 +217,30 @@ namespace MissedCall.Feature.Phone {
             }
 
             LastJiggled = jiggled;
+        }
+
+        // 폰은 바닥에 눕혀 있어서 눈높이에서 보면 얇은 선으로만 보인다.
+        // 형상은 화면이 플레이어를 향하게 세우고(긴 변이 위아래) 키워서 멀리서도 폰 모양으로 읽히게 한다.
+        private void FaceXRayToPlayer() {
+            if (xrayRoot == null) {
+                return;
+            }
+
+            Vector3 center = Center;
+            Vector3 toPlayer = context.PlayerPosition - center;
+            if (toPlayer.sqrMagnitude < 0.0001f) {
+                return;
+            }
+
+            toPlayer.Normalize();
+            Vector3 up = Vector3.ProjectOnPlane(Vector3.up, toPlayer);
+            if (up.sqrMagnitude < 0.0001f) {
+                up = Vector3.ProjectOnPlane(Vector3.forward, toPlayer);
+            }
+
+            // 폰 로컬 축: y = 화면 법선, z = 긴 변.
+            xrayRoot.SetPositionAndRotation(center, Quaternion.LookRotation(up.normalized, toPlayer));
+            xrayRoot.localScale = Vector3.one * tuning.missedXRayScale;
         }
 
         private void SetVisible(bool value) {
