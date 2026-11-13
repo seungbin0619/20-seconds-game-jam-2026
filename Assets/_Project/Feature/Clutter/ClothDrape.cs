@@ -4,16 +4,29 @@ using UnityEngine;
 namespace MissedCall.Feature.Clutter {
     /// <summary>
     /// 잡거나 던진 천(셔츠, 담요)의 겉모습을 위한 작은 천 시뮬레이션. 점 N x N 격자를 Verlet 적분하고,
-    /// 이웃 점 사이 거리(가로세로, 대각선, 한 칸 건너)를 지켜 천처럼 늘어지고 주름지게 한다.
-    /// - 잡혔거나 날아가는 동안은 가운데 2 x 2 점을 물건 중심에 붙인다. 물건이 움직이면 뒤로 끌린다.
-    /// - 점마다 가구, 바닥, 다른 물건과 부딪혀 그 위에 걸치거나 늘어진다 (자기 충돌체는 무시).
+    /// 이웃 점 사이 거리(가로세로, 대각선, 한 칸과 두 칸 건너)를 지켜 천처럼 늘어지게 한다.
+    /// - 고정(Hard): 잡혔거나 던져서 날아가는 동안 가운데 2 x 2 점을 물건 중심에 붙인다.
+    /// - 약한 고정(Soft): 떨어진 뒤에는 가운데를 물건 쪽으로 약하게만 당겨, 천이 충돌체(조준 판정) 근처에 머물게 한다.
+    /// - 감쇠는 물건 속도 기준이라 천이 손을 따라 함께 움직이고 흔들림만 조금 남는다.
+    /// - 점마다 가구, 바닥, 다른 물건과 부딪혀 그 위에 걸치거나 늘어진다 (자기 충돌체 무시).
     /// - 가라앉으면 모양을 물건 기준으로 굳혀(Freeze) 물건을 따라다니게 하고, 다시 움직이면 그 모양에서 이어 간다.
+    /// 그릴 때는 격자를 곡선 보간(Catmull-Rom)으로 R x R로 늘리고 법선을 직접 계산해, 많이 꺾여도 삼각형이 드러나지 않게 한다.
     /// 충돌체는 따로 있고(상자), 이 시뮬레이션은 겉모습만 바꾼다. 물건마다 하나를 만들어 재사용한다.
     /// </summary>
     public sealed class ClothDrape {
+        public enum Pin {
+            Hard,
+            Soft,
+        }
+
         public const int N = 12;
+        private const int R = (N - 1) * 2 + 1;
         private const float FixedStep = 1f / 60f;
         private const int MaxSteps = 3;
+        // 한 스텝에 움직일 수 있는 최대 거리(m). 충돌과 제약이 부딪혀 튀는 것을 막는다.
+        private const float MaxStepMove = 0.08f;
+        // 약한 고정: 반복마다 가운데 점을 제자리 쪽으로 당기는 비율
+        private const float SoftPull = 0.08f;
         // 한 스텝에 이만큼(m) 안 움직이는 상태가 SettleSteps 동안 이어지면 가라앉은 것으로 본다.
         private const float SettleMove = 0.0006f;
         private const int SettleSteps = 20;
@@ -26,13 +39,21 @@ namespace MissedCall.Feature.Clutter {
         private readonly Vector3[] start = new Vector3[N * N];
         private readonly Vector3[] restLocal = new Vector3[N * N];
         private readonly Vector3[] frozenLocal = new Vector3[N * N];
-        private readonly Vector3[] normals = new Vector3[N * N];
         private readonly int[] constraintA;
         private readonly int[] constraintB;
         private readonly float[] restLength;
         private readonly int[] pins = { Index(N / 2 - 1, N / 2 - 1), Index(N / 2, N / 2 - 1), Index(N / 2 - 1, N / 2), Index(N / 2, N / 2) };
         private readonly bool[] pinned = new bool[N * N];
-        private readonly Vector3[] vertices = new Vector3[N * N * 2];
+
+        // 그리기용 보간 격자
+        private static readonly int[,] SampleIndex = BuildSampleIndex(out SampleWeight);
+        private static readonly float[,] SampleWeight;
+        private readonly Vector3[] rows = new Vector3[N * R];
+        private readonly Vector3[] smooth = new Vector3[R * R];
+        private readonly Vector3[] smoothNormal = new Vector3[R * R];
+        private readonly Vector3[] vertices = new Vector3[R * R * 2];
+        private readonly Vector3[] meshNormals = new Vector3[R * R * 2];
+
         private float accumulator;
         private float thickness = 0.02f;
         private int stillSteps;
@@ -53,7 +74,7 @@ namespace MissedCall.Feature.Clutter {
                 pinned[p] = true;
             }
 
-            // 가로세로(구조), 대각선(전단), 한 칸 건너(굽힘) 제약
+            // 가로세로(구조), 대각선(전단), 한 칸 건너(굽힘) 제약. 두 칸 건너까지 넣으면 너무 빳빳해서 늘어지지 않았다.
             var a = new List<int>();
             var b = new List<int>();
             void Link(int i0, int j0, int i1, int j1) {
@@ -81,39 +102,68 @@ namespace MissedCall.Feature.Clutter {
             Mesh = new Mesh { name = "ClothDrape" };
             Mesh.MarkDynamic();
             Mesh.vertices = vertices;
+            Mesh.normals = meshNormals;
             Mesh.triangles = BuildTriangles();
         }
 
-        // 앞면(위), 뒷면(아래), 그리고 둘을 잇는 테두리 띠. 띠는 앞뒤 정점을 같이 써서 가장자리가 둥글게 음영진다.
+        private static int Index(int i, int j) => j * N + i;
+
+        private static int RenderIndex(int i, int j) => j * R + i;
+
+        // 그리기 격자의 각 칸(0..R-1)이 시뮬레이션 격자에서 쓰는 4점과 Catmull-Rom 가중치
+        private static int[,] BuildSampleIndex(out float[,] weights) {
+            var index = new int[R, 4];
+            weights = new float[R, 4];
+            for (int r = 0; r < R; r++) {
+                float x = r * (N - 1f) / (R - 1f);
+                int i1 = Mathf.Min(Mathf.FloorToInt(x), N - 2);
+                float t = x - i1;
+                float t2 = t * t;
+                float t3 = t2 * t;
+                float[] w = {
+                    -0.5f * t3 + t2 - 0.5f * t,
+                    1.5f * t3 - 2.5f * t2 + 1f,
+                    -1.5f * t3 + 2f * t2 + 0.5f * t,
+                    0.5f * t3 - 0.5f * t2,
+                };
+                for (int k = 0; k < 4; k++) {
+                    index[r, k] = Mathf.Clamp(i1 - 1 + k, 0, N - 1);
+                    weights[r, k] = w[k];
+                }
+            }
+
+            return index;
+        }
+
+        // 앞면(위), 뒷면(아래), 그리고 둘을 잇는 테두리 띠
         private static int[] BuildTriangles() {
             var triangles = new List<int>();
-            int back = N * N;
-            for (int j = 0; j < N - 1; j++) {
-                for (int i = 0; i < N - 1; i++) {
-                    int k = Index(i, j);
-                    triangles.AddRange(new[] { k, k + N, k + 1, k + 1, k + N, k + N + 1 });
-                    triangles.AddRange(new[] { back + k, back + k + 1, back + k + N, back + k + 1, back + k + N + 1, back + k + N });
+            int back = R * R;
+            for (int j = 0; j < R - 1; j++) {
+                for (int i = 0; i < R - 1; i++) {
+                    int k = RenderIndex(i, j);
+                    triangles.AddRange(new[] { k, k + R, k + 1, k + 1, k + R, k + R + 1 });
+                    triangles.AddRange(new[] { back + k, back + k + 1, back + k + R, back + k + 1, back + k + R + 1, back + k + R });
                 }
             }
 
             var ring = new List<int>();
-            for (int i = 0; i < N - 1; i++) {
-                ring.Add(Index(i, 0));
+            for (int i = 0; i < R - 1; i++) {
+                ring.Add(RenderIndex(i, 0));
             }
 
-            for (int j = 0; j < N - 1; j++) {
-                ring.Add(Index(N - 1, j));
+            for (int j = 0; j < R - 1; j++) {
+                ring.Add(RenderIndex(R - 1, j));
             }
 
-            for (int i = N - 1; i > 0; i--) {
-                ring.Add(Index(i, N - 1));
+            for (int i = R - 1; i > 0; i--) {
+                ring.Add(RenderIndex(i, R - 1));
             }
 
-            for (int j = N - 1; j > 0; j--) {
-                ring.Add(Index(0, j));
+            for (int j = R - 1; j > 0; j--) {
+                ring.Add(RenderIndex(0, j));
             }
 
-            // 고리는 위에서 볼 때 반시계(+x 다음 +z)로 돈다. 바깥을 보게 감는다.
             for (int r = 0; r < ring.Count; r++) {
                 int a = ring[r];
                 int b = ring[(r + 1) % ring.Count];
@@ -122,8 +172,6 @@ namespace MissedCall.Feature.Clutter {
 
             return triangles.ToArray();
         }
-
-        private static int Index(int i, int j) => j * N + i;
 
         /// <summary>물건의 현재 자세로 펼친 천 한 장을 놓고 시작한다. size는 물건 상자 크기(가로, 세로 = x, z).</summary>
         public void Begin(Transform item, Vector3 size, float sheetThickness) {
@@ -147,7 +195,7 @@ namespace MissedCall.Feature.Clutter {
             StartRunning();
         }
 
-        /// <summary>굳혀 둔 모양에서 다시 시뮬레이션을 이어 간다 (다시 집거나 밀렸을 때).</summary>
+        /// <summary>굳혀 둔 모양에서 다시 시뮬레이션을 이어 간다 (다시 집었을 때).</summary>
         public void Resume(Transform item) {
             for (int k = 0; k < position.Length; k++) {
                 position[k] = item.TransformPoint(frozenLocal[k]);
@@ -179,33 +227,40 @@ namespace MissedCall.Feature.Clutter {
             HasShape = false;
         }
 
-        /// <summary>시뮬레이션을 진행한다. pin이면 가운데를 물건 중심(자세 포함)에 붙인다. self 충돌체는 무시한다.</summary>
-        public void Simulate(float dt, Transform item, bool pin, float damping, int iterations, Collider self) {
+        /// <summary>
+        /// 시뮬레이션을 진행한다. itemVelocity는 물건 속도로, 감쇠의 기준이 된다 (천이 물건과 함께 움직인다).
+        /// hitDynamic이 false면 움직이는 물체(다른 물건)와는 부딪히지 않는다. 들고 있을 때 더미를 헤집으며 떨리지 않게 한다.
+        /// </summary>
+        public void Simulate(float dt, Transform item, Pin pin, Vector3 itemVelocity, float damping, int iterations,
+            Collider self, bool hitDynamic) {
             if (collisionMask == 0) {
                 collisionMask = Physics.DefaultRaycastLayers & ~LayerMask.GetMask("Player");
             }
 
             accumulator = Mathf.Min(accumulator + dt, FixedStep * MaxSteps);
             Vector3 gravity = Physics.gravity * (FixedStep * FixedStep);
+            Vector3 carried = itemVelocity * FixedStep;
+            bool hard = pin == Pin.Hard;
             while (accumulator >= FixedStep) {
                 accumulator -= FixedStep;
                 for (int k = 0; k < position.Length; k++) {
                     Vector3 current = position[k];
                     start[k] = current;
-                    position[k] += (current - previous[k]) * damping + gravity;
+                    // 물건과 같이 움직이는 몫은 그대로 두고, 그 위에 얹힌 흔들림만 감쇠한다.
+                    Vector3 velocity = carried + (current - previous[k] - carried) * damping + gravity;
+                    position[k] += Vector3.ClampMagnitude(velocity, MaxStepMove);
                     previous[k] = current;
                 }
 
                 for (int iteration = 0; iteration < iterations; iteration++) {
-                    SolveDistances(pin);
-                    if (pin) {
-                        foreach (int p in pins) {
-                            position[p] = item.TransformPoint(restLocal[p]);
-                        }
+                    SolveDistances(hard);
+                    foreach (int p in pins) {
+                        Vector3 target = item.TransformPoint(restLocal[p]);
+                        position[p] = hard ? target : Vector3.Lerp(position[p], target, SoftPull);
                     }
                 }
 
-                Collide(self);
+                Collide(self, hitDynamic);
 
                 float maxMove = 0f;
                 for (int k = 0; k < position.Length; k++) {
@@ -216,7 +271,7 @@ namespace MissedCall.Feature.Clutter {
             }
         }
 
-        private void SolveDistances(bool pin) {
+        private void SolveDistances(bool hard) {
             for (int c = 0; c < constraintA.Length; c++) {
                 int a = constraintA[c];
                 int b = constraintB[c];
@@ -227,8 +282,8 @@ namespace MissedCall.Feature.Clutter {
                 }
 
                 Vector3 fix = delta * (0.5f * (length - restLength[c]) / length);
-                bool fixedA = pin && pinned[a];
-                bool fixedB = pin && pinned[b];
+                bool fixedA = hard && pinned[a];
+                bool fixedB = hard && pinned[b];
                 if (fixedA && fixedB) {
                     continue;
                 }
@@ -244,28 +299,38 @@ namespace MissedCall.Feature.Clutter {
             }
         }
 
-        // 점마다 이번 스텝에 지나간 길을 쏘아, 부딪히면 그 면 위(두께 절반만큼 띄워)에 멈춘다. 닿은 점은 미끄러지지 않게 한다.
-        private void Collide(Collider self) {
+        // 점마다 이번 스텝에 지나간 길을 쏘아, 면 쪽으로 들어가는 중이면 그 면 위(두께 절반만큼 띄워)에 멈춘다.
+        // 닿은 점은 미끄러지지 않게 한다.
+        private void Collide(Collider self, bool hitDynamic) {
             float lift = thickness * 0.5f + 0.003f;
             for (int k = 0; k < position.Length; k++) {
                 Vector3 from = start[k];
                 Vector3 move = position[k] - from;
-                float distance = move.magnitude + lift;
-                if (distance < 1e-5f) {
+                float length = move.magnitude;
+                if (length < 1e-6f) {
                     continue;
                 }
 
-                Vector3 direction = move.sqrMagnitude > 1e-10f ? move.normalized : Vector3.down;
-                int count = Physics.RaycastNonAlloc(from, direction, Hits, distance, collisionMask, QueryTriggerInteraction.Ignore);
+                Vector3 direction = move / length;
+                int count = Physics.RaycastNonAlloc(from, direction, Hits, length + lift, collisionMask, QueryTriggerInteraction.Ignore);
                 float nearest = float.MaxValue;
                 RaycastHit best = default;
                 for (int h = 0; h < count; h++) {
-                    if (Hits[h].collider == self || Hits[h].distance >= nearest) {
+                    RaycastHit hit = Hits[h];
+                    if (hit.collider == self || hit.distance >= nearest || hit.distance <= 0f) {
                         continue;
                     }
 
-                    nearest = Hits[h].distance;
-                    best = Hits[h];
+                    if (!hitDynamic && hit.rigidbody != null) {
+                        continue;
+                    }
+
+                    if (Vector3.Dot(direction, hit.normal) >= 0f) {
+                        continue;
+                    }
+
+                    nearest = hit.distance;
+                    best = hit;
                 }
 
                 if (nearest == float.MaxValue) {
@@ -273,31 +338,57 @@ namespace MissedCall.Feature.Clutter {
                 }
 
                 position[k] = best.point + best.normal * lift;
-                // 마찰: 닿은 점은 거의 멈춘다.
                 previous[k] = Vector3.Lerp(previous[k], position[k], 0.85f);
             }
         }
 
-        /// <summary>시뮬레이션 결과를 물건 로컬 메시로 옮긴다. 앞뒤 두 장을 법선 방향으로 벌려 두께를 준다.</summary>
+        /// <summary>시뮬레이션 결과를 부드럽게 늘린 격자로 옮겨 물건 로컬 메시를 만든다. 앞뒤 두 장을 법선 방향으로 벌려 두께를 준다.</summary>
         public void Write(Transform item) {
+            // 가로 먼저 보간 (N줄 x R칸), 이어서 세로 보간 (R줄 x R칸)
             for (int j = 0; j < N; j++) {
-                for (int i = 0; i < N; i++) {
-                    int k = Index(i, j);
-                    Vector3 du = position[Index(Mathf.Min(i + 1, N - 1), j)] - position[Index(Mathf.Max(i - 1, 0), j)];
-                    Vector3 dv = position[Index(i, Mathf.Min(j + 1, N - 1))] - position[Index(i, Mathf.Max(j - 1, 0))];
-                    Vector3 n = Vector3.Cross(dv, du);
-                    normals[k] = n.sqrMagnitude > 1e-10f ? n.normalized : Vector3.up;
+                for (int r = 0; r < R; r++) {
+                    Vector3 sum = Vector3.zero;
+                    for (int k = 0; k < 4; k++) {
+                        sum += position[Index(SampleIndex[r, k], j)] * SampleWeight[r, k];
+                    }
+
+                    rows[j * R + r] = sum;
                 }
             }
 
-            for (int k = 0; k < position.Length; k++) {
-                Vector3 offset = normals[k] * (thickness * 0.5f);
-                vertices[k] = item.InverseTransformPoint(position[k] + offset);
-                vertices[N * N + k] = item.InverseTransformPoint(position[k] - offset);
+            for (int rj = 0; rj < R; rj++) {
+                for (int ri = 0; ri < R; ri++) {
+                    Vector3 sum = Vector3.zero;
+                    for (int k = 0; k < 4; k++) {
+                        sum += rows[SampleIndex[rj, k] * R + ri] * SampleWeight[rj, k];
+                    }
+
+                    smooth[RenderIndex(ri, rj)] = sum;
+                }
+            }
+
+            for (int j = 0; j < R; j++) {
+                for (int i = 0; i < R; i++) {
+                    Vector3 du = smooth[RenderIndex(Mathf.Min(i + 1, R - 1), j)] - smooth[RenderIndex(Mathf.Max(i - 1, 0), j)];
+                    Vector3 dv = smooth[RenderIndex(i, Mathf.Min(j + 1, R - 1))] - smooth[RenderIndex(i, Mathf.Max(j - 1, 0))];
+                    Vector3 n = Vector3.Cross(dv, du);
+                    smoothNormal[RenderIndex(i, j)] = n.sqrMagnitude > 1e-12f ? n.normalized : Vector3.up;
+                }
+            }
+
+            Quaternion toLocal = Quaternion.Inverse(item.rotation);
+            for (int k = 0; k < smooth.Length; k++) {
+                Vector3 n = smoothNormal[k];
+                Vector3 offset = n * (thickness * 0.5f);
+                vertices[k] = item.InverseTransformPoint(smooth[k] + offset);
+                vertices[R * R + k] = item.InverseTransformPoint(smooth[k] - offset);
+                Vector3 localNormal = toLocal * n;
+                meshNormals[k] = localNormal;
+                meshNormals[R * R + k] = -localNormal;
             }
 
             Mesh.vertices = vertices;
-            Mesh.RecalculateNormals();
+            Mesh.normals = meshNormals;
             Mesh.RecalculateBounds();
         }
     }

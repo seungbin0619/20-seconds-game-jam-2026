@@ -37,6 +37,8 @@ namespace MissedCall.Feature.Clutter {
         private float bendVelocity;
         private ClothDrape drape;
         private float clothSettle;
+        // 던져서 아직 아무것에도 닿지 않았는지. 이 동안만 천 가운데를 물건에 붙인다.
+        private bool airborne;
 
         public ItemKind Item { get; private set; }
         public Vector3 Size { get; private set; }
@@ -71,6 +73,7 @@ namespace MissedCall.Feature.Clutter {
             bend = 0f;
             bendVelocity = 0f;
             drape?.Clear();
+            airborne = false;
             meshFilter.sharedMesh = mesh;
             meshRenderer.sharedMaterial = material;
             SetAimed(false);
@@ -196,6 +199,7 @@ namespace MissedCall.Feature.Clutter {
 
         public void Release(Vector3 velocity, Vector3 angularVelocity) {
             Held = false;
+            airborne = true;
             body.useGravity = true;
             body.angularDamping = tuning.itemAngularDamping;
             body.WakeUp();
@@ -232,8 +236,9 @@ namespace MissedCall.Feature.Clutter {
         /// 새 판에서 다시 쓰이기 전까지 갠 모양으로 돌아가지 않는다.
         /// </summary>
         private void UpdateCloth() {
-            bool flying = !Held && !body.IsSleeping() && body.linearVelocity.sqrMagnitude > 0.8f * 0.8f;
-            bool moving = Held || flying;
+            // 던진 뒤 처음 무언가에 닿을 때까지만 '날아가는 중'이다. 그 뒤에 물건이 튀거나 미끄러져도 다시 붙이지 않는다
+            // (붙이면 천 가운데가 물건 중심으로 홱 끌려가 발작하듯 보였다).
+            bool moving = Held || airborne;
             if (!moving && (drape == null || !drape.Active)) {
                 // 안 건드렸으면 갠 모양, 굳힌 뒤면 그 모양 그대로 (메시가 물건 로컬이라 물건을 따라다닌다).
                 return;
@@ -250,12 +255,26 @@ namespace MissedCall.Feature.Clutter {
             }
 
             clothSettle = moving ? 0f : clothSettle + Time.deltaTime;
-            // 들고 있거나 날아가는 동안은 가운데를 물건에 붙이고, 떨어진 뒤에는 풀어서 닿은 곳 모양대로 늘어지게 둔다.
-            drape.Simulate(Time.deltaTime, transform, moving, tuning.clothDamping, tuning.clothIterations, box);
+            // 들고 있거나 날아가는 동안은 가운데를 물건에 붙이고, 떨어진 뒤에는 약하게만 당겨 닿은 곳 모양대로 늘어지게 둔다.
+            // 들고 있는 동안은 다른 물건과 부딪히지 않는다 (더미를 헤집으며 떨리지 않게).
+            ClothDrape.Pin pin = moving ? ClothDrape.Pin.Hard : ClothDrape.Pin.Soft;
+            drape.Simulate(Time.deltaTime, transform, pin, body.linearVelocity, tuning.clothDamping, tuning.clothIterations,
+                box, !Held);
             drape.Write(transform);
             meshFilter.sharedMesh = drape.Mesh;
             if (!moving && (drape.Settled || clothSettle >= tuning.clothSettleTime)) {
                 drape.Freeze(transform);
+            }
+        }
+
+        private void OnCollisionEnter(Collision collision) {
+            airborne = false;
+        }
+
+        // 무언가에 닿은 채로 놓았으면 Enter가 오지 않으므로 Stay에서도 끝낸다.
+        private void OnCollisionStay(Collision collision) {
+            if (!Held) {
+                airborne = false;
             }
         }
 
