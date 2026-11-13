@@ -34,10 +34,144 @@ namespace MissedCall.Feature.Room.Editor {
             whiteMat = LoadOrCreateMaterial("Graybox_White", new Color(0.92f, 0.92f, 0.90f));
 
             BuildBathroom();
+            BuildBathroomB();
+            BuildDressingRoom();
             BuildBedroom();
+            BuildBedroomB();
+            BuildKitchen();
+            BuildKitchenB();
             BuildLivingRoom();
+            BuildLivingRoomB();
             AssetDatabase.SaveAssets();
-            Debug.Log("[GrayboxRoomBuilder] Built 3 graybox room modules in " + Root);
+            Debug.Log("[GrayboxRoomBuilder] Built 9 graybox room modules in " + Root);
+        }
+
+        // 소켓 앞 통로(문 폭 + 양쪽 0.25m, 벽에서 0.8m)에는 가구를 두지 않는다. 좌표는 모두 모듈 로컬.
+
+        // S 3 x 3. 문 소켓은 남, 서. 욕조는 동쪽 벽, 세면대와 변기는 북쪽 벽.
+        private static void BuildBathroomB() {
+            var b = new ModuleBuilder("Room_Bathroom_S_B", RoomKind.Bathroom, RoomSize.S, new Vector2(3f, 3f));
+            b.Sockets(WallSide.South, WallSide.West);
+
+            b.Hollow("Bathtub", 0.65f, 1.4f, -0.5f, 1.4f, 0.55f, 0.08f, whiteMat);
+            b.Box("Toilet", -1.0f, -0.6f, 0.85f, 1.4f, 0f, 0.45f, whiteMat);
+            b.Box("SinkCabinet", -0.4f, 0.4f, 0.9f, 1.4f, 0f, 0.85f, whiteMat);
+            b.Hollow("Hamper", 0.75f, 1.35f, -1.35f, -0.75f, 0.32f, 0.04f, woodMat);
+            b.Rug("BathMat", -0.5f, 0.3f, -0.3f, 0.4f, fabricMat);
+
+            b.Spot("Spot_Tub", 1.025f, 0.02f, 0.45f, ItemKind.SmallShirt, true);
+            b.Spot("Spot_Hamper", 1.05f, 0.02f, -1.05f, ItemKind.SmallShirt, true);
+            b.Spot("Spot_SinkTop", 0f, 0.85f, 1.15f, ItemKind.SmallShirt, false);
+            b.Spot("Spot_Mat", -0.1f, 0.02f, 0.05f, ItemKind.Shirt, false);
+            b.Save();
+        }
+
+        // S 3 x 3. 문 소켓은 남, 서. 북쪽 벽에 옷장과 선반, 동쪽 벽에 신발장과 옷걸이 봉.
+        private static void BuildDressingRoom() {
+            var b = new ModuleBuilder("Room_DressingRoom_S_A", RoomKind.DressingRoom, RoomSize.S, new Vector2(3f, 3f));
+            b.Sockets(WallSide.South, WallSide.West);
+
+            b.Box("Wardrobe", -1.4f, 0.6f, 0.85f, 1.4f, 0f, 2.0f, woodMat);
+            b.Box("Shelf", 0.7f, 1.4f, 0.95f, 1.4f, 0f, 1.2f, woodMat);
+            b.Box("ShoeBench", 1.0f, 1.4f, -0.6f, 0.7f, 0f, 0.4f, woodMat);
+            b.Box("HangingRail", 1.15f, 1.25f, -0.6f, 0.7f, 1.6f, 1.65f, whiteMat);
+            b.Box("Ottoman", -0.4f, 0.4f, -0.1f, 0.4f, 0f, 0.45f, fabricMat);
+            b.Hollow("LaundryBasket", -1.35f, -0.75f, -1.35f, -0.75f, 0.32f, 0.04f, woodMat);
+
+            b.Spot("Spot_Shelf", 1.05f, 1.2f, 1.17f, ItemKind.Book, false);
+            b.Spot("Spot_ShoeBench", 1.2f, 0.4f, 0.05f, ItemKind.Book, false);
+            b.Spot("Spot_Ottoman", 0f, 0.45f, 0.15f, ItemKind.Shirt, false);
+            b.Spot("Spot_Basket", -1.05f, 0.02f, -1.05f, ItemKind.SmallShirt, true);
+            b.Spot("Spot_FloorCorner", 1.0f, 0f, -1.05f, ItemKind.Shirt, false);
+            b.Save();
+        }
+
+        // M 4 x 3.5. 문 소켓은 동, 서 (지나가는 방). 침대는 북쪽 벽 가운데, 서랍장과 책상은 남쪽 벽.
+        private static void BuildBedroomB() {
+            var b = new ModuleBuilder("Room_Bedroom_M_B", RoomKind.Bedroom, RoomSize.M, new Vector2(4f, 3.5f));
+            b.Sockets(WallSide.East, WallSide.West);
+
+            b.Box("BedFrame", -0.7f, 0.7f, -0.35f, 1.65f, 0f, 0.3f, woodMat);
+            b.Box("Mattress", -0.65f, 0.65f, -0.3f, 1.6f, 0.3f, 0.45f, fabricMat);
+            b.Box("Nightstand", -1.25f, -0.8f, 1.2f, 1.65f, 0f, 0.5f, woodMat);
+            b.Box("Dresser", -1.6f, -0.4f, -1.65f, -1.2f, 0f, 0.9f, woodMat);
+            b.Box("Desk", 0.6f, 1.8f, -1.65f, -1.05f, 0f, 0.75f, woodMat);
+            b.Box("Chair", 0.9f, 1.3f, -1.0f, -0.75f, 0f, 0.45f, woodMat);
+            b.Hollow("LaundryBasket", 1.25f, 1.85f, 1.05f, 1.65f, 0.32f, 0.04f, woodMat);
+            b.Rug("Rug", -0.9f, 0.9f, -1.0f, -0.4f, fabricMat);
+
+            b.Spot("Spot_BedHead", -0.3f, 0.45f, 0.9f, ItemKind.Shirt, false);
+            b.Spot("Spot_BedFoot", 0.3f, 0.45f, 0.1f, ItemKind.Blanket, false);
+            b.Spot("Spot_Nightstand", -1.02f, 0.5f, 1.42f, ItemKind.Book, false);
+            b.Spot("Spot_Dresser", -1.0f, 0.9f, -1.42f, ItemKind.SmallShirt, false);
+            b.Spot("Spot_Desk", 1.4f, 0.75f, -1.35f, ItemKind.SmallShirt, false);
+            b.Spot("Spot_Basket", 1.55f, 0.02f, 1.35f, ItemKind.SmallShirt, true);
+            b.Spot("Spot_Rug", 0.4f, 0.02f, -0.7f, ItemKind.Shirt, false);
+            b.Save();
+        }
+
+        // M 4 x 3.5. 문 소켓은 남, 동, 서. 조리대는 북쪽 벽, 냉장고는 북서 모서리, 식탁은 가운데.
+        private static void BuildKitchen() {
+            var b = new ModuleBuilder("Room_Kitchen_M_A", RoomKind.Kitchen, RoomSize.M, new Vector2(4f, 3.5f));
+            b.Sockets(WallSide.South, WallSide.East, WallSide.West);
+
+            b.Box("Fridge", -1.9f, -1.25f, 1.0f, 1.65f, 0f, 1.8f, whiteMat);
+            b.Box("Counter", -1.2f, 1.9f, 1.05f, 1.65f, 0f, 0.9f, woodMat);
+            b.Box("Table", -0.7f, 0.7f, -0.8f, 0f, 0f, 0.75f, woodMat);
+            b.Box("Chair", -0.2f, 0.2f, 0.1f, 0.5f, 0f, 0.45f, woodMat);
+            b.Hollow("Bin", 1.25f, 1.85f, -1.6f, -1.0f, 0.5f, 0.04f, whiteMat);
+
+            b.Spot("Spot_CounterLeft", -0.4f, 0.9f, 1.35f, ItemKind.SmallShirt, false);
+            b.Spot("Spot_CounterRight", 1.4f, 0.9f, 1.35f, ItemKind.Book, false);
+            b.Spot("Spot_Table", 0.3f, 0.75f, -0.4f, ItemKind.Shirt, false);
+            b.Spot("Spot_Chair", 0f, 0.45f, 0.3f, ItemKind.Cushion, false);
+            b.Spot("Spot_Bin", 1.55f, 0.02f, -1.3f, ItemKind.SmallShirt, true);
+            b.Spot("Spot_FloorCorner", -1.5f, 0f, -1.3f, ItemKind.Carton, false);
+            b.Save();
+        }
+
+        // M 4 x 3.5. 문 소켓은 남, 서. ㄱ자 조리대(북, 동), 냉장고는 북서 모서리, 아일랜드는 가운데.
+        private static void BuildKitchenB() {
+            var b = new ModuleBuilder("Room_Kitchen_M_B", RoomKind.Kitchen, RoomSize.M, new Vector2(4f, 3.5f));
+            b.Sockets(WallSide.South, WallSide.West);
+
+            b.Box("Fridge", -1.9f, -1.25f, 1.0f, 1.65f, 0f, 1.8f, whiteMat);
+            b.Box("CounterNorth", -1.2f, 1.9f, 1.05f, 1.65f, 0f, 0.9f, woodMat);
+            b.Box("CounterEast", 1.3f, 1.9f, -1.65f, 1.0f, 0f, 0.9f, woodMat);
+            b.Box("Island", -0.6f, 0.5f, -0.3f, 0.35f, 0f, 0.9f, woodMat);
+            b.Hollow("Bin", -1.85f, -1.25f, -1.6f, -1.0f, 0.5f, 0.04f, whiteMat);
+
+            b.Spot("Spot_CounterNorth", 0.5f, 0.9f, 1.35f, ItemKind.SmallShirt, false);
+            b.Spot("Spot_CounterEast", 1.6f, 0.9f, -0.6f, ItemKind.Book, false);
+            b.Spot("Spot_Island", -0.05f, 0.9f, 0.02f, ItemKind.Shirt, false);
+            b.Spot("Spot_Bin", -1.55f, 0.02f, -1.3f, ItemKind.SmallShirt, true);
+            b.Spot("Spot_FloorCorner", 0.95f, 0f, -1.3f, ItemKind.Carton, false);
+            b.Save();
+        }
+
+        // L 5 x 4. 문 소켓은 네 벽 모두. 소파는 남서 모서리, TV 장은 북서, 낮은 장은 북동.
+        private static void BuildLivingRoomB() {
+            var b = new ModuleBuilder("Room_LivingRoom_L_B", RoomKind.LivingRoom, RoomSize.L, new Vector2(5f, 4f));
+            b.Sockets(WallSide.North, WallSide.East, WallSide.South, WallSide.West);
+
+            b.Box("SofaSeat", -2.4f, -0.9f, -1.9f, -1.2f, 0f, 0.45f, fabricMat);
+            b.Box("SofaBack", -2.4f, -0.9f, -1.9f, -1.72f, 0.45f, 0.85f, fabricMat);
+            b.Box("Chaise", -2.4f, -1.7f, -1.2f, -0.8f, 0f, 0.45f, fabricMat);
+            b.Box("CoffeeTable", -1.3f, -0.5f, -0.6f, 0f, 0f, 0.4f, woodMat);
+            b.Box("TvStand", -2.2f, -1.0f, 1.45f, 1.9f, 0f, 0.5f, woodMat);
+            b.Box("Cabinet", 1.0f, 2.2f, 1.55f, 1.9f, 0f, 0.9f, woodMat);
+            b.Box("Beanbag", 1.4f, 2.1f, -1.7f, -1.0f, 0f, 0.35f, fabricMat);
+            b.Hollow("ToyBox", 0.9f, 1.3f, -1.85f, -1.25f, 0.4f, 0.04f, woodMat);
+            b.Rug("Rug", -1.6f, 0.3f, -0.9f, 0.4f, fabricMat);
+
+            b.Spot("Spot_SofaLeft", -1.95f, 0.45f, -1.45f, ItemKind.Blanket, false);
+            b.Spot("Spot_SofaRight", -1.2f, 0.45f, -1.45f, ItemKind.Cushion, false);
+            b.Spot("Spot_CoffeeTable", -0.9f, 0.4f, -0.3f, ItemKind.Shirt, false);
+            b.Spot("Spot_TvStand", -1.6f, 0.5f, 1.67f, ItemKind.SmallShirt, false);
+            b.Spot("Spot_Cabinet", 1.6f, 0.9f, 1.72f, ItemKind.Book, false);
+            b.Spot("Spot_Beanbag", 1.75f, 0.35f, -1.35f, ItemKind.Cushion, false);
+            b.Spot("Spot_ToyBox", 1.1f, 0.02f, -1.55f, ItemKind.Book, true);
+            b.Save();
         }
 
         // S 3 x 3. 문 소켓은 남쪽, 동쪽. 가구는 북쪽과 서쪽 벽에 붙인다.
@@ -51,7 +185,7 @@ namespace MissedCall.Feature.Room.Editor {
             b.Box("Toilet", 0.6f, 1.1f, 0.85f, 1.4f, 0f, 0.45f, whiteMat);
             b.Hollow("LaundryBasket", -1.35f, -0.75f, -1.3f, -0.7f, 0.32f, 0.04f, woodMat);
 
-            b.Spot("Spot_Tub", -0.6f, 0.02f, 1.025f, ItemKind.Blanket, true);
+            b.Spot("Spot_Tub", -0.6f, 0.02f, 1.025f, ItemKind.SmallShirt, true);
             b.Spot("Spot_Basket", -1.05f, 0.02f, -1.0f, ItemKind.SmallShirt, true);
             b.Spot("Spot_SinkTop", -1.15f, 0.85f, -0.1f, ItemKind.SmallShirt, false);
             b.Spot("Spot_FloorCorner", 1.05f, 0f, -1.05f, ItemKind.Blanket, false);
