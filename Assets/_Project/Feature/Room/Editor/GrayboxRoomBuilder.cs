@@ -359,9 +359,10 @@ namespace MissedCall.Feature.Room.Editor {
                 Transform socketT = Child(sockets, "Socket" + side);
                 socketT.localPosition = normal * distance + right * offset;
                 socketT.localRotation = Quaternion.LookRotation(normal, Vector3.up);
-                // 막힘 조각은 소켓 아래에 둔다. 굽기 씬은 소켓을 모두 막고 구우므로, 함께 구워야 옆 벽과 밝기가 같다.
+                // 막힘 조각은 소켓 아래에 둔다. 다른 벽 조각처럼 라이트맵 없이 실시간 조명과 환경광만 받는다.
                 GameObject closed = Cube(socketT, "Closed", new Vector3(0f, DoorHeight * 0.5f, 0f),
                     new Vector3(DoorWidth, DoorHeight, WallThickness), wallMat, true, true);
+                UnlightmappedWall(closed);
                 DoorSocket socket = socketT.gameObject.AddComponent<DoorSocket>();
                 socket.EditorSetup(side, offset, DoorWidth, null, closed);
                 socketList.Add(socket);
@@ -375,7 +376,14 @@ namespace MissedCall.Feature.Room.Editor {
 
                 Vector3 center = normal * distance + right * along + Vector3.up * ((minY + maxY) * 0.5f);
                 Vector3 extent = Abs(right) * length + Abs(normal) * WallThickness + Vector3.up * (maxY - minY);
-                Cube(parent, pieceName, center, extent, wallMat, gi, true);
+                UnlightmappedWall(Cube(parent, pieceName, center, extent, wallMat, gi, true));
+            }
+
+            // 벽은 상자 여러 개(문 양옆, 인방, 막힘 조각)로 되어 있어서, 상자마다 라이트맵을 따로 구우면
+            // 낮은 해상도에서 경계가 어긋나 보인다. 벽은 라이트맵을 받지 않고 실시간 조명과 환경광(장면에 라이트 프로브가
+            // 없으므로 모두 같은 값)만 받게 해서 조각 사이가 이어져 보이게 한다. 바닥과 가구에 주는 간접광(ContributeGI)은 유지한다.
+            private static void UnlightmappedWall(GameObject piece) {
+                piece.GetComponent<MeshRenderer>().receiveGI = ReceiveGI.LightProbes;
             }
         }
 

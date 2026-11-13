@@ -12,7 +12,7 @@ namespace MissedCall.Core.Rooms {
         [SerializeField] private float width = 0.9f;
         [Tooltip("열렸을 때 켜는 오브젝트 (문틀 등). 없어도 된다")]
         [SerializeField] private GameObject openPiece;
-        [Tooltip("막혔을 때 켜는 벽 조각. 옆 벽과 같은 빛을 받도록 라이트맵을 함께 굽는다")]
+        [Tooltip("막혔을 때 켜는 벽 조각. 다른 벽 조각처럼 라이트맵 없이 실시간 조명만 받는다")]
         [SerializeField] private GameObject closedPiece;
 
         public WallSide Side => side;
