@@ -156,7 +156,9 @@ namespace MissedCall.Feature.ScreenFx {
             float since = missedAt >= 0f ? Time.unscaledTime - missedAt : 10f;
             float flash = Mathf.Exp(-since * missFlashDecay);
             float hold = tuning.fxPulseStrength * 0.6f;
+            // 놓치면 시간이 다 된 화면(진행도 끝)에서 멈춘다.
             tight = 1f;
+            low = 1f;
             tense = new Vector4(
                 tuning.fxVignetteMax,
                 tuning.fxDesaturateMax,

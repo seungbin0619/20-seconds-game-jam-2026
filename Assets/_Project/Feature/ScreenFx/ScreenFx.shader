@@ -140,21 +140,31 @@ Shader "Hidden/MissedCall/ScreenFx" {
                 return lerp(srgb, ink, cover * 0.85);
             }
 
-            // 붉은 맥박 대신: 가장자리부터 붉은 물감이 번진다. 번진 끝이 진하게 고인다.
-            half3 RedWash(half3 srgb, ScreenPixel p, float t) {
-                half pulse = saturate(_McFxTense.z * 2.5);
-                if (pulse <= 0) {
+            // 붉은 맥박 대신: 가장자리부터 붉은 물감이 화면을 잠식한다. 남은 시간에만 따라 넓어지고
+            // 물러나지 않는다. 벨 박자(맥박)는 번진 끝을 조금 밀어 넣고 고인 안료를 진하게 할 뿐이다.
+            // creep: 10초부터 조금씩, 마지막 5초에 크게 번져 0초에는 가운데만 남는다.
+            half3 RedWash(half3 srgb, ScreenPixel p, float t, half creep) {
+                if (creep <= 0) {
                     return srgb;
                 }
 
-                half shape = p.radius + (Fbm(p.uv * 3.5 + t * 0.05) - 0.5) * 0.5;
-                half front = 1.05 - pulse * 0.45;
-                half wash = smoothstep(front, front + 0.25, shape);
-                // 물감 가장자리에 안료가 고여 진한 띠가 생긴다.
-                half rim = smoothstep(0.06, 0, abs(shape - front - 0.02)) * pulse;
+                half pulse = saturate(_McFxTense.z * 2.5);
+                // 물감 줄기: 큰 얼룩과 잔 줄기를 섞고, 천천히 기어 들어오게 흐른다.
+                float2 q = p.uv * float2(_ScreenSize.x * _ScreenSize.w, 1);
+                half tendril = (Fbm(q * 2.5 + t * 0.04) - 0.5) * 0.55 + (ValueNoise(q * 11 - t * 0.1) - 0.5) * 0.12;
+                half shape = p.radius + tendril;
+                half front = 1.2 - creep * 0.95 - pulse * 0.05;
+
+                half wash = smoothstep(front, front + 0.18, shape);
+                // 안쪽일수록 물감이 겹쳐 진해진다.
+                half depth = smoothstep(front + 0.1, front + 0.6, shape);
+                // 번진 끝에 안료가 고여 진한 띠가 생긴다.
+                half rim = smoothstep(0.025, 0, abs(shape - front - 0.01));
+
                 half3 pigment = LinearToSRGB(_McFxPulseColor.rgb);
-                srgb *= lerp(1, pigment, wash * 0.65);
-                return srgb * lerp(1, pigment * 0.7, rim * 0.4);
+                srgb *= lerp(1, pigment, wash * (0.75 + 0.25 * creep));
+                srgb *= lerp(1, pigment * 0.55, depth * 0.6 * creep);
+                return srgb * lerp(1, pigment * 0.6, rim * (0.35 + 0.3 * pulse));
             }
 
             half4 Frag(Varyings input) : SV_Target {
@@ -174,7 +184,7 @@ Shader "Hidden/MissedCall/ScreenFx" {
                 srgb = lerp(srgb, ink, stroke * 0.9);
 
                 srgb = lerp(srgb, Luminance(srgb).xxx, _McFxTense.y);
-                srgb = RedWash(srgb, p, t);
+                srgb = RedWash(srgb, p, t, saturate(tight * 0.4 + low * 0.6));
                 srgb = Hatch(srgb, p, boil, ink);
                 return half4(SRGBToLinear(saturate(srgb)), 1);
             }
