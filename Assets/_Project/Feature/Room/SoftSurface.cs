@@ -35,6 +35,9 @@ namespace MissedCall.Feature.Room {
         // 폰(0.22 x 0.14)과 자리 흔들림(±0.06)을 덮는 평평한 바닥 반경, 그 바깥으로 완만하게 올라오는 반경(m)
         private const float PocketInner = 0.17f;
         private const float PocketOuter = 0.3f;
+        // 깔린 메시: 처짐 배율, 오목한 자리에 더하는 깊이(m)
+        private const float CoveredDentScale = 1.6f;
+        private const float CoveredPocketExtra = 0.035f;
 
         private sealed class Surface {
             public MeshFilter Filter;
@@ -46,6 +49,8 @@ namespace MissedCall.Feature.Room {
             public float[] Offset;
             public float[] Velocity;
             public Vector3[] World;
+            // 다른 겉면 아래에 깔린 정점. 처짐과 오목한 자리를 더 깊게 해 위 메시를 뚫고 나오지 않게 한다.
+            public bool[] Covered;
         }
 
         private readonly List<Surface> surfaces = new();
@@ -243,7 +248,7 @@ namespace MissedCall.Feature.Room {
             float toLocal = 1f / Mathf.Max(0.001f, s.Filter.transform.lossyScale.y);
             for (int i = 0; i < s.Base.Length; i++) {
                 Vector3 v = s.Base[i];
-                v.y -= s.Offset[i] * s.Weight[i] * toLocal;
+                v.y -= s.Offset[i] * s.Weight[i] * DentScaleAt(s, i) * toLocal;
                 s.Current[i] = v;
             }
 
@@ -292,10 +297,46 @@ namespace MissedCall.Feature.Room {
                     s.Weight[i] = h * h;
                 }
 
-                PressPockets(s);
                 surfaces.Add(s);
             }
+
+            MarkCovered();
+            foreach (Surface s in surfaces) {
+                PressPockets(s);
+            }
         }
+
+        // 다른 겉면 아래에 깔린 메시(이불 아래 매트리스)는 더 깊이 누른다. 같은 깊이로 누르면 격자 간격이 달라
+        // 경사진 곳에서 높이가 어긋나 아래 메시가 위 메시를 뚫고 하얗게 비쳤다 (11/13, 시드 1681461537).
+        // 덮인 부분의 정점에만 적용한다 (이불 밖으로 드러난 매트리스까지 깊게 누르면 폰이 떠 보인다).
+        private void MarkCovered() {
+            foreach (Surface s in surfaces) {
+                Bounds own = s.Filter.GetComponent<Renderer>().bounds;
+                RefreshWorld(s);
+                foreach (Surface other in surfaces) {
+                    if (other == s) {
+                        continue;
+                    }
+
+                    Bounds cover = other.Filter.GetComponent<Renderer>().bounds;
+                    if (cover.max.y <= own.max.y + 0.001f) {
+                        continue;
+                    }
+
+                    // 덮는 메시 둘레를 조금 넓혀, 가장자리에서 아래 메시가 삐져나오지 않게 한다.
+                    cover.Expand(new Vector3(0.04f, 0f, 0.04f));
+                    s.Covered ??= new bool[s.Base.Length];
+                    for (int i = 0; i < s.Base.Length; i++) {
+                        Vector3 w = s.World[i];
+                        if (w.x > cover.min.x && w.x < cover.max.x && w.z > cover.min.z && w.z < cover.max.z) {
+                            s.Covered[i] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static float DentScaleAt(Surface s, int i) => s.Covered != null && s.Covered[i] ? CoveredDentScale : 1f;
 
         // 숨는 자리는 처음부터 오목하게 눌러 둔다. 겉면이 충돌체보다 높아서(방 빌더의 SoftSink) 그대로 두면
         // 자리 표면(충돌체 윗면)에 놓이는 폰이 쿠션 속에 묻혀 보이지 않았다 (11/13, 시드 1269263595).
@@ -320,7 +361,8 @@ namespace MissedCall.Feature.Room {
                     nearest = Mathf.Min(nearest, dx * dx + dz * dz);
                 }
 
-                float press = pocketDepth * (1f - Mathf.SmoothStep(0f, 1f,
+                float extra = s.Covered != null && s.Covered[i] ? CoveredPocketExtra : 0f;
+                float press = (pocketDepth + extra) * (1f - Mathf.SmoothStep(0f, 1f,
                     Mathf.InverseLerp(PocketInner, PocketOuter, Mathf.Sqrt(nearest))));
                 s.Base[i].y -= press * s.Weight[i] * toLocal;
                 s.Current[i] = s.Base[i];

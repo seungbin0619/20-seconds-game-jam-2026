@@ -646,7 +646,7 @@ namespace MissedCall.Feature.Room.Editor {
                 WallSide foot = Opposite(head);
                 B cover = mattress.Slice(foot, Depth(mattress, head) * 0.6f);
                 cover = new B(cover.X0 - 0.02f, cover.X1 + 0.02f, cover.Z0 - 0.02f, cover.Z1 + 0.02f,
-                    mattress.Y1 + SoftSink - 0.08f, mattress.Y1 + SoftSink + 0.006f);
+                    mattress.Y1 + SoftSink - 0.08f, mattress.Y1 + SoftSink + 0.012f);
                 Part(pad, "Blanket", cover, blanket);
                 Soft(mattressCollider, 0.035f, 220f, 16f, pad);
 
