@@ -137,7 +137,16 @@ namespace MissedCall.Feature.Ui.Editor {
             Place(clock.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -14f), new Vector2(400f, 80f));
             TMP_Text hint = Text(rect, "Hint", "Follow the sound and clear the piles", 20f, UiPalette.Paper, bodyFont, bodyShadow);
             Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -96f), new Vector2(900f, 34f));
-            Wire(hud, ("clock", clock), ("hint", hint));
+            // 판 변수 태그: 힌트 아래 기울인 노란 띠
+            Image tag = Shape(rect, "ModifierTag", UiPalette.Ring, 0f, ButtonSkew, 0.7f, 0f, -0.25f);
+            tag.gameObject.AddComponent<CanvasGroup>();
+            Place(tag.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -138f), new Vector2(340f, 36f));
+            TMP_Text tagText = Text(tag.rectTransform, "Label", "Blackout", 16f, UiPalette.Night, bodyFont, null,
+                FontStyles.Bold | FontStyles.Italic | FontStyles.UpperCase);
+            tagText.characterSpacing = 6f;
+            Stretch(tagText.rectTransform);
+            tag.gameObject.SetActive(false);
+            Wire(hud, ("clock", clock), ("hint", hint), ("modifierTag", tag.rectTransform), ("modifierText", tagText));
             return hud;
         }
 

@@ -72,7 +72,7 @@ var MissedCallAudioLib = {
       var now = ctx.currentTime;
       for (var i = 0; i < MCA.voices.length; i++) {
         var v = MCA.voices[i];
-        if (!v || !v.running) continue;
+        if (!v || !v.running || v.loop) continue;
         if (v.next < now) {
           // 탭이 멈췄다 돌아온 경우 밀린 음을 한꺼번에 울리지 않고 처음부터 다시 시작한다.
           v.next = now + 0.05;
@@ -170,10 +170,48 @@ var MissedCallAudioLib = {
     return id;
   },
 
+  // 반복 재생하는 잡음 음원(소음 변수). 벨 음원과 같은 bus -> muffle -> panner 체인을 쓴다.
+  MC_Audio_CreateLoop: function (dataPtr, count, sampleRate) {
+    var ctx = MCA.ctx;
+    if (!ctx || count <= 0) return -1;
+    var buffer = ctx.createBuffer(1, count, sampleRate);
+    buffer.getChannelData(0).set(HEAPF32.subarray(dataPtr >> 2, (dataPtr >> 2) + count));
+    var bus = ctx.createGain();
+    bus.gain.value = 0;
+    var muffle = ctx.createBiquadFilter();
+    muffle.type = 'lowpass';
+    muffle.frequency.value = 7000;
+    muffle.Q.value = 0.7;
+    var panner = ctx.createPanner();
+    panner.panningModel = 'HRTF';
+    panner.distanceModel = 'inverse';
+    panner.refDistance = 0.8;
+    panner.rolloffFactor = MCA.rolloff;
+    panner.maxDistance = 20;
+    bus.connect(muffle);
+    muffle.connect(panner);
+    panner.connect(MCA.master);
+    var id = MCA.voices.length;
+    MCA.voices.push({
+      id: id, loop: true, buffer: buffer, source: null,
+      bus: bus, muffle: muffle, panner: panner,
+      running: false, gain: 0, x: 0, y: 0, z: 0
+    });
+    return id;
+  },
+
   MC_Audio_StartVoice: function (id) {
     var v = MCA.voices[id];
     if (!v) return;
     var now = MCA.ctx.currentTime;
+    if (v.loop) {
+      if (v.source) { try { v.source.stop(); } catch (e) {} }
+      v.source = MCA.ctx.createBufferSource();
+      v.source.buffer = v.buffer;
+      v.source.loop = true;
+      v.source.connect(v.bus);
+      v.source.start();
+    }
     v.running = true;
     v.index = 0;
     v.next = now + 0.05;
@@ -186,6 +224,11 @@ var MissedCallAudioLib = {
     if (!v) return;
     v.running = false;
     v.bus.gain.setTargetAtTime(0, MCA.ctx.currentTime, 0.012);
+    if (v.loop && v.source) {
+      var src = v.source;
+      v.source = null;
+      try { src.stop(MCA.ctx.currentTime + 0.1); } catch (e) {}
+    }
   },
 
   MC_Audio_SetVoice: function (id, x, y, z, cutoff, gain) {

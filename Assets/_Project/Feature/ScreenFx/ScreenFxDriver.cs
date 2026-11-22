@@ -29,6 +29,10 @@ namespace MissedCall.Feature.ScreenFx {
         private static readonly int OutlineColorId = Shader.PropertyToID("_McFxOutlineColor");
         private static readonly int PulseColorId = Shader.PropertyToID("_McFxPulseColor");
         private static readonly int TimeId = Shader.PropertyToID("_McFxTime");
+        private static readonly int BlackoutId = Shader.PropertyToID("_McFxBlackout");
+        private static readonly int GlowId = Shader.PropertyToID("_McFxGlow");
+        // 정전이 켜지고 꺼지는 정도 (판이 바뀔 때 부드럽게)
+        private float blackout;
 
         // x 비네트, y 채도 빼기, z 붉은 맥박, w 색수차. 받은 뒤에는 이 값에서 서서히 0으로 푼다.
         private Vector4 tense;
@@ -59,6 +63,7 @@ namespace MissedCall.Feature.ScreenFx {
             // 꺼지면 시간 연출이 화면에 남지 않게 한다.
             Shader.SetGlobalVector(TenseId, Vector4.zero);
             Shader.SetGlobalVector(ShadeId, Vector4.zero);
+            Shader.SetGlobalVector(BlackoutId, Vector4.zero);
         }
 
         private void OnStateChanged(RoundState previous, RoundState next) {
@@ -88,6 +93,50 @@ namespace MissedCall.Feature.ScreenFx {
             Shader.SetGlobalColor(OutlineColorId, outlineColor.linear);
             Shader.SetGlobalColor(PulseColorId, pulseColor.linear);
             Shader.SetGlobalVector(TimeId, new Vector4(Time.unscaledTime, tight, low, 0f));
+            UpdateBlackout(tuning);
+        }
+
+        /// <summary>
+        /// 정전 변수: 화면을 어둡게 하고 폰 화면 불빛만 남긴다. 폰이 보이면 그 둘레를 밝히고, 물건에 덮였으면 새어 나오는 정도만,
+        /// 벽이나 가구에 가렸으면 밝히지 않는다. 판 시작 전(타이틀)에는 켜지 않는다.
+        /// </summary>
+        private void UpdateBlackout(GameTuning tuning) {
+            RoundContext context = flow.Context;
+            bool on = context.Modifier == RoundModifier.Blackout && context.State != RoundState.Title;
+            blackout = Mathf.MoveTowards(blackout, on ? 1f : 0f, Time.unscaledDeltaTime * 3f);
+            if (blackout <= 0f) {
+                Shader.SetGlobalVector(BlackoutId, Vector4.zero);
+                return;
+            }
+
+            float glow = 0f;
+            Vector2 uv = new(-10f, -10f);
+            float radius = tuning.blackoutGlowRadius;
+            Camera cam = Camera.main;
+            bool phoneOut = context.State == RoundState.Playing || context.State == RoundState.Won || context.State == RoundState.Missed;
+            if (cam != null && phoneOut && !context.BatteryDead) {
+                Vector3 phone = context.PhonePosition;
+                Vector3 view = cam.WorldToViewportPoint(phone);
+                if (view.z > 0f) {
+                    uv = new Vector2(view.x, view.y);
+                    int clutter = LayerMask.GetMask("Clutter");
+                    int solid = Physics.DefaultRaycastLayers & ~clutter & ~LayerMask.GetMask("Player", "Ignore Raycast");
+                    Vector3 eye = cam.transform.position;
+                    Vector3 toward = phone + Vector3.up * 0.03f;
+                    if (!Physics.Linecast(eye, toward, solid, QueryTriggerInteraction.Ignore)) {
+                        glow = Physics.Linecast(eye, toward, clutter, QueryTriggerInteraction.Ignore) ? 0.35f : 1f;
+                    }
+
+                    radius /= Mathf.Max(0.5f, view.z);
+                    // 울리는 동안 화면처럼 깜박인다.
+                    if (context.State == RoundState.Playing) {
+                        glow *= Mathf.Sin(Time.unscaledTime * tuning.screenBlinkRate) > 0f ? 1f : 0.7f;
+                    }
+                }
+            }
+
+            Shader.SetGlobalVector(BlackoutId, new Vector4(tuning.blackoutDarkness * blackout, uv.x, uv.y, glow));
+            Shader.SetGlobalVector(GlowId, new Vector4(radius, 0f, 0f, 0f));
         }
 
         private void UpdateTense(GameTuning tuning) {

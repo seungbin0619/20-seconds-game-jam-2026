@@ -64,6 +64,26 @@ namespace MissedCall.Feature.Ringtone {
             return voices.Count - 1;
         }
 
+        public int CreateLoopVoice(float[] data, int sampleRate) {
+            var go = new GameObject("Loop Voice");
+            go.transform.SetParent(host, false);
+            AudioClip clip = AudioClip.Create("Loop", Mathf.Max(1, data.Length), 1, sampleRate, false);
+            clip.SetData(data, 0);
+            var source = go.AddComponent<AudioSource>();
+            source.clip = clip;
+            source.loop = true;
+            source.playOnAwake = false;
+            source.spatialBlend = 1f;
+            source.dopplerLevel = 0f;
+            source.maxDistance = MaxDistance;
+            source.rolloffMode = AudioRolloffMode.Custom;
+            source.SetCustomCurve(AudioSourceCurveType.CustomRolloff, InverseRolloff());
+            var filter = go.AddComponent<AudioLowPassFilter>();
+            filter.lowpassResonanceQ = 0.7f;
+            voices.Add(new Voice { Source = source, Filter = filter });
+            return voices.Count - 1;
+        }
+
         public void StartVoice(int voice) => voices[voice].Source.Play();
         public void StopVoice(int voice) => voices[voice].Source.Stop();
 

@@ -32,6 +32,7 @@ namespace MissedCall.Feature.Ringtone {
                 case SoundCue.UiClick: return Variants(3, i => Tock(noise, 760f + i * 70f, 0.5f));
                 case SoundCue.SlideGrab: return Variants(2, i => Tock(noise, 560f + i * 50f, 0.55f));
                 case SoundCue.SlideBack: return new[] { SlideBack(noise) };
+                case SoundCue.BatteryDead: return new[] { BatteryDead() };
                 default: return new[] { new float[1] };
             }
         }
@@ -308,6 +309,56 @@ namespace MissedCall.Feature.Ringtone {
             }
 
             return Finish(data, level);
+        }
+
+        // 배터리가 다 되어 꺼지는 소리. 낮아지는 짧은 두 음.
+        private static float[] BatteryDead() {
+            float length = 0.42f;
+            var data = Buffer(length);
+            var soft = new Biquad(Biquad.Kind.LowPass, 1500f, 0.7f);
+            for (int i = 0; i < data.Length; i++) {
+                float t = Sec(i);
+                float a = t < 0.16f ? Mathf.Sin(2f * Mathf.PI * 880f * t) * Attack(t, 0.008f) * Mathf.Clamp01((0.16f - t) / 0.02f) : 0f;
+                float u = t - 0.2f;
+                float b = u > 0f && u < 0.2f ? Mathf.Sin(2f * Mathf.PI * 587.33f * u) * Attack(u, 0.008f) * Mathf.Clamp01((0.2f - u) / 0.05f) : 0f;
+                data[i] = soft.Process(a + b);
+            }
+
+            return Finish(data, 0.4f);
+        }
+
+        /// <summary>
+        /// 소음 변수의 환풍기 소리. 끊김 없이 반복되도록 끝을 처음에 겹쳐 만든다. 날개가 도는 느린 떨림과 낮은 모터 웅웅거림을 섞는다.
+        /// </summary>
+        public static float[] FanLoop() {
+            const float length = 3f;
+            const float overlap = 0.3f;
+            var noise = new Noise(0xFA4);
+            int total = Mathf.CeilToInt((length + overlap) * SampleRate);
+            var raw = new float[total];
+            var low = new Biquad(Biquad.Kind.LowPass, 700f, 0.6f);
+            var band = new Biquad(Biquad.Kind.BandPass, 1600f, 0.8f);
+            for (int i = 0; i < total; i++) {
+                float t = Sec(i);
+                float n = noise.Next();
+                // 날개 한 바퀴마다 바람이 조금 세졌다 약해진다 (3초에 정수 번)
+                float blade = 1f + 0.25f * Mathf.Sin(2f * Mathf.PI * 6f * t);
+                float hum = Mathf.Sin(2f * Mathf.PI * 100f * t) * 0.18f + Mathf.Sin(2f * Mathf.PI * 200f * t) * 0.06f;
+                raw[i] = (low.Process(n) * 1.6f + band.Process(n) * 0.35f) * blade + hum;
+            }
+
+            int count = Mathf.CeilToInt(length * SampleRate);
+            int fade = total - count;
+            var data = new float[count];
+            for (int i = 0; i < count; i++) {
+                data[i] = raw[i];
+                if (i < fade) {
+                    float k = i / (float)fade;
+                    data[i] = raw[i] * k + raw[count + i] * (1f - k);
+                }
+            }
+
+            return Finish(data, 0.6f);
         }
 
         // 손잡이가 처음 자리로 미끄러져 돌아간다.

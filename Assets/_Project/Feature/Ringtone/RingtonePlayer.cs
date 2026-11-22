@@ -83,6 +83,7 @@ namespace MissedCall.Feature.Ringtone {
                 case SoundCue.UiClick: return (0.7f, 0.7f, 0.06f);
                 case SoundCue.SlideGrab: return (0.8f, 0.8f, 0.03f);
                 case SoundCue.SlideBack: return (0.6f, 0.6f, 0.03f);
+                case SoundCue.BatteryDead: return (0.8f, 0.8f, 0f);
                 default: return (1f, 1f, 0f);
             }
         }
@@ -164,6 +165,19 @@ namespace MissedCall.Feature.Ringtone {
             });
             return voices.Count - 1;
         }
+
+        /// <summary>샘플을 반복 재생하는 음원 (소음). 벨 음원과 같은 번호 체계를 쓴다.</summary>
+        public int CreateLoopVoice(float[] data, int sampleRate) {
+            voices.Add(new VoiceState {
+                BackendId = backend.CreateLoopVoice(data, sampleRate),
+                Cutoff = tuning.clearCutoff,
+                Gain = 0f
+            });
+            return voices.Count - 1;
+        }
+
+        /// <summary>벨 공식 대신 볼륨을 직접 정한다 (소음).</summary>
+        public void SetVoiceGain(int voice, float gain) => voices[voice].Gain = gain;
 
         public void StartVoice(int voice) => backend.StartVoice(voices[voice].BackendId);
         public void StopVoice(int voice) => backend.StopVoice(voices[voice].BackendId);

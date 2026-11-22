@@ -21,6 +21,8 @@ namespace MissedCall.Core.Audio {
         UiClick,
         SlideGrab,
         SlideBack,
+        /// <summary>배터리가 다 되어 폰이 꺼진다 (배터리 부족 변수)</summary>
+        BatteryDead,
     }
 
     /// <summary>효과음 한 번. <see cref="Spatial"/>이면 <see cref="Position"/>에서 들린다.</summary>

@@ -109,6 +109,13 @@ namespace MissedCall.Feature.Phone {
                 return;
             }
 
+            // 배터리 부족 변수: 꺼진 폰은 떨지도 빛나지도 않는다.
+            if (context.BatteryDead) {
+                visual.localPosition = Vector3.zero;
+                SetScreen(idleColor);
+                return;
+            }
+
             if (context.Elapsed >= nextJiggle) {
                 Jiggle();
                 nextJiggle += Mathf.Max(0.05f, tuning.jiggleInterval);

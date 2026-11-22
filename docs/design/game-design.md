@@ -59,12 +59,14 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 
 | 변수 | 내용 | 우선순위 |
 |---|---|---|
-| 미끼 소리 | TV 속 전화벨, 알람시계, 태블릿 알림 같은 가짜 소리가 다른 곳에서 난다 | 필수 |
-| 진동 모드 | 벨 없이 진동 소리와 물건 떨림만 난다 | 필수 |
-| 정전 | 집 전체 또는 방 하나가 어둡다. 폰 화면 불빛이 단서 | 필수 |
+| 미끼 소리 | 폰에서 2.5m 넘게 떨어진 다른 숨는 자리 더미 속에서 알람시계(삐삐삐)가 판 내내 울린다. 벨처럼 문 쪽 경로와 벽 먹먹함을 따르고, 더미 2개에 덮인 만큼 먹먹하다. 받기 화면에서 멈춘다 | 구현 (11/22) |
+| 진동 모드 | 벨 대신 1초마다 진동음(158Hz)만 나고 물건이 원래 세기로 떤다 | 구현 (11/22) |
+| 정전 | 집 전체가 달빛처럼 푸르게 어둡다(`blackoutDarkness` 0.78). 폰 화면이 보이면 둘레가 차가운 불빛으로 밝아지고(깜박임), 물건에 덮였으면 새어 나오는 정도, 벽에 가렸으면 밝히지 않는다. ScreenFx가 처리한다 | 구현 (11/22) |
 | 닫힌 문 | 문 하나가 닫혀 있어 클릭해서 연다. 닫힌 문 너머는 더 먹먹하다 | 선택 |
-| 배터리 부족 | 벨이 20초보다 일찍 끊긴다 | 선택 |
-| 소음 | 욕실 환풍기나 빗소리가 벨을 가린다 | 선택 |
+| 배터리 부족 | 경과 8~13초에 벨이 끊기고, 폰 쪽에서 꺼지는 소리(낮아지는 두 음)가 난다. 꺼진 폰은 떨지도 빛나지도 않는다 | 구현 (11/22) |
+| 소음 | 폰이 없는 방 천장에서 환풍기 소리가 난다. 벨처럼 벽과 문 경로를 따른다 | 구현 (11/22) |
+
+변수는 판 시드의 Modifier 스트림으로 고른다 (`Feature/Modifiers/ModifierStep`, Phone 다음 단계). `modifierChance` 확률로 하나가 붙고, 종류는 `*Weight`로 고른다. 판이 시작되면 타이머 아래에 기울인 노란 태그로 이름을 보여 준다.
 
 ## 소리 설계
 
@@ -220,6 +222,13 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | `lowTimeWarning` | 5 | 남은 시간이 이 값(초) 이하면 타이머가 빨갛게 바뀐다 |
 | `resultInputDelay` | 0.6 | 결과가 나온 뒤 이 시간(초) 동안은 클릭으로 새 판을 시작하지 않는다 |
 | `modifierChance` | 0.5 | 판에 변수가 붙을 확률 (잠정) |
+| `vibrateWeight` 등 | 1 | 변수 종류별 상대 확률 (진동, 배터리, 미끼, 소음, 정전) |
+| `batteryRingTime` | (8, 13) | 배터리 부족 판에서 벨이 끊기는 경과 시간 범위(초) |
+| `decoyMinDistance` | 2.5 | 미끼는 폰에서 이 거리(m) 넘게 떨어진 숨는 자리에 둔다 |
+| `decoyCovers` | 2 | 미끼를 덮은 물건 수로 친다 |
+| `noiseGain` | 0.55 | 소음 볼륨 |
+| `blackoutDarkness` | 0.78 | 정전 어둡기 |
+| `blackoutGlowRadius` | 0.16 | 폰 불빛 반경 (화면 높이 비율, 1m 기준) |
 | `roomCount` | 2~4 | 방 개수 범위 |
 
 먹먹함 공식: `cutoff = max(minCutoff, clear × (covered / clear) ^ (min(1, covers / maxCovers) ^ 0.6) × wallCutoffScale ^ walls)`. `walls`는 문 근처에서 소수가 된다. `answer` 상태에서는 `clearCutoff`로 고정한다.
@@ -287,7 +296,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 
 ### 발신자
 
-발신자마다 벨소리가 다르다. 벨소리 구성은 오디오 검증 후 정한다.
+발신자마다 벨소리가 다르다 (`CallerProfile.ringtone` → `PhoneRinger`의 벨소리 목록). 벨소리 5종: Classic(Mom), OldBell 빠른 떨림(Delivery Driver), Marimba(Fried Chicken Place), Office 두 음 삑(Job Interview), Chirp 올라가는 짹(Unknown Number). 모두 기본음이 660~1660Hz라 덮임과 벽 먹먹함이 똑같이 걸린다.
 
 | 이름 | 받았을 때 | 놓쳤을 때 |
 |---|---|---|
@@ -309,6 +318,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 시작 버튼 | Ring It |
 | 타이틀 하단 | Headphones make the direction much easier to hear. |
 | 플레이 힌트 | Follow the sound and clear the piles |
+| 변수 태그 | Vibrate only / Low battery / Something else is ringing / Noisy house / Blackout |
 | 조준 라벨 | Grab / Grab phone / Open |
 | 받기 화면 | Incoming call / (발신자 이름) / Pick up! / Slide to answer |
 | 성공 | Hello? / Answered in {0.0}s |

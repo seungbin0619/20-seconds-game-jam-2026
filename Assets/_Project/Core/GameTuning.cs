@@ -10,6 +10,24 @@ namespace MissedCall.Core {
         public float duration = 20f;
         public Vector2Int roomCount = new(2, 4);
         [Range(0f, 1f)] public float modifierChance = 0.5f;
+        [Tooltip("변수마다 뽑힐 상대 확률: 진동 모드, 배터리 부족, 미끼 소리, 소음, 정전")]
+        public float vibrateWeight = 1f;
+        public float lowBatteryWeight = 1f;
+        public float decoyWeight = 1f;
+        public float noiseWeight = 1f;
+        public float blackoutWeight = 1f;
+        [Tooltip("배터리 부족 판에서 벨이 끊기는 경과 시간 범위(초)")]
+        public Vector2 batteryRingTime = new(8f, 13f);
+        [Tooltip("미끼 소리는 폰에서 이 거리(m) 넘게 떨어진 숨는 자리에 둔다")]
+        public float decoyMinDistance = 2.5f;
+        [Tooltip("미끼 소리를 덮은 물건 수로 친다 (먹먹함)")]
+        public int decoyCovers = 2;
+        [Tooltip("소음 볼륨")]
+        public float noiseGain = 0.55f;
+        [Tooltip("정전 판에서 화면을 어둡게 하는 정도 (1이면 완전히 검다)")]
+        [Range(0f, 1f)] public float blackoutDarkness = 0.78f;
+        [Tooltip("폰 화면 불빛 반경 (화면 높이 비율, 1m 거리 기준)")]
+        public float blackoutGlowRadius = 0.16f;
 
         [Header("Player")]
         public float walkSpeed = 3.2f;

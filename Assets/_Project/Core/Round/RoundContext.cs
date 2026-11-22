@@ -29,8 +29,28 @@ namespace MissedCall.Core.Round {
         public int Covers { get; set; }
         /// <summary>폰 조준 대상. Phone이 판 준비 중에 채우고, Interaction이 물건보다 먼저 조준한다.</summary>
         public IGrabbable Phone { get; set; }
-        /// <summary>진동 모드 변수. 벨 없이 진동만 난다. Modifiers가 판 준비 중에 정하고 Phone, Ringtone이 읽는다.</summary>
-        public bool VibrationMode { get; set; }
+        /// <summary>판 변수. Modifiers가 판 준비 중에 정하고 Phone, Ringtone, ScreenFx, Ui가 읽는다.</summary>
+        public RoundModifier Modifier { get; set; }
+
+        /// <summary>진동 모드 변수. 벨 없이 진동만 난다.</summary>
+        public bool VibrationMode {
+            get => Modifier == RoundModifier.Vibrate;
+            set => Modifier = value ? RoundModifier.Vibrate : Modifier == RoundModifier.Vibrate ? RoundModifier.None : Modifier;
+        }
+
+        /// <summary>배터리 부족 변수에서 벨이 끊기는 경과 시간(초). 변수가 없으면 무한대.</summary>
+        public float RingStopTime { get; set; } = float.PositiveInfinity;
+
+        /// <summary>배터리가 다 되어 벨과 화면이 꺼졌는가.</summary>
+        public bool BatteryDead => Elapsed >= RingStopTime;
+
+        /// <summary>미끼 소리 위치와 방. 미끼 변수가 없으면 방이 -1.</summary>
+        public Vector3 DecoyPosition { get; set; }
+        public int DecoyRoom { get; set; } = -1;
+
+        /// <summary>소음원 위치와 방. 소음 변수가 없으면 방이 -1.</summary>
+        public Vector3 NoisePosition { get; set; }
+        public int NoiseRoom { get; set; } = -1;
 
         /// <summary>플레이어(듣는 사람). Player가 갱신한다. 판 준비 중에는 시작 위치를 담는다.</summary>
         public Vector3 PlayerPosition { get; set; }
@@ -55,7 +75,12 @@ namespace MissedCall.Core.Round {
             PhoneRoom = -1;
             Covers = 0;
             Phone = null;
-            VibrationMode = false;
+            Modifier = RoundModifier.None;
+            RingStopTime = float.PositiveInfinity;
+            DecoyPosition = Vector3.zero;
+            DecoyRoom = -1;
+            NoisePosition = Vector3.zero;
+            NoiseRoom = -1;
             PlayerPosition = Vector3.zero;
             PlayerRoom = -1;
             AimTarget = null;

@@ -14,6 +14,9 @@ namespace MissedCall.Feature.Ringtone {
 
         void Init(float rolloff);
         int CreateVoice(RingtonePattern pattern);
+
+        /// <summary>샘플을 반복 재생하는 음원. 벨 음원처럼 위치, 먹먹함, 볼륨을 받는다.</summary>
+        int CreateLoopVoice(float[] data, int sampleRate);
         void StartVoice(int voice);
         void StopVoice(int voice);
         void SetVoice(int voice, Vector3 position, float cutoff, float gain);

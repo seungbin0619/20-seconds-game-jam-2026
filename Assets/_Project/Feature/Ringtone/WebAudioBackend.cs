@@ -15,6 +15,7 @@ namespace MissedCall.Feature.Ringtone {
         [DllImport("__Internal")] private static extern void MC_Audio_OneShot(int wave, float frequency, float length, float level, float delay);
         [DllImport("__Internal")] private static extern void MC_Audio_Shutdown();
         [DllImport("__Internal")] private static extern void MC_Audio_SetPaused(int paused);
+        [DllImport("__Internal")] private static extern int MC_Audio_CreateLoop(float[] data, int count, int sampleRate);
         [DllImport("__Internal")] private static extern int MC_Audio_CreateSample(float[] data, int count, int sampleRate);
         [DllImport("__Internal")] private static extern void MC_Audio_PlaySample(int id, float gain, float rate, int spatial, float x, float y, float z);
 
@@ -39,6 +40,8 @@ namespace MissedCall.Feature.Ringtone {
         public int CreateVoice(RingtonePattern pattern) =>
             MC_Audio_CreateVoice(pattern.notes, pattern.notes.Length, pattern.noteGap, pattern.pause,
                 (int)pattern.waveform, pattern.shimmer ? 1 : 0, pattern.buzz ? 1 : 0, pattern.level);
+
+        public int CreateLoopVoice(float[] data, int sampleRate) => MC_Audio_CreateLoop(data, data.Length, sampleRate);
 
         public void StartVoice(int voice) => MC_Audio_StartVoice(voice);
         public void StopVoice(int voice) => MC_Audio_StopVoice(voice);

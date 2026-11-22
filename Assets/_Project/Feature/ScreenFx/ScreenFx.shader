@@ -171,6 +171,22 @@ Shader "Hidden/MissedCall/ScreenFx" {
                 return lerp(srgb, LineInk, lineMask * 0.75 * saturate(low * 1.5));
             }
 
+            // 정전: 달빛처럼 푸르게 어둡히고, 폰 화면 둘레만 차가운 불빛으로 밝힌다.
+            half3 Blackout(half3 srgb, ScreenPixel p) {
+                half amount = _McFxBlackout.x;
+                if (amount <= 0) {
+                    return srgb;
+                }
+
+                float aspect = _ScreenSize.x * _ScreenSize.w;
+                float2 d = (p.uv - _McFxBlackout.yz) * float2(aspect, 1);
+                half r = max(0.01, _McFxGlow.x);
+                half glow = exp(-dot(d, d) / (r * r)) * _McFxBlackout.w;
+                half3 dark = srgb * (1 - amount) * half3(0.7, 0.82, 1.0);
+                half3 lit = srgb * half3(0.85, 1.0, 1.1);
+                return lerp(dark, lit, saturate(glow));
+            }
+
             half4 Frag(Varyings input) : SV_Target {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float t = _McFxTime.x;
@@ -179,6 +195,7 @@ Shader "Hidden/MissedCall/ScreenFx" {
 
                 ScreenPixel p = MakePixel(input.texcoord);
                 half3 srgb = Watercolor(SampleScene(p), p);
+                srgb = Blackout(srgb, p);
                 // 종이가 시간이 갈수록 어둡고 차가워진다 (저녁에서 밤으로).
                 srgb *= lerp(half3(1, 1, 1), PaperDusk, tight * 0.75);
 

@@ -19,6 +19,10 @@ float4 _McFxTense;
 float4 _McFxTime;
 float4 _McFxOutlineColor;
 float4 _McFxPulseColor;
+// 정전 변수: x 어둡기, yz 폰 화면 위치(uv), w 폰 불빛 세기 (0이면 가림)
+float4 _McFxBlackout;
+// x 폰 불빛 반경 (화면 높이 비율)
+float4 _McFxGlow;
 
 struct ScreenPixel {
     float2 uv;
