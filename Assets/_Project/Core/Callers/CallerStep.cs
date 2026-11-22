@@ -13,8 +13,22 @@ namespace MissedCall.Core.Callers {
                 return;
             }
 
+            // 가중치로 고른다. 희귀 발신자는 가중치가 작다.
             System.Random rng = context.Seed.Stream(RoundStream.Caller);
-            context.Caller = callers[rng.Next(callers.Length)];
+            float total = 0f;
+            foreach (CallerProfile caller in callers) {
+                total += Mathf.Max(0f, caller.weight);
+            }
+
+            float pick = (float)rng.NextDouble() * total;
+            context.Caller = callers[callers.Length - 1];
+            foreach (CallerProfile caller in callers) {
+                pick -= Mathf.Max(0f, caller.weight);
+                if (pick < 0f) {
+                    context.Caller = caller;
+                    break;
+                }
+            }
         }
     }
 }

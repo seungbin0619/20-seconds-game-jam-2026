@@ -16,15 +16,25 @@ MonoBehaviour:
   - displayName: Mom
     answeredLine: '"Have you eaten yet?"'
     missedLine: '1 new text: "Why aren''t you picking up?"'
+    ringtone: 0
+    weight: 1
   - displayName: Delivery Driver
     answeredLine: '"I''ll leave it at your door."'
     missedLine: '"Missed delivery. Returning to sender."'
+    ringtone: 1
+    weight: 1
   - displayName: Job Interview
     answeredLine: '"We''d like to offer you the position."'
     missedLine: '"We couldn''t reach you. We''ve moved on to the next candidate."'
+    ringtone: 3
+    weight: 1
   - displayName: Fried Chicken Place
     answeredLine: '"Your address didn''t come through. Which building?"'
     missedLine: Your chicken is getting cold.
+    ringtone: 2
+    weight: 1
   - displayName: Unknown Number
     answeredLine: '"Hello! We have a low-interest loan offer for you."'
     missedLine: Probably nothing important anyway.
+    ringtone: 4
+    weight: 1

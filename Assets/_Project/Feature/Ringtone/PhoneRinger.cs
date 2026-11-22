@@ -16,9 +16,10 @@ namespace MissedCall.Feature.Ringtone {
         [SerializeField] private GameFlow flow;
         [SerializeField] private GameTuning tuning;
         [SerializeField] private RingtonePlayer player;
-        [Tooltip("벨소리. 발신자별 벨소리는 4단계에서 판마다 고른다")]
-        [SerializeField] private RingtonePattern pattern;
+        [Tooltip("벨소리 목록. 발신자(CallerProfile.ringtone)가 번호로 고른다")]
+        [SerializeField] private RingtonePattern[] patterns = new RingtonePattern[0];
 
+        private int[] voices;
         private int voice = -1;
         private bool ringing;
         // 문턱처럼 어느 방에도 속하지 않는 곳에서는 마지막으로 있던 방을 쓴다. 벽 수가 튀지 않게 한다.
@@ -38,9 +39,27 @@ namespace MissedCall.Feature.Ringtone {
 
         // 다른 컴포넌트의 Start에서 판을 바로 시작해도 음원이 있게 한다.
         private void EnsureVoice() {
-            if (voice < 0) {
-                voice = player.CreateVoice(pattern);
+            if (voices != null) {
+                return;
             }
+
+            voices = new int[patterns.Length];
+            for (int i = 0; i < patterns.Length; i++) {
+                voices[i] = player.CreateVoice(patterns[i]);
+            }
+
+            voice = voices.Length > 0 ? voices[0] : -1;
+        }
+
+        // 이번 판 발신자의 벨소리
+        private void PickVoice() {
+            EnsureVoice();
+            if (voices.Length == 0) {
+                return;
+            }
+
+            int index = flow.Context.Caller != null ? flow.Context.Caller.ringtone : 0;
+            voice = voices[Mathf.Clamp(index, 0, voices.Length - 1)];
         }
 
         private void OnEnable() {
@@ -65,8 +84,8 @@ namespace MissedCall.Feature.Ringtone {
                     revealed = false;
                     wasCovered = false;
                     lastBeat = -1;
-                    EnsureVoice();
                     Stop();
+                    PickVoice();
                     if (!flow.Context.VibrationMode) {
                         Apply();
                         player.SnapVoice(voice);

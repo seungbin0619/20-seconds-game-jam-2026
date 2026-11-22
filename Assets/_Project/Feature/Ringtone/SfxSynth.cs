@@ -245,20 +245,27 @@ namespace MissedCall.Feature.Ringtone {
             return Mathf.Sin(2f * Mathf.PI * f * t) * Attack(t, 0.008f) * Mathf.Exp(-t * 16f) * level;
         }
 
-        // 받았다. 밝게 올라가는 세 음.
+        // 받았다. 멜로디 대신 통화가 연결되는 소리: 부드러운 딸깍, 전화선 잡음이 잠깐 열렸다 닫히고,
+        // 아래에 낮고 따뜻한 화음(A3, E4)이 천천히 부풀었다 가라앉는다. 긴장이 풀리는 느낌만 준다.
         private static float[] Win(Noise noise) {
-            float length = 0.9f;
+            float length = 0.75f;
             var data = Buffer(length);
-            var high = new Biquad(Biquad.Kind.BandPass, 2800f, 1f);
+            var clickBand = new Biquad(Biquad.Kind.BandPass, 1400f, 1.2f);
+            var lineBand = new Biquad(Biquad.Kind.BandPass, 1100f, 0.5f);
+            var warm = new Biquad(Biquad.Kind.LowPass, 900f, 0.7f);
             for (int i = 0; i < data.Length; i++) {
                 float t = Sec(i);
-                float click = high.Process(noise.Next()) * Mathf.Exp(-t * 250f);
-                float tones = Bell(t, 1046.5f, 5f) * 0.45f + Bell(t - 0.08f, 1318.5f, 5f) * 0.4f +
-                    Bell(t - 0.16f, 1568f, 4f) * 0.45f + Bell(t - 0.16f, 2093f, 6f) * 0.15f;
-                data[i] = click * 0.3f + tones;
+                float n = noise.Next();
+                float click = clickBand.Process(n) * Attack(t, 0.001f) * Mathf.Exp(-t * 180f) * 0.6f;
+                float line = lineBand.Process(n) * Attack(t - 0.02f, 0.03f) * Mathf.Exp(-t * 9f) * 0.12f;
+                float u = t - 0.03f;
+                float swell = u > 0f ? Attack(u, 0.06f) * Mathf.Exp(-u * 4.2f) : 0f;
+                float chord = (Mathf.Sin(2f * Mathf.PI * 220f * t) * 0.5f + Mathf.Sin(2f * Mathf.PI * 329.63f * t) * 0.35f
+                    + Mathf.Sin(2f * Mathf.PI * 440f * t) * 0.12f) * swell;
+                data[i] = click + line + warm.Process(chord) * Fade(t, length, 0.08f);
             }
 
-            return Finish(data, 0.5f);
+            return Finish(data, 0.45f);
         }
 
         // 놓쳤다. 통화가 끊긴 뒤의 뚜-뚜-뚜.
