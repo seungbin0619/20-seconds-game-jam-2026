@@ -10,7 +10,7 @@ namespace MissedCall.Feature.Ui {
     public sealed class HudView : MonoBehaviour {
         [SerializeField] private TMP_Text clock;
         [SerializeField] private TMP_Text hint;
-        [Tooltip("판 변수를 알리는 노란 태그 (바탕과 글자)")]
+        [Tooltip("판 변수를 알리는 강조색 태그 (바탕과 글자)")]
         [SerializeField] private RectTransform modifierTag;
         [SerializeField] private TMP_Text modifierText;
         [Tooltip("남은 시간이 적을 때 초가 넘어가는 순간 타이머가 커지는 비율")]

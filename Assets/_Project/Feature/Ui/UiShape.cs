@@ -24,7 +24,7 @@ namespace MissedCall.Feature.Ui {
         [Range(0f, 1f)] public float halftone;
         [Tooltip("하프톤이 커지는 방향(도). 9 = 고르게, 8 = 가운데에서 바깥으로")]
         public float halftoneAngle = -45f;
-        [Tooltip("점 색. +면 강조색(노랑), -면 검정. 크기가 진하기")]
+        [Tooltip("점 색. +면 밝은 청회색(_DotLight), -면 검정. 크기가 진하기")]
         [Range(-1f, 1f)] public float dotTone;
         [Tooltip("0보다 크면 이 두께(px)의 테두리만 그린다")]
         public float outline;

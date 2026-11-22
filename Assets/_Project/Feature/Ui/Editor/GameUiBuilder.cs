@@ -137,7 +137,7 @@ namespace MissedCall.Feature.Ui.Editor {
             Place(clock.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -14f), new Vector2(400f, 80f));
             TMP_Text hint = Text(rect, "Hint", "Follow the sound and clear the piles", 20f, UiPalette.Paper, bodyFont, bodyShadow);
             Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -96f), new Vector2(900f, 34f));
-            // 판 변수 태그: 힌트 아래 기울인 노란 띠
+            // 판 변수 태그: 힌트 아래 기울인 강조색 띠
             Image tag = Shape(rect, "ModifierTag", UiPalette.Ring, 0f, ButtonSkew, 0.7f, 0f, -0.25f);
             tag.gameObject.AddComponent<CanvasGroup>();
             Place(tag.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -138f), new Vector2(340f, 36f));
@@ -170,7 +170,7 @@ namespace MissedCall.Feature.Ui.Editor {
             clock = Tag(handset, "LockTime", "00:00");
             Heading(handset, "Missed Call", 56f, UiPalette.Ring);
             Text(handset, "Lead", "Your phone is ringing somewhere. Find it and pick up before it stops.", 18f, UiPalette.Paper, bodyFont);
-            string key = "<color=#FFD23F><b>{0}</b></color>  {1}";
+            string key = "<color=#FFFFFF><b>{0}</b></color>  {1}";
             TMP_Text keys = Text(handset, "Keys",
                 string.Format(key, "WASD", "Walk") + "\n"
                 + string.Format(key, "Mouse", "Look around") + "\n"
@@ -252,7 +252,7 @@ namespace MissedCall.Feature.Ui.Editor {
 
         // ---------- 부품 ----------
 
-        // 폰 패널. 모서리 두 곳을 깎은 어두운 카드에 하프톤 점, 점으로 된 그림자, 노란 띠를 얹는다.
+        // 폰 패널. 모서리 두 곳을 깎은 어두운 카드에 하프톤 점, 점으로 된 그림자, 강조색 띠를 얹는다.
         // UiTilt가 원근감 있게 기울이고 등장 애니메이션을 한다. 바탕 도형들은 레이아웃에서 빼고 카드 크기를 따라간다.
         private static RectTransform Handset(Transform parent) {
             RectTransform rect = Node("Handset", parent);
@@ -301,7 +301,7 @@ namespace MissedCall.Feature.Ui.Editor {
         }
 
         // 기울인 버튼. 누름 판정은 GameUi가 이 이미지의 사각형으로 한다.
-        // primary는 노란 바탕(Ring It, Try Again, Resume), 아니면 반투명 바탕(Restart, Title).
+        // primary는 강조색 바탕(Ring It, Try Again, Resume), 아니면 반투명 바탕(Restart, Title).
         private static Image Pill(Transform parent, string name, string label, bool primary = true) {
             Image button = primary
                 ? Shape(parent, name, UiPalette.Ring, 8f, ButtonSkew, 0.75f, 0f, -0.28f)
@@ -444,7 +444,7 @@ namespace MissedCall.Feature.Ui.Editor {
                 material.shader = shader;
             }
 
-            // 어두운 바탕 위의 밝은 점: 남색보다 조금 밝은 청회색. 노랑은 폰과 UI 강조에만 쓴다.
+            // 어두운 바탕 위의 밝은 점: 남색보다 조금 밝은 청회색. 강조색은 UI에만 쓴다.
             material.SetColor("_DotLight", new Color(0.15f, 0.22f, 0.29f));
             EditorUtility.SetDirty(material);
             return material;

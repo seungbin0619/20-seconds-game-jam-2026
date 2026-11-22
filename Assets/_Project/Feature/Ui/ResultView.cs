@@ -31,9 +31,9 @@ namespace MissedCall.Feature.Ui {
             shownAt = Time.unscaledTime;
             CallerProfile profile = context.Caller;
             caller.text = profile != null ? profile.displayName : "Unknown Number";
-            // 희귀 발신자는 이름 옆에 노란 표시
+            // 희귀 발신자는 이름 옆에 강조색 표시
             if (profile != null && profile.weight < RareWeight) {
-                caller.text += "  <color=#FFD23F><size=70%>RARE CALLER</size></color>";
+                caller.text += "  <color=#FFFFFF><size=70%>RARE CALLER</size></color>";
             }
             if (won) {
                 head.text = "Hello?";

@@ -210,7 +210,8 @@ namespace MissedCall.Feature.Ui {
             bool hovered = mouse != null && Cursor.lockState != CursorLockMode.Locked
                 && RectTransformUtility.RectangleContainsScreenPoint(button.rectTransform, mouse.position.ReadValue(), null);
             Color normal = primary ? UiPalette.Ring : UiPalette.Secondary;
-            Color hover = primary ? Color.Lerp(UiPalette.Ring, Color.white, hoverBrighten) : UiPalette.SecondaryHover;
+            // 강조색이 흰색이라 밝히는 대신 살짝 어둡게 한다.
+            Color hover = primary ? Color.Lerp(UiPalette.Ring, UiPalette.Muted, hoverBrighten * 2f) : UiPalette.SecondaryHover;
             button.color = hovered ? hover : normal;
             // 커서를 올리면 살짝 커지고, 누르면 눌렸다 튄다.
             float scale = button.rectTransform.localScale.x;

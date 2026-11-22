@@ -212,8 +212,8 @@ Shader "Hidden/MissedCall/ScreenFx" {
                 srgb = lerp(srgb, Luminance(srgb).xxx, _McFxTense.y);
                 half pulse = saturate(_McFxTense.z * 2.5);
                 srgb = HalftoneCreep(srgb, p, t, saturate(tight * 0.4 + low * 0.6), pulse);
-                // 집중선은 박자(진동 간격 1초)의 절반마다 새로 긋는다.
-                srgb = FocusLines(srgb, p, floor(t * 2), low);
+                // 집중선은 초당 2.8번 새로 긋는다 (11/22: 0.5초 간격에서 1.4배 빠르게).
+                srgb = FocusLines(srgb, p, floor(t * 2.8), low);
                 return half4(SRGBToLinear(saturate(srgb)), 1);
             }
             ENDHLSL
