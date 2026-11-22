@@ -130,7 +130,7 @@ namespace MissedCall.Feature.Room.Editor {
             b.Bathtub("Bathtub", new B(0.65f, 1.4f, -0.5f, 1.4f, 0f, 0.55f), WallSide.North);
             b.Toilet("Toilet", new B(-1.0f, -0.6f, 0.85f, 1.4f, 0f, 0.45f), WallSide.North);
             b.SinkCabinet("SinkCabinet", new B(-0.4f, 0.4f, 0.9f, 1.4f, 0f, 0.85f), WallSide.South);
-            b.Hollow("Hamper", 0.75f, 1.35f, -1.35f, -0.75f, 0.32f, 0.04f, wood);
+            b.Hollow("Hamper", 0.75f, 1.35f, -1.35f, -0.75f, 0.32f, 0.04f, wood, true);
             b.Rug("BathMat", -0.5f, 0.3f, -0.3f, 0.4f, fabricTeal);
 
             b.Window(WallSide.East, 0.45f, 0.8f);
@@ -154,7 +154,7 @@ namespace MissedCall.Feature.Room.Editor {
             b.Cabinet("ShoeBench", new B(1.0f, 1.4f, -0.6f, 0.7f, 0f, 0.4f), WallSide.West, wood, wood, 3, 1);
             b.HangingRail("HangingRail", new B(1.15f, 1.25f, -0.6f, 0.7f, 1.6f, 1.65f));
             b.Ottoman("Ottoman", new B(-0.4f, 0.4f, -0.1f, 0.4f, 0f, 0.45f), fabricRose);
-            b.Hollow("LaundryBasket", -1.35f, -0.75f, -1.35f, -0.75f, 0.32f, 0.04f, wood);
+            b.Hollow("LaundryBasket", -1.35f, -0.75f, -1.35f, -0.75f, 0.32f, 0.04f, wood, true);
 
             b.Picture(WallSide.East, -1.1f, 0.45f, 1.3f, 1.75f);
 
@@ -177,7 +177,7 @@ namespace MissedCall.Feature.Room.Editor {
             b.Cabinet("Nightstand", new B(-1.25f, -0.8f, 1.2f, 1.65f, 0f, 0.5f), WallSide.South, wood, wood, 1, 2);
             b.Cabinet("Dresser", new B(-1.6f, -0.4f, -1.65f, -1.2f, 0f, 0.9f), WallSide.North, wood, wood, 2, 3);
             b.Desk("Desk", new B(0.6f, 1.8f, -1.65f, -1.05f, 0f, 0.75f), WallSide.North);
-            b.Hollow("LaundryBasket", 1.25f, 1.85f, 1.05f, 1.65f, 0.32f, 0.04f, wood);
+            b.Hollow("LaundryBasket", 1.25f, 1.85f, 1.05f, 1.65f, 0.32f, 0.04f, wood, true);
             b.Rug("Rug", -0.9f, 0.9f, -1.0f, -0.4f, rugBlue);
 
             b.Window(WallSide.North, 0f, 1.0f);
@@ -282,7 +282,7 @@ namespace MissedCall.Feature.Room.Editor {
             b.Bathtub("Bathtub", new B(-1.4f, 0.2f, 0.65f, 1.4f, 0f, 0.55f), WallSide.West);
             b.PedestalSink("Sink", new B(-1.4f, -0.9f, -0.5f, 0.3f, 0f, 0.85f), WallSide.West);
             b.Toilet("Toilet", new B(0.6f, 1.1f, 0.85f, 1.4f, 0f, 0.45f), WallSide.North);
-            b.Hollow("LaundryBasket", -1.35f, -0.75f, -1.3f, -0.7f, 0.32f, 0.04f, wood);
+            b.Hollow("LaundryBasket", -1.35f, -0.75f, -1.3f, -0.7f, 0.32f, 0.04f, wood, true);
 
             b.Window(WallSide.North, -0.6f, 0.9f);
             b.Mirror(WallSide.West, -0.1f, 0.55f);
@@ -553,6 +553,12 @@ namespace MissedCall.Feature.Room.Editor {
                         float a1 = (float)(c + 1) / cols - gapA;
                         float y0 = Mathf.Lerp(h0, h1, (float)r / rows) + (r > 0 ? gap : 0f);
                         float y1 = Mathf.Lerp(h0, h1, (float)(r + 1) / rows) - gap;
+                        // 서랍장(rows > 1)은 첫 열 맨 위 서랍을 여닫을 수 있게 만든다. 폰이 들어갈 수 있다.
+                        if (rows > 1 && c == 0 && r == rows - 1) {
+                            LiveDrawer(g, "LiveDrawer", b, b.Span(alongX, a0, a1).WithY(y0, y1), front, doors, 0.06f, 0.012f);
+                            continue;
+                        }
+
                         Panel(g, $"Door_{c}_{r}", b, front, a0, a1, y0, y1, 0.015f, doors);
 
                         // 서랍(rows > 1)은 가운데, 문짝은 안쪽 모서리 쪽 높이에 손잡이.
@@ -608,6 +614,12 @@ namespace MissedCall.Feature.Room.Editor {
                 for (int r = 0; r < 3; r++) {
                     float y0 = Mathf.Lerp(drawers.Y0 + 0.04f, drawers.Y1, r / 3f) + 0.01f;
                     float y1 = Mathf.Lerp(drawers.Y0 + 0.04f, drawers.Y1, (r + 1) / 3f) - 0.01f;
+                    if (r == 2) {
+                        LiveDrawer(g, "LiveDrawer", drawers, drawers.Span(alongX, 0.06f, 0.94f).WithY(y0, y1), front, wood,
+                            0.04f, 0.01f);
+                        continue;
+                    }
+
                     Panel(g, "Drawer" + r, drawers, front, 0.06f, 0.94f, y0, y1, 0.012f, wood);
                     B handleBody = Outside(drawers, front, 0.012f);
                     Panel(g, "Handle" + r, handleBody, front, 0.4f, 0.6f, (y0 + y1) * 0.5f - 0.01f, (y0 + y1) * 0.5f + 0.01f,
@@ -898,20 +910,96 @@ namespace MissedCall.Feature.Room.Editor {
                 }
             }
 
-            /// <summary>바닥판과 네 테두리로 된 속이 빈 상자 (욕조, 바구니). 테두리마다 충돌체가 있다.</summary>
-            public void Hollow(string boxName, float minX, float maxX, float minZ, float maxZ, float height, float rim, Material mat) {
+            /// <summary>
+            /// 바닥판과 네 테두리로 된 속이 빈 상자 (욕조, 바구니). 테두리마다 충돌체가 있다.
+            /// loose면 물리로 움직이는 바구니다: 라이트맵에서 빼고, 차거나 들이받으면 넘어져 안의 물건이 쏟아진다 (LooseProp).
+            /// </summary>
+            public void Hollow(string boxName, float minX, float maxX, float minZ, float maxZ, float height, float rim, Material mat,
+                bool loose = false, float mass = 1.5f) {
                 Transform group = Group(boxName);
                 float cx = (minX + maxX) * 0.5f;
                 float cz = (minZ + maxZ) * 0.5f;
                 float sx = maxX - minX;
                 float sz = maxZ - minZ;
+                // 움직이는 바구니는 그룹 원점을 바닥 가운데에 두어 넘어질 때 그 자리를 축으로 돈다.
+                Vector3 origin = loose ? new Vector3(cx, 0f, cz) : Vector3.zero;
+                if (loose) {
+                    group.localPosition = origin;
+                }
+
+                bool baked = !loose;
                 const float baseThickness = 0.02f;
-                Cube(group, "Base", new Vector3(cx, baseThickness * 0.5f, cz), new Vector3(sx, baseThickness, sz), mat, true, true);
+                Cube(group, "Base", new Vector3(cx, baseThickness * 0.5f, cz) - origin, new Vector3(sx, baseThickness, sz), mat, baked, true);
                 float hy = height * 0.5f;
-                Cube(group, "RimW", new Vector3(minX + rim * 0.5f, hy, cz), new Vector3(rim, height, sz), mat, true, true);
-                Cube(group, "RimE", new Vector3(maxX - rim * 0.5f, hy, cz), new Vector3(rim, height, sz), mat, true, true);
-                Cube(group, "RimS", new Vector3(cx, hy, minZ + rim * 0.5f), new Vector3(sx - rim * 2f, height, rim), mat, true, true);
-                Cube(group, "RimN", new Vector3(cx, hy, maxZ - rim * 0.5f), new Vector3(sx - rim * 2f, height, rim), mat, true, true);
+                Cube(group, "RimW", new Vector3(minX + rim * 0.5f, hy, cz) - origin, new Vector3(rim, height, sz), mat, baked, true);
+                Cube(group, "RimE", new Vector3(maxX - rim * 0.5f, hy, cz) - origin, new Vector3(rim, height, sz), mat, baked, true);
+                Cube(group, "RimS", new Vector3(cx, hy, minZ + rim * 0.5f) - origin, new Vector3(sx - rim * 2f, height, rim), mat, baked, true);
+                Cube(group, "RimN", new Vector3(cx, hy, maxZ - rim * 0.5f) - origin, new Vector3(sx - rim * 2f, height, rim), mat, baked, true);
+                if (!loose) {
+                    return;
+                }
+
+                Rigidbody body = group.gameObject.AddComponent<Rigidbody>();
+                body.mass = mass;
+                body.interpolation = RigidbodyInterpolation.Interpolate;
+                body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+                body.linearDamping = 0.2f;
+                body.angularDamping = 0.4f;
+                group.gameObject.AddComponent<LooseProp>();
+            }
+
+            /// <summary>
+            /// 클릭으로 여닫는 서랍 (Drawer). span은 앞면 칸(높이 포함, 장 깊이 전체), body는 장 전체.
+            /// 서랍 상자는 장 충돌체 안에 들어가 있다가 앞으로 빠져나온다. 서랍 안에는 더미 없이 폰만 숨는 자리를 둔다.
+            /// 장 앞면 그 칸에는 어두운 판을 붙여, 열렸을 때 안쪽이 빈 구멍처럼 보이게 한다.
+            /// 서랍은 움직이므로 라이트맵을 받지 않는다.
+            /// </summary>
+            private void LiveDrawer(Transform g, string drawerName, B body, B span, WallSide front, Material mat,
+                float handleHalfWidth, float handleHalfHeight) {
+                const float wall = 0.012f;
+                const float frontDepth = 0.015f;
+                float depth = Mathf.Min(0.38f, Depth(body, front) - 0.06f);
+                B box = span.Slice(front, depth);
+                Part(g, drawerName + "Cavity", Outside(span, front, 0.002f), woodDark);
+
+                Transform drawer = Child(g, drawerName);
+                drawer.localPosition = box.Center - Offset(g);
+                Rigidbody rb = drawer.gameObject.AddComponent<Rigidbody>();
+                rb.isKinematic = true;
+                rb.useGravity = false;
+
+                bool alongX = front == WallSide.North || front == WallSide.South;
+                B frontPanel = Outside(box, front, frontDepth);
+                GameObject frontGo = Loose(drawer, "Front", frontPanel, mat, true);
+                float width = alongX ? box.Size.x : box.Size.z;
+                float cy = (box.Y0 + box.Y1) * 0.5f;
+                float hw = handleHalfWidth / width;
+                B handle = Outside(frontPanel, front, 0.02f).Span(alongX, 0.5f - hw, 0.5f + hw)
+                    .WithY(cy - handleHalfHeight, cy + handleHalfHeight);
+                Loose(drawer, "Handle", handle, metal, false);
+                float innerTop = box.Y1 - 0.02f;
+                Loose(drawer, "Bottom", box.WithY(box.Y0, box.Y0 + wall), mat, true);
+                Loose(drawer, "Back", box.Slice(Opposite(front), wall).WithY(box.Y0, innerTop), mat, true);
+                B sideA = alongX ? new B(box.X0, box.X0 + wall, box.Z0, box.Z1, box.Y0, innerTop)
+                    : new B(box.X0, box.X1, box.Z0, box.Z0 + wall, box.Y0, innerTop);
+                B sideB = alongX ? new B(box.X1 - wall, box.X1, box.Z0, box.Z1, box.Y0, innerTop)
+                    : new B(box.X0, box.X1, box.Z1 - wall, box.Z1, box.Y0, innerTop);
+                Loose(drawer, "SideA", sideA, mat, true);
+                Loose(drawer, "SideB", sideB, mat, true);
+
+                Transform spotTransform = Child(drawer, "Spot_" + g.name + "Drawer");
+                spotTransform.localPosition = new Vector3(box.Center.x, box.Y0 + wall, box.Center.z) - Offset(drawer);
+                HideSpot spot = spotTransform.gameObject.AddComponent<HideSpot>();
+                spot.EditorSetupBare(true);
+                spotList.Add(spot);
+
+                Drawer component = drawer.gameObject.AddComponent<Drawer>();
+                component.EditorSetup(Normal(front) * (depth * 0.8f), spot, frontGo.GetComponent<MeshRenderer>());
+            }
+
+            /// <summary>움직이는 부품 (라이트맵 없음). b는 모듈 로컬.</summary>
+            private GameObject Loose(Transform parent, string partName, B b, Material mat, bool collider) {
+                return Cube(parent, partName, b.Center - Offset(parent), b.Size, mat, false, collider);
             }
 
             /// <summary>얇은 깔개. 물건이 깔개 위에 놓이도록 충돌체를 둔다. 테두리에 한 겹 더 깐다.</summary>

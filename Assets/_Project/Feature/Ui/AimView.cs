@@ -57,6 +57,11 @@ namespace MissedCall.Feature.Ui {
                         color = UiPalette.Ring;
                         text = "Open";
                         break;
+                    case AimKind.Drawer:
+                        targetScale = itemScale;
+                        color = UiPalette.Ring;
+                        text = target is IClickable { IsOpen: true } ? "Close" : "Open";
+                        break;
                     default:
                         targetScale = itemScale;
                         color = UiPalette.Ring;

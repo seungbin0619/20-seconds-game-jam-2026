@@ -4,5 +4,7 @@ namespace MissedCall.Core.Aim {
         Item,
         Phone,
         Door,
+        /// <summary>열고 닫는 서랍 (<see cref="IClickable"/>)</summary>
+        Drawer,
     }
 }

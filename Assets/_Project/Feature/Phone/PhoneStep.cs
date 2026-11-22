@@ -56,6 +56,11 @@ namespace MissedCall.Feature.Phone {
             Vector3 offset = t.rotation * new Vector3(Range(rng, jitter.x), 0f, Range(rng, jitter.y));
             Quaternion rotation = t.rotation * Quaternion.Euler(0f, Range(rng, tuning.phoneYawJitter), 0f);
             device.Place(context, t.position + offset, rotation, phoneRoom);
+            context.PhoneSpot = Spot;
+            // 서랍 안 자리는 서랍과 함께 움직인다.
+            if (Spot.Moves) {
+                context.PhoneMount = t;
+            }
         }
 
         private static float Range(System.Random rng, float limit) => (float)(rng.NextDouble() * 2.0 - 1.0) * limit;

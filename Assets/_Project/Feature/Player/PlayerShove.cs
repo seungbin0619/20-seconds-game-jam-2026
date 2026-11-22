@@ -123,6 +123,16 @@ namespace MissedCall.Feature.Player {
                 // 앞으로 차되, 옆에 있던 물건은 그 옆으로 조금 벌어진다.
                 Vector3 side = Vector3.ProjectOnPlane(Flat(offset), forward);
                 Vector3 velocity = (forward + side * tuning.kickSpread) * tuning.kickSpeed + Vector3.up * tuning.kickLift;
+                if (!body.TryGetComponent(out IThrowable _)) {
+                    // 물건이 아닌 물리 가구(빨래 바구니)는 대개 구석에 있어 앞으로 차면 벽에 막힌다.
+                    // 윗부분이 플레이어 쪽으로 넘어오게 엎어 안의 물건을 쏟는다.
+                    body.WakeUp();
+                    body.linearVelocity = Vector3.up * tuning.kickTipLift - forward * tuning.kickTipBack;
+                    body.angularVelocity = Vector3.Cross(Vector3.up, -forward) * tuning.kickTipSpin;
+                    LastKicked++;
+                    continue;
+                }
+
                 if (body.TryGetComponent(out IThrowable item) && item.Enclosed) {
                     // 바구니, 상자 안의 물건은 앞으로 차면 테두리에 걸려 멈춘다. 위로 들썩이게만 한다 (비우려면 들어 올려야 한다).
                     velocity = forward * (tuning.kickSpeed * tuning.kickEnclosedForward) + Vector3.up * tuning.kickEnclosedLift;

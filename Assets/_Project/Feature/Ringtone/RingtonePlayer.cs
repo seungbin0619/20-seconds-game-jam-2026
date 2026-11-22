@@ -110,6 +110,7 @@ namespace MissedCall.Feature.Ringtone {
                 case SoundCue.Meow: return (0.8f, 0.8f, 0.08f);
                 case SoundCue.Kick: return (0.35f, 0.8f, 0.1f);
                 case SoundCue.Slam: return (0.3f, 0.9f, 0.1f);
+                case SoundCue.Drawer: return (0.6f, 0.8f, 0.08f);
                 default: return (1f, 1f, 0f);
             }
         }
@@ -121,6 +122,7 @@ namespace MissedCall.Feature.Ringtone {
                 case SoundCue.Tug:
                 case SoundCue.Kick:
                 case SoundCue.Slam:
+                case SoundCue.Drawer:
                     return tuning.sfxHandVolume;
                 case SoundCue.ImpactSoft:
                 case SoundCue.ImpactHard:

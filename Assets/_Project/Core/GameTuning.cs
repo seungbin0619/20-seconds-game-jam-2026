@@ -142,6 +142,12 @@ namespace MissedCall.Core {
         public float kickEnclosedLift = 3.5f;
         [Tooltip("바구니, 상자 안 물건을 찼을 때 앞으로 가는 속도 비율 (kickSpeed에 곱한다)")]
         [Range(0f, 1f)] public float kickEnclosedForward = 0.25f;
+        [Tooltip("빨래 바구니 같은 물리 가구를 찼을 때 위로 뜨는 속도(m/s)")]
+        public float kickTipLift = 2.4f;
+        [Tooltip("물리 가구를 찼을 때 플레이어 쪽으로 끌려오는 속도(m/s)")]
+        public float kickTipBack = 1.2f;
+        [Tooltip("물리 가구를 찼을 때 윗부분이 플레이어 쪽으로 넘어오는 회전 속도(rad/s)")]
+        public float kickTipSpin = 16f;
         [Tooltip("구 가장자리 물건의 세기 배율")]
         [Range(0f, 1f)] public float kickEdgeScale = 0.45f;
         [Tooltip("옆에 있던 물건이 옆으로 벌어지는 비율")]

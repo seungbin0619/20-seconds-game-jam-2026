@@ -35,6 +35,7 @@ namespace MissedCall.Feature.Vacuum {
 
             vacuum.Place(context, floor, (float)rng.NextDouble() * 360f, rng);
             context.PhoneMount = vacuum.Mount;
+            context.PhoneSpot = null;
             context.PhonePosition = vacuum.Mount.position;
             context.PhoneRoom = room;
         }

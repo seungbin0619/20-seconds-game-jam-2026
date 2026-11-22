@@ -110,6 +110,7 @@ namespace MissedCall.Feature.Layout {
                     Quaternion.Euler(0f, 90f * picks[i].quarterTurns, 0f));
                 module.CloseAllSockets();
                 module.gameObject.SetActive(true);
+                module.ResetProps();
                 active.Add(module);
                 rooms[i] = module;
 

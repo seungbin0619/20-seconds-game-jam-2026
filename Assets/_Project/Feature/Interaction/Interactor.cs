@@ -180,6 +180,12 @@ namespace MissedCall.Feature.Interaction {
                 return;
             }
 
+            if (aimed is IClickable clickable) {
+                clickable.Click();
+                nextGrabTime = Time.unscaledTime + tuning.throwCooldown;
+                return;
+            }
+
             if (aimed is IGrabbable phone) {
                 SetAim(null);
                 phone.Grab();

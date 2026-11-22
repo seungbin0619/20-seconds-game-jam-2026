@@ -11,16 +11,33 @@ namespace MissedCall.Core.Rooms {
         [SerializeField] private Vector2Int pileCount = new(2, 4);
         [Tooltip("바구니나 욕조처럼 둘레에 벽이 있는 자리인지")]
         [SerializeField] private bool enclosed;
+        [Tooltip("물건 더미 없이 폰만 두는 자리 (서랍 안)")]
+        [SerializeField] private bool bare;
+        [Tooltip("움직이는 가구(서랍)에 붙은 자리. 폰이 이 자리를 따라간다")]
+        [SerializeField] private bool moves;
 
         public ItemKind BaseKind => baseKind;
         public Vector2Int PileCount => pileCount;
         public bool Enclosed => enclosed;
+        public bool Bare => bare;
+        public bool Moves => moves;
+
+        /// <summary>
+        /// 물건 말고도 폰을 덮어 소리를 먹먹하게 하는 것의 수 (닫힌 서랍). 서랍이 판 동안 바꾸고 Phone이 덮임 수에 더한다.
+        /// </summary>
+        public int ExtraCovers { get; set; }
 
 #if UNITY_EDITOR
         public void EditorSetup(ItemKind kind, Vector2Int count, bool isEnclosed) {
             baseKind = kind;
             pileCount = count;
             enclosed = isEnclosed;
+        }
+
+        public void EditorSetupBare(bool isMoving) {
+            bare = true;
+            moves = isMoving;
+            pileCount = Vector2Int.zero;
         }
 
         private void OnDrawGizmos() {

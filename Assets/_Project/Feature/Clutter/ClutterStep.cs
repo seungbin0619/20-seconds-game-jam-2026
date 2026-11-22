@@ -105,6 +105,11 @@ namespace MissedCall.Feature.Clutter {
         }
 
         private void BuildPile(HideSpot spot, System.Random rng) {
+            // 서랍 안처럼 폰만 두는 자리
+            if (spot.Bare) {
+                return;
+            }
+
             Transform t = spot.transform;
             Quaternion baseRotation = t.rotation * Quaternion.Euler(0f, Range(rng, -catalog.baseSpin, catalog.baseSpin), 0f);
             ClutterCatalog.Kind baseKind = catalog.Get(spot.BaseKind);

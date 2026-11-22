@@ -27,6 +27,8 @@ namespace MissedCall.Core.Round {
         public Vector3 PhonePosition { get; set; }
         public int PhoneRoom { get; set; } = -1;
         public int Covers { get; set; }
+        /// <summary>폰을 둔 숨는 자리. Phone이 판 준비 중에 채운다. 로봇청소기에 실리면 null이다.</summary>
+        public HideSpot PhoneSpot { get; set; }
         /// <summary>폰 조준 대상. Phone이 판 준비 중에 채우고, Interaction이 물건보다 먼저 조준한다.</summary>
         public IGrabbable Phone { get; set; }
         /// <summary>판 변수. Modifiers가 판 준비 중에 정하고 Phone, Ringtone, ScreenFx, Ui가 읽는다.</summary>
@@ -89,6 +91,7 @@ namespace MissedCall.Core.Round {
             PhonePosition = Vector3.zero;
             PhoneRoom = -1;
             Covers = 0;
+            PhoneSpot = null;
             Phone = null;
             Modifier = RoundModifier.None;
             Mood = 0;

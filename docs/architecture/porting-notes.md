@@ -128,6 +128,7 @@ three.js는 오른손, Unity는 왼손 좌표계다. 방이 대칭이 아니므�
 | `PhoneDevice` | `IGrabbable`. 원점은 표면이고 중심은 0.012m 위다. `RoundContext`의 `Phone`, `PhonePosition`, `PhoneRoom`, `Covers`를 쓴다. 프리팹 `Phone.prefab`(몸체 Simple Lit, 화면 Unlit) |
 
 - 덮임 수: 폰 위 기둥 범위의 Clutter 콜라이더를 `OverlapBox`로 모은 뒤 프로토타입 `countCovers` 조건으로 센다. 물건 중심 높이가 폰 중심 -`coverBelow` ~ +`coverAbove`, 폰 중심을 물건 로컬로 옮겼을 때 가로세로가 반 크기 + `coverMargin` 안. 판 진행 중(`Playing`, `Answer`) 매 프레임 갱신한다.
+- 서랍 속 폰 (11/22): 폰을 둔 자리가 `HideSpot.Moves`면 `PhoneStep`이 `PhoneMount`에 그 자리를 넣어 폰이 서랍을 따라간다. 덮임은 `HideSpot.ExtraCovers`(닫힌 서랍 3)를 더하고, 물건은 서랍 안 높이(0.15m)까지만 센다. 처음에는 평소처럼 1.1m 위까지 셌더니 책상 위 더미가 열린 서랍 속 폰까지 덮어 먹먹함과 드러남 소리가 남았다 (시드 18). 검증: 시드 1~60 중 5판이 서랍 속 폰, 열면 0.3m 빠져나오고 덮임 0, 폰과 자리 차이 0mm.
 - 기어가는 폰 (11/22, 프로토타입에 없음): 폰은 콜라이더가 없으므로 `PhoneDevice.Crawl`이 레이로 표면을 따라간다. 앞쪽 수평 레이(`crawlWallMargin`)가 `surfaceMask`(Default)에 맞거나 다음 자리가 집 밖이면 반대쪽으로 돌고, 다음 자리 위 `crawlStepUp`에서 아래로 쏜 레이의 높이가 `crawlStepUp`보다 낮으면 중력으로 떨어진다. 물건(Clutter)은 표면으로 보지 않아 바닥에 떨어진 폰은 그 자리의 물건 밑으로 들어간 것처럼 된다. 움직일 때마다 `RoundContext.PhonePosition`, `PhoneRoom`을 갱신하므로 벨소리 경로와 화면 연출이 따라온다. 방향은 `RoundStream.Vibration`에서 뽑는다.
   - 검증 (에디터, 진동 모드 강제, 폰 위 물건을 치운 시드 8개, 약 10초): 모두 0.7m 안팎 움직였고 벽이나 가구 안으로 들어간 경우 없음. 침대·탁자 위 폰 3개가 바닥(또는 낮은 가구)으로 떨어짐. 책상 밑 자리는 처음부터 책상 상자 콜라이더 안에 있으며(기존과 같음) 거기서도 빠져나온다.
 - 로봇청소기 변수 (11/22, 프로토타입에 없음, `Feature/Vacuum`): `VacuumStep`이 폰 방 바닥에서 둘레 0.22m, 높이 3~23cm가 빈 자리를 찾아 키네마틱 강체 청소기를 두고, `RoundContext.PhoneMount`에 윗면을 넣는다. `PhoneDevice`는 마운트가 있으면 매 프레임 그 위치로 옮기고 기어가지 않는다. 청소기는 `MovePosition`으로 움직여 바닥 물건을 밀어낸다.
@@ -179,6 +180,7 @@ three.js는 오른손, Unity는 왼손 좌표계다. 방이 대칭이 아니므�
 - 발차기와 박치기 (11/22, `Player/PlayerShove`, 프로토타입에 없음): 물건(Clutter 레이어)은 플레이어와 충돌하지 않으므로 겹침 질의로 찾아 `IThrowable.Knock`으로 속도를 준다. `Knock`은 `Release`처럼 천을 날아가는 상태로 두고 `Enclosed`를 지운다. 회전은 `RoundStream.Shove`에서 뽑는다.
   - 발차기: 우클릭을 물리 스텝에서 처리한다. 발 앞 `kickReach`, 높이 `kickHeight`, 반지름 `kickRadius` 구 안의 물건을 앞쪽 위로 찬다. 가운데에서 멀수록 `kickEdgeScale`까지 약해진다.
   - 바구니, 상자, 욕조 안 물건(`Enclosed`)은 앞으로 차면 테두리에 걸려 거의 움직이지 않았다 (위로 4.2~6.5m/s를 줘도 2~4개 중 0~2개만 빠져나옴, 바로 위로만 차면 0개). 그래서 위로 들썩이기만 하게 두고(`kickEnclosedLift`), 비우는 것은 들어 올리기로 한다.
+  - 빨래 바구니 같은 물리 가구(물건이 아닌 강체)는 대개 구석에 있어서 앞으로 차면 벽에 막혀 4~9cm만 밀렸다 (시드 5개). 그래서 앞으로 밀지 않고 위로 `kickTipLift`, 플레이어 쪽으로 `kickTipBack`, 윗부분이 플레이어 쪽으로 넘어오는 회전 `kickTipSpin`을 준다. 회전 7에서는 25도쯤 기울다 말았고, 12에서 5개 중 3개, 16에서 4개가 70~90도 넘어가 물건 2~4개 중 0~4개가 쏟아졌다. 서랍은 키네마틱이라 차도 움직이지 않는다.
   - 박치기: `slamMinSpeed` 이상으로 걸을 때 몸 캡슐(반지름 + `slamReach`, 아래 구 중심은 발 높이) 안에서 걷는 방향 앞쪽 물건을 튕긴다. 아래 구 중심을 몸 반지름 높이에 두었더니 바닥에 깔린 납작한 물건(높이 0.06m)이 앞에서 닿지 않았다.
   - 검증 (에디터, 깔개 더미, 시드 47·58): 1.6m 앞에서 걸어 들어가 물건 2~3개 중 2개가 0.2~1.3m 밀려남. 발차기는 깔개 더미 2~3개 모두 0.5m 안팎 날아감.
   - 에디터 확인 팁: `unity command eval` 안에서 `Rigidbody.linearVelocity`를 넣으면 다음 스텝에 남지 않는다. 게임 루프에서 실행되게 `PlayerShove.QueueKick()`이나 `PlayerMotor`의 `debugInput`(리플렉션)을 쓴다.

@@ -25,6 +25,13 @@ namespace MissedCall.Core.Rooms {
         public PropSpot[] PropSpots => propSpots;
         public Light MainLight => mainLight;
 
+        /// <summary>서랍, 바구니처럼 판 동안 움직이는 것을 처음 상태로 되돌린다. 풀에서 꺼낼 때 부른다.</summary>
+        public void ResetProps() {
+            foreach (IRoundReset prop in GetComponentsInChildren<IRoundReset>(true)) {
+                prop.ResetForRound();
+            }
+        }
+
         /// <summary>모든 문 소켓을 막는다. 풀에서 꺼낼 때 초기 상태로 되돌린다.</summary>
         public void CloseAllSockets() {
             foreach (DoorSocket socket in sockets) {

@@ -36,6 +36,7 @@ namespace MissedCall.Feature.Ringtone {
                 case SoundCue.Meow: return Variants(3, i => Meow(noise, i));
                 case SoundCue.Kick: return Variants(4, i => Kick(noise, i));
                 case SoundCue.Slam: return Variants(4, i => Slam(noise, i));
+                case SoundCue.Drawer: return Variants(3, i => Drawer(noise, i));
                 default: return new[] { new float[1] };
             }
         }
@@ -140,6 +141,28 @@ namespace MissedCall.Feature.Ringtone {
             }
 
             return Finish(data, 0.6f);
+        }
+
+        // 서랍: 나무가 미끄러지는 낮은 드르륵과 끝에서 닿는 툭.
+        private static float[] Drawer(Noise noise, int variant) {
+            float slide = Pick(noise, 0.16f, 0.22f);
+            float length = slide + 0.09f;
+            float body = Pick(noise, 110f, 150f);
+            var data = Buffer(length);
+            var low = new Biquad(Biquad.Kind.LowPass, Pick(noise, 500f, 700f), 0.7f);
+            var grain = new Biquad(Biquad.Kind.BandPass, Pick(noise, 900f, 1200f), 1.5f);
+            for (int i = 0; i < data.Length; i++) {
+                float t = Sec(i);
+                float n = noise.Next();
+                // 미끄러지는 동안 잘게 떨리는 마찰
+                float rub = t < slide ? Mathf.Sin(Mathf.PI * t / slide) * (0.6f + 0.4f * Mathf.Sin(2f * Mathf.PI * 38f * t)) : 0f;
+                float u = t - slide;
+                float knock = u > 0f ? Attack(u, 0.002f) * Mathf.Exp(-u * 45f) : 0f;
+                float thump = u > 0f ? Mathf.Sin(2f * Mathf.PI * body * u) * knock : 0f;
+                data[i] = low.Process(n) * rub * 0.8f + grain.Process(n) * rub * 0.25f + (low.Process(n) * 0.6f + thump) * knock;
+            }
+
+            return Finish(data, 0.5f);
         }
 
         // 몸으로 더미를 들이받는 둔한 털썩. 충돌음보다 낮고 길다.

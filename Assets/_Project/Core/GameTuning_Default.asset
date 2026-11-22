@@ -20,6 +20,7 @@ MonoBehaviour:
   decoyWeight: 1
   noiseWeight: 1
   blackoutWeight: 1
+  vacuumWeight: 1
   flipPhoneChance: 0.1
   catChance: 0
   batteryRingTime: {x: 8, y: 13}
@@ -28,6 +29,10 @@ MonoBehaviour:
   noiseGain: 0.55
   blackoutDarkness: 0.78
   blackoutGlowRadius: 0.16
+  vacuumSpeed: 0.5
+  vacuumTurnSpeed: 140
+  vacuumRoamTime: 3
+  vacuumGain: 0.3
   walkSpeed: 3.2
   lookSpeed: 0.0023
   reach: 3.1
@@ -76,6 +81,9 @@ MonoBehaviour:
   kickLift: 2.6
   kickEnclosedLift: 3.5
   kickEnclosedForward: 0.25
+  kickTipLift: 2.4
+  kickTipBack: 1.2
+  kickTipSpin: 16
   kickEdgeScale: 0.45
   kickSpread: 0.6
   kickSpin: {x: 8, y: 6, z: 8}
@@ -109,6 +117,14 @@ MonoBehaviour:
   jiggleRadius: 0.5
   jiggleHeight: 0.6
   jiggleSpin: {x: 1, y: 1.5, z: 1}
+  crawlSpeed: 0.12
+  ringCrawlScale: 0.5
+  crawlDuty: 0.6
+  crawlMaxCovers: 1
+  crawlTurn: 35
+  crawlSpin: 25
+  crawlStepUp: 0.04
+  crawlWallMargin: 0.05
   clearCutoff: 7000
   coveredCutoff: 420
   maxCovers: 4

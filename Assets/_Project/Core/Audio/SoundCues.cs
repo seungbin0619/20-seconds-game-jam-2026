@@ -29,6 +29,8 @@ namespace MissedCall.Core.Audio {
         Kick,
         /// <summary>걷다가 몸으로 더미를 들이받는다</summary>
         Slam,
+        /// <summary>서랍이 미끄러져 열리거나 닫힌다</summary>
+        Drawer,
     }
 
     /// <summary>효과음 한 번. <see cref="Spatial"/>이면 <see cref="Position"/>에서 들린다.</summary>

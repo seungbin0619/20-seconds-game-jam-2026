@@ -16,6 +16,8 @@ namespace MissedCall.Feature.Phone {
         private const float CenterHeight = 0.012f;
         // 덮임 후보를 찾는 기둥의 여유(m). 기울어진 물건이 기둥에 닿지 않아 빠지지 않게 넉넉히 잡는다.
         private const float CoverQuerySlack = 0.3f;
+        // 서랍 안 자리에서 덮임으로 세는 높이(m). 서랍 안 높이 정도.
+        private const float DrawerCoverAbove = 0.15f;
 
         [SerializeField] private GameTuning tuning;
         [Tooltip("떨림을 주는 시각 요소의 부모. 원점은 그대로 두고 이것만 흔든다")]
@@ -168,9 +170,16 @@ namespace MissedCall.Feature.Phone {
         /// 그 물건의 로컬 가로세로 범위를 coverMargin만큼 넓혔을 때 폰 중심이 그 안에 드는 물건을 센다 (프로토타입 countCovers).
         /// </summary>
         public int CountCovers() {
+            int extra = context != null && context.PhoneSpot != null ? context.PhoneSpot.ExtraCovers : 0;
+            return CountItemCovers() + extra;
+        }
+
+        private int CountItemCovers() {
             Vector3 phone = Center;
             float below = tuning.coverBelow;
-            float above = tuning.coverAbove;
+            // 서랍 안 자리는 서랍 안에 든 것만 센다. 장 위에 쌓인 더미는 열린 서랍 속 폰을 덮지 않는다.
+            bool inDrawer = context != null && context.PhoneSpot != null && context.PhoneSpot.Bare;
+            float above = inDrawer ? DrawerCoverAbove : tuning.coverAbove;
             float side = tuning.coverMargin + CoverQuerySlack;
             Vector3 queryCenter = phone + Vector3.up * ((above - below) * 0.5f);
             var queryHalf = new Vector3(side, (above + below) * 0.5f + CoverQuerySlack, side);
