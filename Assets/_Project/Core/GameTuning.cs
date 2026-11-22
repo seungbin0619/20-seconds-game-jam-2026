@@ -205,6 +205,24 @@ namespace MissedCall.Core {
         [Tooltip("진동 시 무작위 회전 속도 최대값 (rad/s, x y z 각각 ±)")]
         public Vector3 jiggleSpin = new(1f, 1.5f, 1f);
 
+        [Header("Crawl")]
+        [Tooltip("진동 모드에서 폰이 표면 위를 미끄러지는 속도(m/s). 진동하는 동안만 움직인다")]
+        public float crawlSpeed = 0.12f;
+        [Tooltip("벨이 울리는 판의 미끄러짐 배율. 0이면 진동 모드에서만 움직인다")]
+        [Range(0f, 1f)] public float ringCrawlScale = 0.5f;
+        [Tooltip("진동 간격(jiggleInterval) 중 떨며 움직이는 비율")]
+        [Range(0f, 1f)] public float crawlDuty = 0.6f;
+        [Tooltip("위에 얹힌 물건이 이 수 이하일 때만 움직인다")]
+        public int crawlMaxCovers = 1;
+        [Tooltip("진동마다 방향이 틀어지는 최대 각도(도, ±)")]
+        public float crawlTurn = 35f;
+        [Tooltip("움직이는 동안 폰이 제자리에서 도는 속도(도/s)")]
+        public float crawlSpin = 25f;
+        [Tooltip("이 높이(m)까지는 표면이 높아지거나 낮아져도 그대로 따라간다. 더 낮으면 떨어진다")]
+        public float crawlStepUp = 0.04f;
+        [Tooltip("벽, 가구와 이 거리(m) 안이면 막힌 것으로 본다")]
+        public float crawlWallMargin = 0.05f;
+
         [Header("Sound")]
         public float clearCutoff = 7000f;
         public float coveredCutoff = 420f;

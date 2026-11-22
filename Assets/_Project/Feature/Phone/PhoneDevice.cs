@@ -1,5 +1,6 @@
 using MissedCall.Core;
 using MissedCall.Core.Aim;
+using MissedCall.Core.Audio;
 using MissedCall.Core.Round;
 using UnityEngine;
 
@@ -28,6 +29,8 @@ namespace MissedCall.Feature.Phone {
         [SerializeField] private Vector3 flipScale = new(0.9f, 2.2f, 0.62f);
         [Tooltip("덮임을 세고 진동으로 튀게 할 물건 레이어")]
         [SerializeField] private LayerMask clutterMask;
+        [Tooltip("진동으로 기어갈 때 딛는 표면과 막는 벽, 가구 레이어. 물건과 플레이어는 뺀다")]
+        [SerializeField] private LayerMask surfaceMask = 1;
 
         private readonly Collider[] hits = new Collider[64];
         private Renderer[] renderers;
@@ -36,6 +39,13 @@ namespace MissedCall.Feature.Phone {
         private System.Random rng;
         private float nextJiggle;
         private bool visible = true;
+        // 진동으로 기어가는 방향(월드 yaw, 도)과 이번 진동이 끝나는 판 시각.
+        private float crawlYaw;
+        private float buzzEnd;
+        // 표면 끝에서 떨어지는 중. 떨어지는 속도와 닿을 높이.
+        private bool falling;
+        private float fallSpeed;
+        private float fallTo;
 
         public AimKind Kind => AimKind.Phone;
 
@@ -52,6 +62,10 @@ namespace MissedCall.Feature.Phone {
         public int Jiggles { get; private set; }
         public int LastJiggled { get; private set; }
 
+        /// <summary>이번 판에 기어간 거리(m)와 떨어진 횟수. 확인용.</summary>
+        public float Crawled { get; private set; }
+        public int Falls { get; private set; }
+
         private void Awake() {
             renderers = GetComponentsInChildren<Renderer>(true);
             block = new MaterialPropertyBlock();
@@ -64,6 +78,10 @@ namespace MissedCall.Feature.Phone {
             nextJiggle = tuning.jiggleDelay;
             Jiggles = 0;
             LastJiggled = 0;
+            Crawled = 0f;
+            Falls = 0;
+            falling = false;
+            buzzEnd = 0f;
             Aimed = false;
             transform.SetPositionAndRotation(surface, rotation);
             visual.localPosition = Vector3.zero;
@@ -74,6 +92,7 @@ namespace MissedCall.Feature.Phone {
             round.PhonePosition = Center;
             round.PhoneRoom = room;
             round.Covers = CountCovers();
+            crawlYaw = rotation.eulerAngles.y + (float)rng.NextDouble() * 360f;
             SetScreen(ringColor);
         }
 
@@ -121,8 +140,13 @@ namespace MissedCall.Feature.Phone {
 
             if (context.Elapsed >= nextJiggle) {
                 Jiggle();
+                buzzEnd = context.Elapsed + tuning.jiggleInterval * tuning.crawlDuty;
+                // 진동마다 방향이 조금씩 틀어진다.
+                crawlYaw += Range(tuning.crawlTurn);
                 nextJiggle += Mathf.Max(0.05f, tuning.jiggleInterval);
             }
+
+            Crawl(covers, Time.deltaTime);
 
             float shake = covers == 0 ? Mathf.Sin(Time.time * tuning.phoneShakeRate) * tuning.phoneShake : 0f;
             visual.localPosition = new Vector3(shake, 0f, 0f);
@@ -201,6 +225,85 @@ namespace MissedCall.Feature.Phone {
             }
 
             LastJiggled = jiggled;
+        }
+
+        /// <summary>
+        /// 진동하는 동안 폰이 표면 위를 조금씩 미끄러진다. 위에 물건이 crawlMaxCovers개 넘게 얹혀 있으면 눌려서 못 움직인다.
+        /// 벽이나 가구에 막히면 방향을 바꾸고, 표면 끝을 넘으면 아래 표면(대개 바닥)으로 떨어진다.
+        /// 폰은 콜라이더가 없으므로 레이로 표면을 따라간다. 물건(Clutter)은 표면으로 보지 않는다.
+        /// </summary>
+        private void Crawl(int covers, float dt) {
+            if (falling) {
+                Fall(dt);
+                return;
+            }
+
+            float scale = context.VibrationMode ? 1f : tuning.ringCrawlScale;
+            if (scale <= 0f || covers > tuning.crawlMaxCovers || context.Elapsed >= buzzEnd || dt <= 0f) {
+                return;
+            }
+
+            Vector3 direction = Quaternion.Euler(0f, crawlYaw, 0f) * Vector3.forward;
+            float step = tuning.crawlSpeed * scale * dt;
+            Vector3 center = Center;
+            // 앞이 막혔으면 반대쪽 반원 중 한 방향으로 돌린다.
+            if (Physics.Raycast(center, direction, step + tuning.crawlWallMargin, surfaceMask, QueryTriggerInteraction.Ignore)) {
+                crawlYaw += 180f + Range(70f);
+                return;
+            }
+
+            Vector3 next = transform.position + direction * step;
+            if (context.Graph != null && context.Graph.RoomAt(next) < 0) {
+                crawlYaw += 180f + Range(70f);
+                return;
+            }
+
+            float surface = transform.position.y;
+            Vector3 origin = new(next.x, surface + tuning.crawlStepUp, next.z);
+            if (!Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 5f, surfaceMask, QueryTriggerInteraction.Ignore)) {
+                crawlYaw += 180f + Range(70f);
+                return;
+            }
+
+            transform.position = new Vector3(next.x, transform.position.y, next.z);
+            transform.rotation = Quaternion.Euler(0f, tuning.crawlSpin * scale * dt, 0f) * transform.rotation;
+            Crawled += step;
+            if (hit.point.y < surface - tuning.crawlStepUp) {
+                // 끝을 넘었다. 떨어진다.
+                falling = true;
+                fallSpeed = 0f;
+                fallTo = hit.point.y;
+            } else {
+                transform.position = new Vector3(next.x, hit.point.y, next.z);
+            }
+
+            UpdatePlace();
+        }
+
+        private void Fall(float dt) {
+            fallSpeed += -Physics.gravity.y * dt;
+            Vector3 p = transform.position;
+            p.y = Mathf.Max(fallTo, p.y - fallSpeed * dt);
+            transform.position = p;
+            if (p.y <= fallTo) {
+                falling = false;
+                Falls++;
+                // 떨어진 높이만큼 크게. 진동으로 튀는 소리와 달리 한 번뿐이라 단서로 둔다.
+                SoundCues.PlayAt(SoundCue.ImpactHard, Center, Mathf.Clamp01(fallSpeed / tuning.impactFullSpeed + 0.2f));
+            }
+
+            UpdatePlace();
+        }
+
+        // 다른 기능이 읽는 폰 위치와 방을 갱신한다.
+        private void UpdatePlace() {
+            context.PhonePosition = Center;
+            if (context.Graph != null) {
+                int room = context.Graph.RoomAt(Center);
+                if (room >= 0) {
+                    context.PhoneRoom = room;
+                }
+            }
         }
 
         private void SetVisible(bool value) {
