@@ -44,6 +44,9 @@ namespace MissedCall.Core.Round {
         /// <summary>배터리가 다 되어 벨과 화면이 꺼졌는가.</summary>
         public bool BatteryDead => Elapsed >= RingStopTime;
 
+        /// <summary>시간대 연출. 0 새벽(기본), 1 한밤, 2 흐린 아침. ScreenFx가 색만 바꾼다.</summary>
+        public int Mood { get; set; }
+
         /// <summary>미끼 소리 위치와 방. 미끼 변수가 없으면 방이 -1.</summary>
         public Vector3 DecoyPosition { get; set; }
         public int DecoyRoom { get; set; } = -1;
@@ -76,6 +79,7 @@ namespace MissedCall.Core.Round {
             Covers = 0;
             Phone = null;
             Modifier = RoundModifier.None;
+            Mood = 0;
             RingStopTime = float.PositiveInfinity;
             DecoyPosition = Vector3.zero;
             DecoyRoom = -1;

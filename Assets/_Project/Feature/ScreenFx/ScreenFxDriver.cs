@@ -31,6 +31,14 @@ namespace MissedCall.Feature.ScreenFx {
         private static readonly int TimeId = Shader.PropertyToID("_McFxTime");
         private static readonly int BlackoutId = Shader.PropertyToID("_McFxBlackout");
         private static readonly int GlowId = Shader.PropertyToID("_McFxGlow");
+        private static readonly int MoodId = Shader.PropertyToID("_McFxMood");
+        // 시간대 색 (rgb 곱, a 채도 빼기). 0 새벽(기본), 1 한밤, 2 흐린 아침
+        private static readonly Vector4[] Moods = {
+            new(1f, 1f, 1f, 0f),
+            new(0.62f, 0.7f, 0.92f, 0.15f),
+            new(1.04f, 1.03f, 1.02f, 0.35f),
+        };
+        private Vector4 mood = Moods[0];
         // 정전이 켜지고 꺼지는 정도 (판이 바뀔 때 부드럽게)
         private float blackout;
 
@@ -94,6 +102,9 @@ namespace MissedCall.Feature.ScreenFx {
             Shader.SetGlobalColor(PulseColorId, pulseColor.linear);
             Shader.SetGlobalVector(TimeId, new Vector4(Time.unscaledTime, tight, low, 0f));
             UpdateBlackout(tuning);
+            Vector4 target = flow.Context.State == RoundState.Title ? Moods[0] : Moods[Mathf.Clamp(flow.Context.Mood, 0, Moods.Length - 1)];
+            mood = Vector4.MoveTowards(mood, target, Time.unscaledDeltaTime * 2f);
+            Shader.SetGlobalVector(MoodId, mood);
         }
 
         /// <summary>

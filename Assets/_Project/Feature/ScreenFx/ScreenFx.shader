@@ -195,6 +195,11 @@ Shader "Hidden/MissedCall/ScreenFx" {
 
                 ScreenPixel p = MakePixel(input.texcoord);
                 half3 srgb = Watercolor(SampleScene(p), p);
+                // 시간대: 한밤은 푸르게 어둡고, 흐린 아침은 채도가 빠진다. 값이 없으면(0) 그대로.
+                if (any(_McFxMood != 0)) {
+                    srgb = lerp(srgb, Luminance(srgb).xxx, _McFxMood.a) * _McFxMood.rgb;
+                }
+
                 srgb = Blackout(srgb, p);
                 // 종이가 시간이 갈수록 어둡고 차가워진다 (저녁에서 밤으로).
                 srgb *= lerp(half3(1, 1, 1), PaperDusk, tight * 0.75);

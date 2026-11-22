@@ -19,6 +19,9 @@ namespace MissedCall.Feature.Ui {
         [SerializeField] private float quoteDelay = 0.12f;
         [SerializeField] private float quoteFade = 0.2f;
 
+        // 이 가중치보다 작으면 희귀 발신자로 본다.
+        private const float RareWeight = 0.5f;
+
         private bool won;
         private float value;
         private float shownAt;
@@ -28,6 +31,10 @@ namespace MissedCall.Feature.Ui {
             shownAt = Time.unscaledTime;
             CallerProfile profile = context.Caller;
             caller.text = profile != null ? profile.displayName : "Unknown Number";
+            // 희귀 발신자는 이름 옆에 노란 표시
+            if (profile != null && profile.weight < RareWeight) {
+                caller.text += "  <color=#FFD23F><size=70%>RARE CALLER</size></color>";
+            }
             if (won) {
                 head.text = "Hello?";
                 head.color = UiPalette.Answer;

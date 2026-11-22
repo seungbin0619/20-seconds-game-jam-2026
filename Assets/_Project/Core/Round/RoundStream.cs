@@ -14,5 +14,7 @@ namespace MissedCall.Core.Round {
         Throw = 6,
         /// <summary>폰 진동에 튀는 물건의 무작위 회전. 판 중 시간에 따라 뽑는 횟수가 달라진다.</summary>
         Vibration = 7,
+        /// <summary>시간대 연출(새벽, 한밤, 흐린 아침). 게임플레이와 무관하다.</summary>
+        Mood = 8,
     }
 }

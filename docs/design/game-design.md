@@ -52,6 +52,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 시작 위치 | 폰이 없는 방 중 한 곳 | 필수 |
 | 발신자 | 발신자마다 고유 벨소리 | 필수 |
 | 변수 | 판마다 0~1개 (아래 표) | 필수 |
+| 시간대 | 새벽(기본), 한밤(푸르고 어둡게), 흐린 아침(채도 빠짐). 색만 바꾸고 게임플레이에는 영향이 없다. 판 시드의 Mood 스트림 | 구현 (11/22) |
 
 생성 방식은 [`level-generation.md`](../architecture/level-generation.md)에 있다.
 
@@ -305,6 +306,10 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | Job Interview | "We'd like to offer you the position." | "We couldn't reach you. We've moved on to the next candidate." |
 | Fried Chicken Place | "Your address didn't come through. Which building?" | Your chicken is getting cold. |
 | Unknown Number | "Hello! We have a low-interest loan offer for you." | Probably nothing important anyway. |
+| Santa (희귀) | "Ho ho ho! You're on the nice list. Barely." | Moved to the naughty list. |
+| Future You (희귀) | "Don't eat the leftover pizza. Trust me." | "I told you this would happen." |
+
+발신자는 `CallerProfile.weight`로 뽑는다 (기본 1, 희귀 0.06이면 판의 약 1%씩). 희귀 발신자는 전용 벨소리(Santa: Jingle, Future You: 내려가는 Echo)를 쓰고 결과 화면 이름 옆에 노란 "RARE CALLER"가 붙는다.
 
 ### UI 문구
 

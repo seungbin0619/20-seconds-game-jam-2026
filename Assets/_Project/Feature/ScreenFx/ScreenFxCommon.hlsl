@@ -23,6 +23,8 @@ float4 _McFxPulseColor;
 float4 _McFxBlackout;
 // x 폰 불빛 반경 (화면 높이 비율)
 float4 _McFxGlow;
+// 시간대: rgb 곱하는 색, a 채도 빼기
+float4 _McFxMood;
 
 struct ScreenPixel {
     float2 uv;
