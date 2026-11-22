@@ -133,6 +133,10 @@ namespace MissedCall.Feature.Ui.Editor {
             var hud = rect.gameObject.AddComponent<HudView>();
             Image plate = Shape(rect, "ClockPlate", UiPalette.Night, 10f, 20f, 0.8f, 0f, 0.6f, 0.6f);
             Place(plate.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(210f, 82f));
+            // 초가 넘어갈 때 옆으로 밀려나는 숫자 잔상. 타이머 뒤에 둔다.
+            TMP_Text ghost = Text(rect, "ClockGhost", "20.0", 72f, UiPalette.Ring, displayFont, null, FontStyles.Italic);
+            Place(ghost.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -14f), new Vector2(400f, 80f));
+            ghost.alpha = 0f;
             TMP_Text clock = Text(rect, "Clock", "20.0", 72f, UiPalette.Ring, displayFont, displayShadow, FontStyles.Italic);
             Place(clock.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -14f), new Vector2(400f, 80f));
             TMP_Text hint = Text(rect, "Hint", "Follow the sound and clear the piles", 20f, UiPalette.Paper, bodyFont, bodyShadow);
@@ -146,7 +150,8 @@ namespace MissedCall.Feature.Ui.Editor {
             tagText.characterSpacing = 6f;
             Stretch(tagText.rectTransform);
             tag.gameObject.SetActive(false);
-            Wire(hud, ("clock", clock), ("hint", hint), ("modifierTag", tag.rectTransform), ("modifierText", tagText));
+            Wire(hud, ("clock", clock), ("hint", hint), ("modifierTag", tag.rectTransform), ("modifierText", tagText),
+                ("clockGhost", ghost), ("clockPlate", plate));
             return hud;
         }
 
@@ -166,19 +171,38 @@ namespace MissedCall.Feature.Ui.Editor {
             RectTransform rect = Stretch(Node("Title", parent));
             Transition(rect, new Vector2(0f, -20f), 1f);
             Backdrop(rect, UiPalette.Night, 1f, 0.55f);
+            // 카드 뒤에 부재중 빨강 하프톤이 터지듯 퍼진다.
+            Image burst = Shape(rect, "Burst", UiPalette.Miss, 0f, 0f, 0.62f, UiShape.Burst, UiShape.TintedDots + 0.5f, 0f);
+            Place(burst.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(40f, 10f), new Vector2(980f, 980f), new Vector2(0.5f, 0.5f));
             RectTransform handset = Handset(rect);
+            Image stripe = handset.Find("Stripe").GetComponent<Image>();
+            stripe.color = UiPalette.Miss;
+            // 부재중 알림 배지
+            Image badge = Shape(handset, "Badge", UiPalette.Miss, 8f, 0f, 0.6f, 0f, -0.25f);
+            badge.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            Place(badge.rectTransform, new Vector2(1f, 1f), new Vector2(10f, 14f), new Vector2(40f, 40f), new Vector2(0.5f, 0.5f));
+            badge.rectTransform.localEulerAngles = new Vector3(0f, 0f, -8f);
+            TMP_Text count = Text(badge.rectTransform, "Count", "1", 22f, UiPalette.Ring, displayFont, null, FontStyles.Italic);
+            Stretch(count.rectTransform);
             clock = Tag(handset, "LockTime", "00:00");
-            Heading(handset, "Missed Call", 56f, UiPalette.Ring);
-            Text(handset, "Lead", "Your phone is ringing somewhere. Find it and pick up before it stops.", 18f, UiPalette.Paper, bodyFont);
-            string key = "<color=#FFFFFF><b>{0}</b></color>  {1}";
+            // 제목: 빨간 글자를 깔고 흰 글자를 살짝 어긋나게 얹어 만화 인쇄처럼 보이게 한다.
+            TMP_Text title = Heading(handset, "Missed Call", 56f, UiPalette.Miss);
+            TMP_Text titleTop = Text(title.rectTransform, "Top", "Missed Call", 56f, UiPalette.Ring, displayFont, null,
+                FontStyles.Italic | FontStyles.UpperCase);
+            Stretch(titleTop.rectTransform);
+            titleTop.rectTransform.offsetMin = new Vector2(-4f, 4f);
+            titleTop.rectTransform.offsetMax = new Vector2(-4f, 4f);
+            Text(handset, "Lead", "Your phone is ringing somewhere. Find it and pick up before it stops.", 18f, UiPalette.Text2, bodyFont);
+            // 키 이름은 흰색 100%, 설명은 3단계 투명도. 줄마다 투명도를 다시 정한다.
+            string key = "<alpha=#FF><b>{0}</b>  <alpha=#73>{1}";
             TMP_Text keys = Text(handset, "Keys",
                 string.Format(key, "WASD", "Walk") + "\n"
                 + string.Format(key, "Mouse", "Look around") + "\n"
                 + string.Format(key, "Hold click", "Grab, swing and release to throw"),
-                15f, UiPalette.Paper, bodyFont, null, FontStyles.Normal, TextAlignmentOptions.TopLeft);
+                15f, UiPalette.Ring, bodyFont, null, FontStyles.Normal, TextAlignmentOptions.TopLeft);
             keys.lineSpacing = 8f;
             button = Pill(handset, "Button", "Ring It");
-            Text(handset, "Note", "Headphones make the direction much easier to hear.", 14f, UiPalette.Muted, bodyFont);
+            Text(handset, "Note", "Headphones make the direction much easier to hear.", 14f, UiPalette.Text4, bodyFont);
             return rect.gameObject;
         }
 
@@ -188,12 +212,12 @@ namespace MissedCall.Feature.Ui.Editor {
             var slide = rect.gameObject.AddComponent<AnswerSlide>();
             RectTransform handset = Handset(rect);
             Tag(handset, "LockTime", "Incoming call");
-            TMP_Text caller = Text(handset, "Caller", "Mom", 20f, UiPalette.Paper, bodyFont, null, FontStyles.Bold);
+            TMP_Text caller = Text(handset, "Caller", "Mom", 20f, UiPalette.Text2, bodyFont, null, FontStyles.Bold);
             TMP_Text answerHeading = Heading(handset, "Pick up!", 42f, UiPalette.Answer);
 
             Image track = Shape(handset, "Track", Color.white, 0f, ButtonSkew, 0.7f, 0f, -0.35f, 0.06f);
             track.gameObject.AddComponent<LayoutElement>().preferredHeight = 62f;
-            TMP_Text hint = Text(track.rectTransform, "Label", "Slide to answer  >>", 14f, UiPalette.Muted, bodyFont, null,
+            TMP_Text hint = Text(track.rectTransform, "Label", "Slide to answer  >>", 14f, UiPalette.Text3, bodyFont, null,
                 FontStyles.Italic | FontStyles.UpperCase);
             hint.characterSpacing = 6f;
             Stretch(hint.rectTransform);
@@ -213,11 +237,11 @@ namespace MissedCall.Feature.Ui.Editor {
             RectTransform handset = Handset(rect);
             clock = Tag(handset, "LockTime", "00:00");
             TMP_Text head = Heading(handset, "Hello?", 42f, UiPalette.Answer);
-            TMP_Text caller = Text(handset, "Caller", "Mom", 20f, UiPalette.Paper, bodyFont, null, FontStyles.Bold);
-            TMP_Text quote = Text(handset, "Quote", "\"Have you eaten yet?\"", 17f, UiPalette.Muted, bodyFont);
-            TMP_Text stat = Text(handset, "Stat", "Answered in 0.0s", 15f, UiPalette.Muted, bodyFont);
+            TMP_Text caller = Text(handset, "Caller", "Mom", 20f, UiPalette.Text2, bodyFont, null, FontStyles.Bold);
+            TMP_Text quote = Text(handset, "Quote", "\"Have you eaten yet?\"", 17f, UiPalette.Text3, bodyFont);
+            TMP_Text stat = Text(handset, "Stat", "Answered in 0.0s", 15f, UiPalette.Text3, bodyFont);
             button = Pill(handset, "Button", "Try Again");
-            Text(handset, "Note", "Press R to restart", 14f, UiPalette.Muted, bodyFont);
+            Text(handset, "Note", "Press R to restart", 14f, UiPalette.Text4, bodyFont);
             Wire(view, ("head", head), ("caller", caller), ("quote", quote), ("stat", stat));
             return view;
         }
@@ -229,11 +253,11 @@ namespace MissedCall.Feature.Ui.Editor {
             RectTransform handset = Handset(rect);
             Tag(handset, "LockTime", "On hold");
             Heading(handset, "Paused", 42f, UiPalette.Ring);
-            time = Text(handset, "Time", "20.0s left", 17f, UiPalette.Paper, bodyFont);
+            time = Text(handset, "Time", "20.0s left", 17f, UiPalette.Text2, bodyFont);
             resume = Pill(handset, "Resume", "Resume");
             restart = Pill(handset, "Restart", "Restart", false);
             title = Pill(handset, "Title", "Title", false);
-            Text(handset, "Note", "Press R to restart", 14f, UiPalette.Muted, bodyFont);
+            Text(handset, "Note", "Press R to restart", 14f, UiPalette.Text4, bodyFont);
             return rect.gameObject;
         }
 
@@ -314,7 +338,7 @@ namespace MissedCall.Feature.Ui.Editor {
             }
 
             button.gameObject.AddComponent<LayoutElement>().preferredHeight = primary ? 52f : 44f;
-            TMP_Text text = Text(button.rectTransform, "Label", label, primary ? 19f : 16f, primary ? UiPalette.Night : UiPalette.Paper,
+            TMP_Text text = Text(button.rectTransform, "Label", label, primary ? 19f : 16f, primary ? UiPalette.Night : UiPalette.Text2,
                 bodyFont, null, FontStyles.Bold | FontStyles.Italic | FontStyles.UpperCase);
             text.characterSpacing = 4f;
             Stretch(text.rectTransform);
@@ -332,7 +356,7 @@ namespace MissedCall.Feature.Ui.Editor {
 
         // 작은 머리글(시각, Incoming call 등). 대문자에 자간을 넓힌다.
         private static TMP_Text Tag(Transform parent, string name, string text) {
-            TMP_Text tag = Text(parent, name, text, 13f, UiPalette.Muted, bodyFont, null, FontStyles.Bold | FontStyles.UpperCase);
+            TMP_Text tag = Text(parent, name, text, 13f, UiPalette.Text4, bodyFont, null, FontStyles.Bold | FontStyles.UpperCase);
             tag.characterSpacing = 14f;
             return tag;
         }

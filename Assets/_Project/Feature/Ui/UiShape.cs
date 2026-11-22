@@ -13,6 +13,10 @@ namespace MissedCall.Feature.Ui {
         public const float Uniform = 9f;
         /// <summary>하프톤 방향에 넣는 특수 값: 가운데에서 바깥으로 커짐</summary>
         public const float Radial = 8f;
+        /// <summary>하프톤 방향에 넣는 특수 값: 가운데가 가장 크고 바깥으로 작아짐</summary>
+        public const float Burst = 7f;
+        /// <summary>점 색조에 더하면 점을 채우기 색(Image 색)으로 칠한다. 예: TintedDots + 0.5 = 채우기 색 점, 진하기 0.5</summary>
+        public const float TintedDots = 1.5f;
 
         private const int Columns = 8;
         private const int Rows = 6;
@@ -25,7 +29,7 @@ namespace MissedCall.Feature.Ui {
         [Tooltip("하프톤이 커지는 방향(도). 9 = 고르게, 8 = 가운데에서 바깥으로")]
         public float halftoneAngle = -45f;
         [Tooltip("점 색. +면 밝은 청회색(_DotLight), -면 검정. 크기가 진하기")]
-        [Range(-1f, 1f)] public float dotTone;
+        [Range(-1f, 2.5f)] public float dotTone;
         [Tooltip("0보다 크면 이 두께(px)의 테두리만 그린다")]
         public float outline;
         [Tooltip("채우기 불투명도. 0이면 하프톤 점만 보인다")]
@@ -58,7 +62,7 @@ namespace MissedCall.Feature.Ui {
             }
 
             vh.Clear();
-            float angle = halftoneAngle >= Radial - 0.5f ? halftoneAngle : halftoneAngle * Mathf.Deg2Rad;
+            float angle = halftoneAngle >= Burst - 0.5f && halftoneAngle <= Uniform + 0.5f ? halftoneAngle : halftoneAngle * Mathf.Deg2Rad;
             var shape = new Vector4(rect.width, rect.height, chamfer, skew);
             var tone = new Vector4(halftone, angle, dotTone, outline);
             var fill = new Vector4(fillOpacity, 0f, 0f, 0f);

@@ -22,6 +22,8 @@ namespace MissedCall.Feature.Ui {
         // 이 가중치보다 작으면 희귀 발신자로 본다.
         private const float RareWeight = 0.5f;
 
+        // 인용문의 원래 투명도 (글자 위계 3단계). 나타날 때 이 값까지만 올린다.
+        private float quoteAlpha = -1f;
         private bool won;
         private float value;
         private float shownAt;
@@ -50,6 +52,10 @@ namespace MissedCall.Feature.Ui {
             }
 
             quote.gameObject.SetActive(!string.IsNullOrEmpty(quote.text));
+            if (quoteAlpha < 0f) {
+                quoteAlpha = quote.color.a;
+            }
+
             quote.alpha = 0f;
             SetStat(0f);
         }
@@ -59,7 +65,8 @@ namespace MissedCall.Feature.Ui {
             float k = countTime > 0f ? Mathf.Clamp01(t / countTime) : 1f;
             // 끝에서 느려지게
             SetStat(value * (1f - (1f - k) * (1f - k)));
-            quote.alpha = quoteFade > 0f ? Mathf.Clamp01((t - quoteDelay) / quoteFade) : 1f;
+            float shown = quoteFade > 0f ? Mathf.Clamp01((t - quoteDelay) / quoteFade) : 1f;
+            quote.alpha = Mathf.Max(0f, quoteAlpha) * shown;
         }
 
         private void SetStat(float shown) {

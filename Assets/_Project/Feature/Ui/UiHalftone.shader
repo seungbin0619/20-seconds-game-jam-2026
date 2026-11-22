@@ -3,7 +3,8 @@
 //   color          채우기 색 (rgb), a는 CanvasGroup 등에서 내려온 투명도
 //   uv0            도형 안 위치 0~1
 //   uv1 (x,y,z,w)  도형 크기(px), 모서리 깎기(px), 기울임(px, 위쪽이 오른쪽으로)
-//   uv2 (x,y,z,w)  하프톤 세기 0~1, 하프톤 방향(라디안, 9 = 고르게, 8 = 가운데에서 바깥으로), 점 색조(+면 _DotLight, -면 검정), 테두리 두께(px, 0이면 채움)
+//   uv2 (x,y,z,w)  하프톤 세기 0~1, 하프톤 방향(라디안, 9 = 고르게, 8 = 가운데에서 바깥으로, 7 = 가운데가 가장 큼),
+//                  점 색조(+면 _DotLight, -면 검정, 1.5보다 크면 채우기 색(정점 색)으로 진하기 z-1.5), 테두리 두께(px, 0이면 채움)
 //   uv3 (x)        채우기 불투명도 (0이면 점만 보인다)
 Shader "MissedCall/UiHalftone" {
     Properties {
@@ -109,6 +110,9 @@ Shader "MissedCall/UiHalftone" {
                 float g;
                 if (i.tone.y > 8.5) {
                     g = 1.0;
+                } else if (i.tone.y > 6.5 && i.tone.y < 7.5) {
+                    // 가운데가 가장 크고 바깥으로 갈수록 작아진다 (터지는 모양)
+                    g = saturate(1.0 - length(i.uv - 0.5) * 2.0);
                 } else if (i.tone.y > 7.5) {
                     // 가운데는 비우고 가장자리로 갈수록 커진다
                     g = saturate((length(i.uv - 0.5) * 2.0 - 0.35) / 0.8);
@@ -141,8 +145,9 @@ Shader "MissedCall/UiHalftone" {
                 }
 
                 float fillA = i.fill;
-                float dots = Halftone(i) * abs(i.tone.z);
-                float3 dotRgb = i.tone.z >= 0.0 ? _DotLight.rgb : float3(0.0, 0.0, 0.0);
+                bool tinted = i.tone.z > 1.5;
+                float dots = Halftone(i) * (tinted ? i.tone.z - 1.5 : abs(i.tone.z));
+                float3 dotRgb = tinted ? i.color.rgb : i.tone.z >= 0.0 ? _DotLight.rgb : float3(0.0, 0.0, 0.0);
                 // 채우기 위에 점을 얹는다 (over)
                 float outA = dots + fillA * (1.0 - dots);
                 float3 rgb = (dotRgb * dots + i.color.rgb * fillA * (1.0 - dots)) / max(outA, 1e-4);
