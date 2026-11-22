@@ -51,7 +51,7 @@ Feature ──▶ Core ──▶ Shared
 |---|---|
 | `Round/GameFlow` | 상태 머신 (`Title / Playing / Answer / Won / Missed`), 판 시작과 준비 단계 실행, 실제 시간 타이머. 입력은 읽지 않는다. Feature가 `StartRound`, `RequestRestart`(R), `PickUp`, `Answer`, `Pause`, `Resume`, `ReturnToTitle`을 호출하고 `StateChanged`, `PausedChanged`를 구독한다. 일시정지는 상태가 아니라 `IsPaused` 플래그이며 `Time.timeScale`을 0으로 둔다 |
 | `Round/RoundContext` | 판 공용 상태: 시드, 상태, 경과/남은 시간, `RoomGraph`, 발신자, 폰 위치·방·덮임 수, 진동 모드 여부, 플레이어 위치·방, 조준 대상, 판 통계(던진 수, 받은 시간). `GameFlow.Context`로 얻는다. 판 시작 때 통째로 초기화한다 |
-| `Round/RoundSeed`, `RoundStream` | 판 시드 하나에서 용도별(`Layout`, `Phone`, `Clutter`, `Start`, `Caller`, `Modifier`, `Throw`, `Vibration`, `Mood`, `Extras`, `Shove`) `System.Random`을 가른다. 한 기능의 뽑는 횟수가 바뀌어도 다른 기능의 결과는 그대로다. `RoundStream` 값은 바꾸지 않고 끝에만 추가한다 |
+| `Round/RoundSeed`, `RoundStream` | 판 시드 하나에서 용도별(`Layout`, `Phone`, `Clutter`, `Start`, `Caller`, `Modifier`, `Throw`, `Vibration`, `Mood`, `Extras`, `Shove`, `Vacuum`) `System.Random`을 가른다. 한 기능의 뽑는 횟수가 바뀌어도 다른 기능의 결과는 그대로다. `RoundStream` 값은 바꾸지 않고 끝에만 추가한다 |
 | `Round/RoundStep` | 판 준비 단계의 추상 MonoBehaviour. Feature가 상속하고, `GameFlow` 인스펙터의 순서대로 `Prepare(context)`가 불린다. 이전 판 오브젝트는 여기서 풀에 돌려놓는다 |
 | `Aim/IAimTarget`, `IThrowable`, `IGrabbable`, `AimKind`, `IPointerGate` | Interaction이 Clutter, Phone, Player를 모르고 조준·잡아 던지기·집기를 하기 위한 계약. 끌어오는 속도와 던지는 속도 계산, 집기 조건 판정은 Interaction이 하고 대상은 받은 속도를 적용만 한다. `IPointerGate`는 잠금 클릭을 거르기 위해 PointerLook이 구현한다. 폰(`IGrabbable`)은 콜라이더 없이 `GrabPoint`로 조준하며, Phone이 `RoundContext.Phone`에 넣는다 |
 | `GameTuning` (ScriptableObject) | 튜닝 값. [`game-design.md`](../design/game-design.md)와 일치시킨다 |
@@ -77,6 +77,7 @@ Feature ──▶ Core ──▶ Shared
 | `Ringtone` | 발신자별 벨소리, 공간 음향, 벽 먹먹함, 문 쪽 음원, 효과음 | `initAudio`, `scheduleRing`, `oneShot` |
 | `Modifiers` | 판 변수 고르기 (`ModifierStep`, Phone 다음). 소리는 Ringtone, 정전은 ScreenFx, 꺼진 폰은 Phone, 태그는 Ui가 `RoundContext.Modifier`를 읽어 처리한다 | 신규 |
 | `Result` | 칭호 판정, 기록 저장과 조회 | 신규 |
+| `Vacuum` | 로봇청소기 변수 (`VacuumStep`, Modifiers 다음 Player 앞). `RobotVacuum` 프리팹은 기본 도형으로 만들었고 머티리얼은 `Clutter_Item.mat` 복사본이다. 폰은 `RoundContext.PhoneMount`를 따라가고, 모터 소리는 Ringtone이 `VacuumPosition`을 읽어 낸다 | 신규 |
 | `Cat` | 희귀 요소 고양이 (`CatStep`). **보류**: 코드만 남기고 씬의 판 준비 단계에서 뺐다 | 보류 |
 | `ScreenFx` | 풀스크린 셰이딩: 잉크 외곽선, 음영 단계, 남은 시간에 따라 조여 오는 연출. `GameFlow` 상태와 남은 시간을 읽어 전역 셰이더 값을 넣는다 | 신규 |
 | `Ui` | HUD, 타이틀, 받기 슬라이드, 결과, 기록 화면 (발신자 데이터는 `Core/Callers`). 도형과 하프톤은 `UiHalftone.shader` + `UiShape`, 원근 기울임과 패널이 돌아 들어오고 나가는 움직임은 `UiTilt`, 화면을 켜고 끌 때의 전환은 `UiScreen`(`GameUi`가 `SetActive` 대신 부른다). 캔버스의 추가 셰이더 채널 TexCoord1~3을 `GameUi`가 켠다. **`GameUi.prefab`은 `GameUiBuilder`가 만드는 결과물이므로 프리팹을 직접 고치지 말고 빌더를 고친다** (직접 고치면 다음 빌드에서 사라진다). 씬의 GameUi 인스턴스에는 `flow` 연결과 루트 위치 외의 오버라이드를 남기지 않는다 | HTML 오버레이, `CALLERS` |

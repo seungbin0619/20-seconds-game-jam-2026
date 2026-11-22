@@ -28,8 +28,10 @@ namespace MissedCall.Feature.Ringtone {
         private int vibrationVoice = -1;
         private int decoyVoice = -1;
         private int noiseVoice = -1;
+        private int vacuumVoice = -1;
         private bool decoyOn;
         private bool noiseOn;
+        private bool vacuumOn;
 
         private int[] voices;
         private int voice = -1;
@@ -64,6 +66,7 @@ namespace MissedCall.Feature.Ringtone {
             vibrationVoice = vibration != null ? player.CreateVoice(vibration) : -1;
             decoyVoice = decoy != null ? player.CreateVoice(decoy) : -1;
             noiseVoice = player.CreateLoopVoice(SfxSynth.FanLoop(), SfxSynth.SampleRate);
+            vacuumVoice = player.CreateLoopVoice(SfxSynth.VacuumLoop(), SfxSynth.SampleRate);
         }
 
         // 이번 판 발신자의 벨소리
@@ -219,6 +222,13 @@ namespace MissedCall.Feature.Ringtone {
                 player.SnapVoice(noiseVoice);
                 player.StartVoice(noiseVoice);
             }
+
+            if (context.Modifier == RoundModifier.Vacuum && vacuumVoice >= 0) {
+                vacuumOn = true;
+                ApplyExtras();
+                player.SnapVoice(vacuumVoice);
+                player.StartVoice(vacuumVoice);
+            }
         }
 
         private void ApplyExtras() {
@@ -234,6 +244,12 @@ namespace MissedCall.Feature.Ringtone {
                 player.SetVoice(noiseVoice, route, 0, elapsed01);
                 player.SetVoiceGain(noiseVoice, tuning.noiseGain * Mathf.Pow(tuning.wallGainScale, route.Walls));
             }
+
+            if (vacuumOn) {
+                SoundRoute route = Route(context, context.VacuumPosition, context.VacuumRoom);
+                player.SetVoice(vacuumVoice, route, 0, elapsed01);
+                player.SetVoiceGain(vacuumVoice, tuning.vacuumGain * Mathf.Pow(tuning.wallGainScale, route.Walls));
+            }
         }
 
         private void StopExtras() {
@@ -245,8 +261,13 @@ namespace MissedCall.Feature.Ringtone {
                 player.StopVoice(noiseVoice);
             }
 
+            if (vacuumOn) {
+                player.StopVoice(vacuumVoice);
+            }
+
             decoyOn = false;
             noiseOn = false;
+            vacuumOn = false;
         }
 
         private SoundRoute Route(RoundContext context, Vector3 target, int targetRoom) {

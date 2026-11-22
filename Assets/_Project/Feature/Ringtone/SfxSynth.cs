@@ -425,6 +425,43 @@ namespace MissedCall.Feature.Ringtone {
             return Finish(data, 0.6f);
         }
 
+        /// <summary>
+        /// 로봇청소기 변수의 모터 소리. 높은 모터 윙(벨 대역 아래 520Hz 언저리)과 흡입 바람, 솔이 바닥을 긁는 사각거림.
+        /// 끊김 없이 반복되도록 끝을 처음에 겹쳐 만든다.
+        /// </summary>
+        public static float[] VacuumLoop() {
+            const float length = 2f;
+            const float overlap = 0.25f;
+            var noise = new Noise(0x7AC);
+            int total = Mathf.CeilToInt((length + overlap) * SampleRate);
+            var raw = new float[total];
+            var air = new Biquad(Biquad.Kind.LowPass, 1100f, 0.6f);
+            var brush = new Biquad(Biquad.Kind.BandPass, 2400f, 1.2f);
+            for (int i = 0; i < total; i++) {
+                float t = Sec(i);
+                float n = noise.Next();
+                // 모터가 조금씩 떨리며 돈다 (2초에 정수 번)
+                float wobble = 1f + 0.004f * Mathf.Sin(2f * Mathf.PI * 3f * t);
+                float motor = Mathf.Sin(2f * Mathf.PI * 520f * wobble * t) * 0.07f + Mathf.Sin(2f * Mathf.PI * 260f * t) * 0.1f;
+                // 솔이 한 바퀴 돌 때마다 사각거림이 커졌다 작아진다
+                float sweep = 0.6f + 0.4f * Mathf.Sin(2f * Mathf.PI * 8f * t);
+                raw[i] = air.Process(n) * 1.1f + brush.Process(n) * 0.25f * sweep + motor;
+            }
+
+            int count = Mathf.CeilToInt(length * SampleRate);
+            int fade = total - count;
+            var data = new float[count];
+            for (int i = 0; i < count; i++) {
+                data[i] = raw[i];
+                if (i < fade) {
+                    float k = i / (float)fade;
+                    data[i] = raw[i] * k + raw[count + i] * (1f - k);
+                }
+            }
+
+            return Finish(data, 0.6f);
+        }
+
         // 손잡이가 처음 자리로 미끄러져 돌아간다.
         private static float[] SlideBack(Noise noise) {
             float length = 0.18f;

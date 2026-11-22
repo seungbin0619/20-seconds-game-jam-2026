@@ -20,5 +20,7 @@ namespace MissedCall.Core.Round {
         Extras = 9,
         /// <summary>박치기와 발차기로 튀는 물건의 무작위 회전. 판 중 플레이어 입력에 따라 뽑는 횟수가 달라진다.</summary>
         Shove = 10,
+        /// <summary>로봇청소기 시작 자리와 도는 방향, 고르는 문. 판 중 부딪히는 횟수에 따라 뽑는 횟수가 달라진다.</summary>
+        Vacuum = 11,
     }
 }

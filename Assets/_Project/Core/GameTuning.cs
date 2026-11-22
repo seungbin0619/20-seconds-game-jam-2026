@@ -16,6 +16,7 @@ namespace MissedCall.Core {
         public float decoyWeight = 1f;
         public float noiseWeight = 1f;
         public float blackoutWeight = 1f;
+        public float vacuumWeight = 1f;
         [Tooltip("판에 플립폰이 나올 확률 (받는 방식이 다르다)")]
         [Range(0f, 1f)] public float flipPhoneChance = 0.1f;
         [Tooltip("판에 고양이가 폰 더미 위에 앉아 있을 확률")]
@@ -32,6 +33,15 @@ namespace MissedCall.Core {
         [Range(0f, 1f)] public float blackoutDarkness = 0.78f;
         [Tooltip("폰 화면 불빛 반경 (화면 높이 비율, 1m 거리 기준)")]
         public float blackoutGlowRadius = 0.16f;
+
+        [Tooltip("로봇청소기 변수: 앞으로 가는 속도(m/s)")]
+        public float vacuumSpeed = 0.5f;
+        [Tooltip("로봇청소기가 제자리에서 도는 속도(도/s)")]
+        public float vacuumTurnSpeed = 140f;
+        [Tooltip("로봇청소기가 방 안을 이 시간(초) 돌아다닌 뒤 문 하나를 골라 옆방으로 간다")]
+        public float vacuumRoamTime = 3f;
+        [Tooltip("로봇청소기 모터 소리 볼륨")]
+        public float vacuumGain = 0.3f;
 
         [Header("Player")]
         public float walkSpeed = 3.2f;

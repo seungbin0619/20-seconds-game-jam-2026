@@ -66,6 +66,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 닫힌 문 | 문 하나가 닫혀 있어 클릭해서 연다. 닫힌 문 너머는 더 먹먹하다 | 선택 |
 | 배터리 부족 | 경과 8~13초에 벨이 끊기고, 폰 쪽에서 꺼지는 소리(낮아지는 두 음)가 난다. 꺼진 폰은 떨지도 빛나지도 않는다 | 구현 (11/22) |
 | 소음 | 폰이 없는 방 천장에서 환풍기 소리가 난다. 벨처럼 벽과 문 경로를 따른다 | 구현 (11/22) |
+| 로봇청소기 | 폰이 로봇청소기 위에 얹혀 집 안을 돌아다닌다. 폰 방 바닥의 빈 자리에서 출발해 방 안을 `vacuumRoamTime` 동안 돌다가 문 하나를 골라 옆방으로 넘어간다. 바닥의 물건을 밀고 다니며(가끔 폰 위에 걸치기도 한다) 모터 소리가 벨처럼 벽과 문 경로를 따른다. 벨소리도 청소기를 따라 움직인다. 태그는 Robot vacuum on the loose | 구현 (11/22) |
 
 변수는 판 시드의 Modifier 스트림으로 고른다 (`Feature/Modifiers/ModifierStep`, Phone 다음 단계). `modifierChance` 확률로 하나가 붙고, 종류는 `*Weight`로 고른다. 판이 시작되면 타이머 아래에 기울인 노란 태그로 이름을 보여 준다.
 
@@ -248,7 +249,11 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | `lowTimeWarning` | 5 | 남은 시간이 이 값(초) 이하면 타이머가 빨갛게 바뀐다 |
 | `resultInputDelay` | 0.6 | 결과가 나온 뒤 이 시간(초) 동안은 클릭으로 새 판을 시작하지 않는다 |
 | `modifierChance` | 0.5 | 판에 변수가 붙을 확률 (잠정) |
-| `vibrateWeight` 등 | 1 | 변수 종류별 상대 확률 (진동, 배터리, 미끼, 소음, 정전) |
+| `vibrateWeight` 등 | 1 | 변수 종류별 상대 확률 (진동, 배터리, 미끼, 소음, 정전, 로봇청소기) |
+| `vacuumSpeed` | 0.5 | 로봇청소기가 앞으로 가는 속도(m/s) |
+| `vacuumTurnSpeed` | 140 | 로봇청소기가 제자리에서 도는 속도(도/s) |
+| `vacuumRoamTime` | 3 | 방 안을 이 시간(초) 돌아다닌 뒤 문 하나를 골라 옆방으로 간다 |
+| `vacuumGain` | 0.3 | 모터 소리 볼륨 |
 | `batteryRingTime` | (8, 13) | 배터리 부족 판에서 벨이 끊기는 경과 시간 범위(초) |
 | `decoyMinDistance` | 2.5 | 미끼는 폰에서 이 거리(m) 넘게 떨어진 숨는 자리에 둔다 |
 | `decoyCovers` | 2 | 미끼를 덮은 물건 수로 친다 |
@@ -286,6 +291,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | UI | 버튼, 받기 슬라이드 잡기와 놓침 | 짧은 딸깍, 미끄러짐 |
 | 발차기 | 우클릭 | 낮은 퍽과 짧은 바람. 맞은 물건이 없으면 작게 |
 | 박치기 | 걷다가 더미를 들이받음 | 둔한 털썩. 튕긴 물건이 많을수록 크다 |
+| 청소기 모터 | 로봇청소기 변수 판 내내 | 260/520Hz 모터 윙, 흡입 바람, 솔이 바닥을 긁는 사각거림. 2초 반복 |
 
 같은 상황에서도 매번 다르게 들리도록 소리마다 변형을 여러 개(잡기 6, 던지기 5, 끌리다 맒 4, 충돌 종류마다 5, 발소리 6, UI 2~3) 만들고, 재생할 때 직전과 다른 변형을 골라 음높이(±6~12%)와 볼륨(±15%)을 흔든다. 잡기는 낮게 거른 바스락, 던지기는 공진 없는 부드러운 바람 소리, 끌리다 맒은 먹먹한 툭 한 번이다 (처음 버전은 귀에 거슬렸다).
 
@@ -352,7 +358,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 시작 버튼 | Ring It |
 | 타이틀 하단 | Headphones make the direction much easier to hear. |
 | 플레이 힌트 | Follow the sound and clear the piles |
-| 변수 태그 | Vibrate only / Low battery / Something else is ringing / Noisy house / Blackout |
+| 변수 태그 | Vibrate only / Low battery / Something else is ringing / Noisy house / Blackout / Robot vacuum on the loose |
 | 조준 라벨 | Grab / Grab phone / Open |
 | 받기 화면 | Incoming call / (발신자 이름) / Pick up! / Slide to answer |
 | 성공 | Hello? / Answered in {0.0}s |

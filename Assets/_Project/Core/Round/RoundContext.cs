@@ -58,6 +58,15 @@ namespace MissedCall.Core.Round {
         public Vector3 NoisePosition { get; set; }
         public int NoiseRoom { get; set; } = -1;
 
+        /// <summary>
+        /// 폰을 싣고 다니는 것의 윗면 (로봇청소기 변수). 값이 있으면 Phone이 매 프레임 이 위치와 회전을 따라간다.
+        /// </summary>
+        public Transform PhoneMount { get; set; }
+
+        /// <summary>로봇청소기 위치와 방. 변수가 없으면 방이 -1. Ringtone이 모터 소리를 낸다.</summary>
+        public Vector3 VacuumPosition { get; set; }
+        public int VacuumRoom { get; set; } = -1;
+
         /// <summary>플레이어(듣는 사람). Player가 갱신한다. 판 준비 중에는 시작 위치를 담는다.</summary>
         public Vector3 PlayerPosition { get; set; }
         public int PlayerRoom { get; set; } = -1;
@@ -89,6 +98,9 @@ namespace MissedCall.Core.Round {
             DecoyRoom = -1;
             NoisePosition = Vector3.zero;
             NoiseRoom = -1;
+            PhoneMount = null;
+            VacuumPosition = Vector3.zero;
+            VacuumRoom = -1;
             PlayerPosition = Vector3.zero;
             PlayerRoom = -1;
             AimTarget = null;

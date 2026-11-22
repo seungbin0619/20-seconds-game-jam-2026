@@ -171,6 +171,7 @@ namespace MissedCall.Feature.Ui {
                 case RoundModifier.Decoy: return "Something else is ringing";
                 case RoundModifier.Noise: return "Noisy house";
                 case RoundModifier.Blackout: return "Blackout";
+                case RoundModifier.Vacuum: return "Robot vacuum on the loose";
                 default: return null;
             }
         }

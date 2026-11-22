@@ -125,6 +125,13 @@ namespace MissedCall.Feature.Phone {
                 return;
             }
 
+            // 로봇청소기 변수: 싣고 다니는 것의 윗면을 따라간다.
+            Transform mount = context.PhoneMount;
+            if (mount != null) {
+                transform.SetPositionAndRotation(mount.position, mount.rotation);
+                UpdatePlace();
+            }
+
             int covers = CountCovers();
             context.Covers = covers;
             if (state != RoundState.Playing) {
@@ -146,7 +153,9 @@ namespace MissedCall.Feature.Phone {
                 nextJiggle += Mathf.Max(0.05f, tuning.jiggleInterval);
             }
 
-            Crawl(covers, Time.deltaTime);
+            if (mount == null) {
+                Crawl(covers, Time.deltaTime);
+            }
 
             float shake = covers == 0 ? Mathf.Sin(Time.time * tuning.phoneShakeRate) * tuning.phoneShake : 0f;
             visual.localPosition = new Vector3(shake, 0f, 0f);

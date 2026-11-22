@@ -59,10 +59,12 @@ namespace MissedCall.Feature.Modifiers {
 
         private RoundModifier Pick(System.Random rng) {
             float[] weights = {
-                tuning.vibrateWeight, tuning.lowBatteryWeight, tuning.decoyWeight, tuning.noiseWeight, tuning.blackoutWeight
+                tuning.vibrateWeight, tuning.lowBatteryWeight, tuning.decoyWeight, tuning.noiseWeight, tuning.blackoutWeight,
+                tuning.vacuumWeight
             };
             RoundModifier[] kinds = {
-                RoundModifier.Vibrate, RoundModifier.LowBattery, RoundModifier.Decoy, RoundModifier.Noise, RoundModifier.Blackout
+                RoundModifier.Vibrate, RoundModifier.LowBattery, RoundModifier.Decoy, RoundModifier.Noise, RoundModifier.Blackout,
+                RoundModifier.Vacuum
             };
             float total = 0f;
             foreach (float w in weights) {

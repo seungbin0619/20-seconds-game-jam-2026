@@ -12,5 +12,7 @@ namespace MissedCall.Core.Round {
         Noise = 4,
         /// <summary>집이 어둡다. 폰 화면 불빛이 단서다.</summary>
         Blackout = 5,
+        /// <summary>폰이 로봇청소기 위에 얹혀 집 안을 돌아다닌다.</summary>
+        Vacuum = 6,
     }
 }
