@@ -92,3 +92,12 @@ Feature ──▶ Core ──▶ Shared
 ## 최상위 폴더를 추가할 때
 
 정말 세 폴더에 들어가지 않을 때만 추가하고 (예: Web 전용 템플릿처럼 Unity가 위치를 강제하는 경우), 이 문서에 이유를 남긴다.
+
+## 외부 에셋
+
+| 에셋 | 출처 | 라이선스 | 위치 |
+|---|---|---|---|
+| 고양이 모델 `SM_LowpolyAnimal_Cat.fbx` | PolyOne Studio, [Free Pack - Lowpoly Animal](https://assetstore.unity.com/packages/3d/props/free-pack-lowpoly-animal-405472) (Unity Asset Store) | Standard Unity Asset Store EULA. 게임 빌드에 넣는 것은 자유롭고 출처 표기는 필요 없다. 원본 파일을 그대로 배포하면 안 되므로 공개 저장소에 올리지 않는다 | `Feature/Cat/Model/` (`.gitignore`) |
+| 폰트 Pretendard | [orioncactus/pretendard](https://github.com/orioncactus/pretendard) | SIL OFL 1.1 | `Shared/Fonts/` |
+
+고양이 모델이 없는 새 체크아웃에서는 `Cat.prefab`의 메시가 비어 보인다. Package Manager > My Assets에서 Free Pack - Lowpoly Animal을 받아 `Model/SM_LowpolyAnimal_Cat.fbx`만 `Assets/_Project/Feature/Cat/Model/`에 가져오고(`.meta` 포함), 나머지 동물은 가져오지 않는다. 가져온 뒤 모델 import 설정에서 Material과 Animation을 끈다.

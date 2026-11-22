@@ -136,7 +136,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 2. 더미 속 숨은 물건 (리모컨, 지폐 등. 결과 화면에 "Also found" 표시)
 3. 방 반응 (TV 맞히면 채널 변경, 바구니에 넣으면 "3-pointer!")
 4. 희귀 폰 (플립폰은 받는 방식이 다름) — 구현 (11/22): `flipPhoneChance` 10%. 폰이 짧고 두꺼워지고, 받기 화면이 "Flip it open!"과 "Click to flip open"으로 바뀌어 트랙을 한 번 클릭하면 받는다.
-5. 고양이 (폰 위에 앉아 있거나 물고 이동) — 구현 (11/22): `catChance` 12%. 폰 더미 맨 위에 웅크려 앉아 폰을 가린다 (Clutter 레이어라 덮임으로 세고 폰 조준을 막는다). 잡으려 하면 야옹 하고 같은 방 다른 바닥으로 폴짝 뛰어 달아난다 (`Feature/Cat`). 모델은 임시 상자 모양
+5. 고양이 (폰 위에 앉아 있거나 물고 이동) — 구현 (11/22): `catChance` 12%. 폰 더미 맨 위에 웅크려 앉아 폰을 가린다 (Clutter 레이어라 덮임으로 세고 폰 조준을 막는다). 잡으려 하면 야옹 하고 같은 방 다른 바닥으로 폴짝 뛰어 달아난다 (`Feature/Cat`). 모델은 PolyOne Studio의 [Free Pack - Lowpoly Animal](https://assetstore.unity.com/packages/3d/props/free-pack-lowpoly-animal-405472) 고양이(390 폴리곤, 애니메이션 없음)를 회색 머티리얼로 칠해 쓴다. 숨쉬기와 폴짝 뛰기는 코드로 움직인다
 
 ## 튜닝 값 (`GameTuning`)
 
