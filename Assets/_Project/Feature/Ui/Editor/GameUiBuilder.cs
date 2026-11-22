@@ -19,13 +19,18 @@ namespace MissedCall.Feature.Ui.Editor {
         private const string DisplayShadowPath = Root + "/UiFont_Display_Shadow.mat";
         private const string BodyShadowPath = Root + "/UiFont_Body_Shadow.mat";
         private const string BoldShadowPath = Root + "/UiFont_Bold_Shadow.mat";
+        private const string ShaderPath = Root + "/UiHalftone.shader";
+        private const string ShapeMaterialPath = Root + "/UiHalftone.mat";
 
         // Pretendard. 제목은 ExtraBold, 본문은 Medium이며 본문의 굵은 글씨는 Bold 에셋을 쓴다 (폰트 굵기 표).
         private const string DisplayFontPath = "Assets/_Project/Shared/Fonts/UiFont_Pretendard-ExtraBold SDF.asset";
         private const string BodyFontPath = "Assets/_Project/Shared/Fonts/UiFont_Pretendard-Medium SDF.asset";
         private const string BoldFontPath = "Assets/_Project/Shared/Fonts/UiFont_Pretendard-Bold SDF.asset";
 
-        private const float HandsetWidth = 360f;
+        private const float HandsetWidth = 380f;
+        // 패널 모서리 깎기, 버튼 기울임(px)
+        private const float CardChamfer = 22f;
+        private const float ButtonSkew = 16f;
 
         private static TMP_FontAsset displayFont;
         private static TMP_FontAsset bodyFont;
@@ -33,10 +38,8 @@ namespace MissedCall.Feature.Ui.Editor {
         private static Material displayShadow;
         private static Material bodyShadow;
         private static Material boldShadow;
-        private static Sprite circle;
         private static Sprite ring;
-        private static Sprite panel;
-        private static Sprite panelFrame;
+        private static Material shapeMaterial;
         private static Texture2D cursorTexture;
 
         // 브라우저 CSS 커서는 32px를 넘으면 무시될 수 있다.
@@ -45,11 +48,13 @@ namespace MissedCall.Feature.Ui.Editor {
         [MenuItem("Missed Call/Ui/Build Game Ui")]
         public static void Build() {
             EnsureFolder(SpriteFolder);
-            circle = MakeSprite("Ui_Circle", 64, 32f, 0f, 31);
             ring = MakeSprite("Ui_Ring", 32, 16f, 4.5f, 0);
-            panel = MakeSprite("Ui_Panel", 96, 36f, 0f, 40);
-            panelFrame = MakeSprite("Ui_PanelFrame", 96, 36f, 3f, 40);
             cursorTexture = MakeCursor("Ui_Cursor");
+            shapeMaterial = ShapeMaterial();
+            if (shapeMaterial == null) {
+                Debug.LogError("[GameUiBuilder] UiHalftone shader not found");
+                return;
+            }
 
             displayFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(DisplayFontPath);
             bodyFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(BodyFontPath);
@@ -84,6 +89,9 @@ namespace MissedCall.Feature.Ui.Editor {
             scaler.referenceResolution = new Vector2(1280f, 720f);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 1f;
+            // UiShape가 도형 값을 넣는 채널
+            canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord1
+                | AdditionalCanvasShaderChannels.TexCoord2 | AdditionalCanvasShaderChannels.TexCoord3;
             var ui = root.AddComponent<GameUi>();
 
             Transform parent = root.transform;
@@ -121,8 +129,11 @@ namespace MissedCall.Feature.Ui.Editor {
 
         private static HudView BuildHud(Transform parent) {
             RectTransform rect = Stretch(Node("Hud", parent));
+            Transition(rect, new Vector2(0f, 40f), 1f);
             var hud = rect.gameObject.AddComponent<HudView>();
-            TMP_Text clock = Text(rect, "Clock", "20.0", 72f, UiPalette.Ring, displayFont, displayShadow);
+            Image plate = Shape(rect, "ClockPlate", UiPalette.Night, 10f, 20f, 0.8f, 0f, 0.6f, 0.6f);
+            Place(plate.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(210f, 82f));
+            TMP_Text clock = Text(rect, "Clock", "20.0", 72f, UiPalette.Ring, displayFont, displayShadow, FontStyles.Italic);
             Place(clock.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -14f), new Vector2(400f, 80f));
             TMP_Text hint = Text(rect, "Hint", "Follow the sound and clear the piles", 20f, UiPalette.Paper, bodyFont, bodyShadow);
             Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -96f), new Vector2(900f, 34f));
@@ -132,6 +143,7 @@ namespace MissedCall.Feature.Ui.Editor {
 
         private static AimView BuildAim(Transform parent) {
             RectTransform rect = Stretch(Node("Aim", parent));
+            Transition(rect, Vector2.zero, 1.6f);
             var aim = rect.gameObject.AddComponent<AimView>();
             Image ringImage = Img(rect, "Ring", ring, UiPalette.Paper, Image.Type.Simple);
             Place(ringImage.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(14f, 14f), new Vector2(0.5f, 0.5f));
@@ -143,10 +155,11 @@ namespace MissedCall.Feature.Ui.Editor {
 
         private static GameObject BuildTitle(Transform parent, out TMP_Text clock, out Image button) {
             RectTransform rect = Stretch(Node("Title", parent));
-            Backdrop(rect, UiPalette.Night);
+            Transition(rect, new Vector2(0f, -20f), 1f);
+            Backdrop(rect, UiPalette.Night, 1f, 0.55f);
             RectTransform handset = Handset(rect);
-            clock = Text(handset, "LockTime", "00:00", 15f, UiPalette.Muted, bodyFont);
-            Text(handset, "Heading", "Missed Call", 54f, UiPalette.Ring, displayFont);
+            clock = Tag(handset, "LockTime", "00:00");
+            Heading(handset, "Missed Call", 56f, UiPalette.Ring);
             Text(handset, "Lead", "Your phone is ringing somewhere. Find it and pick up before it stops.", 18f, UiPalette.Paper, bodyFont);
             string key = "<color=#FFD23F><b>{0}</b></color>  {1}";
             TMP_Text keys = Text(handset, "Keys",
@@ -156,24 +169,27 @@ namespace MissedCall.Feature.Ui.Editor {
                 15f, UiPalette.Paper, bodyFont, null, FontStyles.Normal, TextAlignmentOptions.TopLeft);
             keys.lineSpacing = 8f;
             button = Pill(handset, "Button", "Ring It");
-            Text(handset, "Note", "Headphones make the direction much easier to hear.", 15f, UiPalette.Muted, bodyFont);
+            Text(handset, "Note", "Headphones make the direction much easier to hear.", 14f, UiPalette.Muted, bodyFont);
             return rect.gameObject;
         }
 
         private static AnswerSlide BuildAnswer(Transform parent) {
             RectTransform rect = Stretch(Node("Answer", parent));
+            Transition(rect, new Vector2(0f, -30f), 1f);
             var slide = rect.gameObject.AddComponent<AnswerSlide>();
             RectTransform handset = Handset(rect);
-            Text(handset, "LockTime", "Incoming call", 15f, UiPalette.Muted, bodyFont);
+            Tag(handset, "LockTime", "Incoming call");
             TMP_Text caller = Text(handset, "Caller", "Mom", 20f, UiPalette.Paper, bodyFont, null, FontStyles.Bold);
-            Text(handset, "Heading", "Pick up!", 40f, UiPalette.Answer, displayFont);
+            Heading(handset, "Pick up!", 42f, UiPalette.Answer);
 
-            Image track = Img(handset, "Track", circle, new Color(1f, 1f, 1f, 0.14f), Image.Type.Sliced);
+            Image track = Shape(handset, "Track", Color.white, 0f, ButtonSkew, 0.7f, 0f, -0.35f, 0.06f);
             track.gameObject.AddComponent<LayoutElement>().preferredHeight = 62f;
-            TMP_Text hint = Text(track.rectTransform, "Label", "Slide to answer", 15f, UiPalette.Muted, bodyFont);
+            TMP_Text hint = Text(track.rectTransform, "Label", "Slide to answer  >>", 14f, UiPalette.Muted, bodyFont, null,
+                FontStyles.Italic | FontStyles.UpperCase);
+            hint.characterSpacing = 6f;
             Stretch(hint.rectTransform);
-            Image thumb = Img(track.rectTransform, "Thumb", circle, UiPalette.Answer, Image.Type.Simple);
-            Place(thumb.rectTransform, new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(54f, 54f), new Vector2(0f, 0.5f));
+            Image thumb = Shape(track.rectTransform, "Thumb", UiPalette.Answer, 8f, ButtonSkew * 0.8f, 0.8f, 0f, -0.3f);
+            Place(thumb.rectTransform, new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(66f, 54f), new Vector2(0f, 0.5f));
 
             Wire(slide, ("track", track.rectTransform), ("thumb", thumb.rectTransform), ("caller", caller));
             return slide;
@@ -181,39 +197,43 @@ namespace MissedCall.Feature.Ui.Editor {
 
         private static ResultView BuildResult(Transform parent, out TMP_Text clock, out Image button) {
             RectTransform rect = Stretch(Node("Result", parent));
+            Transition(rect, new Vector2(0f, -24f), 1f);
             var view = rect.gameObject.AddComponent<ResultView>();
-            Backdrop(rect, new Color(8f / 255f, 11f / 255f, 14f / 255f, 0.34f));
+            Backdrop(rect, new Color(8f / 255f, 11f / 255f, 14f / 255f), 0.34f, -0.55f);
             RectTransform handset = Handset(rect);
-            clock = Text(handset, "LockTime", "00:00", 15f, UiPalette.Muted, bodyFont);
-            TMP_Text head = Text(handset, "Heading", "Hello?", 40f, UiPalette.Answer, displayFont);
+            clock = Tag(handset, "LockTime", "00:00");
+            TMP_Text head = Heading(handset, "Hello?", 42f, UiPalette.Answer);
             TMP_Text caller = Text(handset, "Caller", "Mom", 20f, UiPalette.Paper, bodyFont, null, FontStyles.Bold);
             TMP_Text quote = Text(handset, "Quote", "\"Have you eaten yet?\"", 17f, UiPalette.Muted, bodyFont);
             TMP_Text stat = Text(handset, "Stat", "Answered in 0.0s", 15f, UiPalette.Muted, bodyFont);
             button = Pill(handset, "Button", "Try Again");
-            Text(handset, "Note", "Press R to restart", 15f, UiPalette.Muted, bodyFont);
+            Text(handset, "Note", "Press R to restart", 14f, UiPalette.Muted, bodyFont);
             Wire(view, ("head", head), ("caller", caller), ("quote", quote), ("stat", stat));
             return view;
         }
 
         private static GameObject BuildPause(Transform parent, out TMP_Text time, out Image resume, out Image restart, out Image title) {
             RectTransform rect = Stretch(Node("Pause", parent));
-            Backdrop(rect, new Color(8f / 255f, 11f / 255f, 14f / 255f, 0.6f));
+            Transition(rect, new Vector2(0f, -20f), 1f);
+            Backdrop(rect, new Color(8f / 255f, 11f / 255f, 14f / 255f), 0.6f, -0.55f);
             RectTransform handset = Handset(rect);
-            Text(handset, "LockTime", "On hold", 15f, UiPalette.Muted, bodyFont);
-            Text(handset, "Heading", "Paused", 40f, UiPalette.Ring, displayFont);
+            Tag(handset, "LockTime", "On hold");
+            Heading(handset, "Paused", 42f, UiPalette.Ring);
             time = Text(handset, "Time", "20.0s left", 17f, UiPalette.Paper, bodyFont);
             resume = Pill(handset, "Resume", "Resume");
             restart = Pill(handset, "Restart", "Restart", false);
             title = Pill(handset, "Title", "Title", false);
-            Text(handset, "Note", "Press R to restart", 15f, UiPalette.Muted, bodyFont);
+            Text(handset, "Note", "Press R to restart", 14f, UiPalette.Muted, bodyFont);
             return rect.gameObject;
         }
 
         // 일시정지 중 Esc를 누르면 메뉴 대신 보이는 안내. 화면 아무 곳이나 클릭하면 재개한다.
         private static GameObject BuildResumeHint(Transform parent) {
             RectTransform rect = Stretch(Node("ResumeHint", parent));
-            Backdrop(rect, new Color(8f / 255f, 11f / 255f, 14f / 255f, 0.45f));
-            TMP_Text head = Text(rect, "Heading", "Click to resume", 40f, UiPalette.Ring, displayFont, displayShadow);
+            Transition(rect, Vector2.zero, 1.12f);
+            Backdrop(rect, new Color(8f / 255f, 11f / 255f, 14f / 255f), 0.45f, -0.55f);
+            TMP_Text head = Text(rect, "Heading", "Click to resume", 40f, UiPalette.Ring, displayFont, displayShadow,
+                FontStyles.Italic | FontStyles.UpperCase);
             Place(head.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 10f), new Vector2(900f, 60f), new Vector2(0.5f, 0f));
             TMP_Text note = Text(rect, "Note", "Esc for menu", 17f, UiPalette.Paper, bodyFont, bodyShadow);
             Place(note.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -6f), new Vector2(900f, 30f));
@@ -222,23 +242,27 @@ namespace MissedCall.Feature.Ui.Editor {
 
         // ---------- 부품 ----------
 
+        // 폰 패널. 모서리 두 곳을 깎은 어두운 카드에 하프톤 점, 점으로 된 그림자, 노란 띠를 얹는다.
+        // UiTilt가 원근감 있게 기울이고 등장 애니메이션을 한다. 바탕 도형들은 레이아웃에서 빼고 카드 크기를 따라간다.
         private static RectTransform Handset(Transform parent) {
             RectTransform rect = Node("Handset", parent);
             Place(rect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(HandsetWidth, 0f), new Vector2(0.5f, 0.5f));
-            var fill = rect.gameObject.AddComponent<Image>();
-            fill.sprite = panel;
-            fill.type = Image.Type.Sliced;
-            fill.color = UiPalette.Glass;
-            fill.raycastTarget = false;
             rect.gameObject.AddComponent<CanvasGroup>().blocksRaycasts = false;
-            rect.gameObject.AddComponent<PopIn>();
+            rect.gameObject.AddComponent<UiTilt>();
 
-            Image frame = Img(rect, "Frame", panelFrame, UiPalette.Frame, Image.Type.Sliced);
-            Stretch(frame.rectTransform);
-            frame.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            Image shadow = Shape(rect, "Shadow", Color.black, CardChamfer, 0f, 1f, UiShape.Uniform, -0.75f, 0f);
+            Backing(shadow.rectTransform, new Vector2(14f, -14f));
+            Image fill = Shape(rect, "Fill", UiPalette.Night, CardChamfer, 0f, 0.85f, -40f, 0.6f, 0.94f);
+            Backing(fill.rectTransform, Vector2.zero);
+            Image edge = Shape(rect, "Edge", UiPalette.Frame, CardChamfer, 0f, 0f, 0f, 0f);
+            edge.GetComponent<UiShape>().outline = 2f;
+            Backing(edge.rectTransform, Vector2.zero);
+            Image stripe = Shape(rect, "Stripe", UiPalette.Ring, 0f, 8f, 0f, 0f, 0f);
+            stripe.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            Place(stripe.rectTransform, new Vector2(0f, 1f), new Vector2(CardChamfer + 10f, 0f), new Vector2(84f, 6f), new Vector2(0f, 0.5f));
 
             var layout = rect.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(24, 24, 24, 22);
+            layout.padding = new RectOffset(30, 30, 30, 26);
             layout.spacing = 14f;
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
@@ -250,20 +274,72 @@ namespace MissedCall.Feature.Ui.Editor {
             return rect;
         }
 
-        // 프로토타입의 button. 누름 판정은 GameUi가 이 이미지의 사각형으로 한다.
-        // primary는 노란 바탕(Ring It, Try Again, Resume), 아니면 반투명 바탕(Restart, Title).
-        private static Image Pill(Transform parent, string name, string label, bool primary = true) {
-            Image pill = Img(parent, name, circle, primary ? UiPalette.Ring : UiPalette.Secondary, Image.Type.Sliced);
-            pill.gameObject.AddComponent<LayoutElement>().preferredHeight = primary ? 50f : 44f;
-            TMP_Text text = Text(pill.rectTransform, "Label", label, primary ? 19f : 17f, primary ? UiPalette.Night : UiPalette.Paper,
-                bodyFont, null, FontStyles.Bold);
-            Stretch(text.rectTransform);
-            return pill;
+        // 화면을 켜고 끌 때의 전환 효과. offset만큼 밀려 들어오고 반대쪽으로 나가며, scale에서 커지거나 줄어든다.
+        private static void Transition(RectTransform rect, Vector2 offset, float scale) {
+            var screen = rect.gameObject.AddComponent<UiScreen>();
+            var so = new SerializedObject(screen);
+            so.FindProperty("offset").vector2Value = offset;
+            so.FindProperty("scale").floatValue = scale;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void Backdrop(RectTransform parent, Color color) {
-            Image image = Img(parent, "Backdrop", null, color, Image.Type.Simple);
+        private static void Backing(RectTransform rect, Vector2 offset) {
+            rect.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            Stretch(rect);
+            rect.offsetMin = offset;
+            rect.offsetMax = offset;
+        }
+
+        // 기울인 버튼. 누름 판정은 GameUi가 이 이미지의 사각형으로 한다.
+        // primary는 노란 바탕(Ring It, Try Again, Resume), 아니면 반투명 바탕(Restart, Title).
+        private static Image Pill(Transform parent, string name, string label, bool primary = true) {
+            Image button = primary
+                ? Shape(parent, name, UiPalette.Ring, 8f, ButtonSkew, 0.75f, 0f, -0.28f)
+                : Shape(parent, name, UiPalette.Secondary, 6f, ButtonSkew, 0f, 0f, 0f);
+            if (!primary) {
+                // 보조 버튼은 테두리를 둘러 바탕을 옅게 둔다.
+                Image edge = Shape(button.rectTransform, "Edge", new Color(1f, 1f, 1f, 0.35f), 6f, ButtonSkew, 0f, 0f, 0f);
+                edge.GetComponent<UiShape>().outline = 1.5f;
+                Stretch(edge.rectTransform);
+            }
+
+            button.gameObject.AddComponent<LayoutElement>().preferredHeight = primary ? 52f : 44f;
+            TMP_Text text = Text(button.rectTransform, "Label", label, primary ? 19f : 16f, primary ? UiPalette.Night : UiPalette.Paper,
+                bodyFont, null, FontStyles.Bold | FontStyles.Italic | FontStyles.UpperCase);
+            text.characterSpacing = 4f;
+            Stretch(text.rectTransform);
+            return button;
+        }
+
+        // 화면 전체 바탕. 가장자리로 갈수록 하프톤 점이 커진다. dotTone +면 청회색 점, -면 검은 점.
+        private static void Backdrop(RectTransform parent, Color color, float opacity, float dotTone) {
+            Image image = Shape(parent, "Backdrop", color, 0f, 0f, 1f, UiShape.Radial, dotTone, opacity);
             Stretch(image.rectTransform);
+        }
+
+        private static TMP_Text Heading(Transform parent, string text, float size, Color color) =>
+            Text(parent, "Heading", text, size, color, displayFont, null, FontStyles.Italic | FontStyles.UpperCase);
+
+        // 작은 머리글(시각, Incoming call 등). 대문자에 자간을 넓힌다.
+        private static TMP_Text Tag(Transform parent, string name, string text) {
+            TMP_Text tag = Text(parent, name, text, 13f, UiPalette.Muted, bodyFont, null, FontStyles.Bold | FontStyles.UpperCase);
+            tag.characterSpacing = 14f;
+            return tag;
+        }
+
+        // UiHalftone으로 그리는 도형
+        private static Image Shape(Transform parent, string name, Color color, float chamfer, float skew, float halftone,
+            float halftoneAngle, float dotTone, float fillOpacity = 1f) {
+            Image image = Img(parent, name, null, color, Image.Type.Simple);
+            image.material = shapeMaterial;
+            var shape = image.gameObject.AddComponent<UiShape>();
+            shape.chamfer = chamfer;
+            shape.skew = skew;
+            shape.halftone = halftone;
+            shape.halftoneAngle = halftoneAngle;
+            shape.dotTone = dotTone;
+            shape.fillOpacity = fillOpacity;
+            return image;
         }
 
         private static RectTransform Node(string name, Transform parent) {
@@ -343,6 +419,26 @@ namespace MissedCall.Feature.Ui.Editor {
         }
 
         // ---------- 에셋 ----------
+
+        private static Material ShapeMaterial() {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
+            if (shader == null) {
+                return null;
+            }
+
+            var material = AssetDatabase.LoadAssetAtPath<Material>(ShapeMaterialPath);
+            if (material == null) {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, ShapeMaterialPath);
+            } else {
+                material.shader = shader;
+            }
+
+            // 어두운 바탕 위의 밝은 점: 남색보다 조금 밝은 청회색. 노랑은 폰과 UI 강조에만 쓴다.
+            material.SetColor("_DotLight", new Color(0.15f, 0.22f, 0.29f));
+            EditorUtility.SetDirty(material);
+            return material;
+        }
 
         // HUD 글자 뒤 그림자 (프로토타입 text-shadow). 폰트 머티리얼을 복사해 밑그림을 켠다.
         private static Material ShadowMaterial(TMP_FontAsset font, string path) {

@@ -12,13 +12,12 @@ namespace MissedCall.Feature.Ringtone {
         [SerializeField] private GameTuning tuning;
         [SerializeField] private Transform listener;
 
-        private const float ImpactSpacing = 0.03f;
-
         private readonly List<VoiceState> voices = new();
         private readonly Dictionary<SoundCue, int[]> sfx = new();
         // 효과음 변형과 음높이 흔들림용. 판 무작위와 상관없는 연출이다.
         private readonly System.Random sfxRandom = new(1234);
         private float nextImpactTime;
+        private readonly Dictionary<SoundCue, int> lastVariant = new();
         private IRingtoneBackend backend;
 
         public bool IsReady => backend != null && backend.IsReady;
@@ -69,20 +68,45 @@ namespace MissedCall.Feature.Ringtone {
         }
 
         // 효과음마다 (가장 작을 때, 가장 클 때) 볼륨과 음높이 흔들림. intensity로 볼륨 사이를 고른다.
+        // 실제 볼륨은 여기에 GameTuning의 전체 볼륨과 묶음 볼륨(sfx*Volume)을 곱한다.
         private static (float min, float max, float jitter) SfxLevel(SoundCue cue) {
             switch (cue) {
-                case SoundCue.Grab: return (0.32f, 0.32f, 0.08f);
-                case SoundCue.Throw: return (0.18f, 0.55f, 0.06f);
-                case SoundCue.Tug: return (0.38f, 0.38f, 0.06f);
-                case SoundCue.ImpactSoft: return (0.12f, 0.6f, 0.1f);
-                case SoundCue.ImpactHard: return (0.1f, 0.55f, 0.1f);
-                case SoundCue.ImpactHollow: return (0.12f, 0.6f, 0.08f);
-                case SoundCue.Step: return (0.1f, 0.1f, 0.08f);
+                case SoundCue.Grab: return (0.45f, 0.45f, 0.12f);
+                case SoundCue.Throw: return (0.2f, 0.6f, 0.1f);
+                case SoundCue.Tug: return (0.4f, 0.4f, 0.1f);
+                case SoundCue.ImpactSoft: return (0.15f, 1f, 0.12f);
+                case SoundCue.ImpactHard: return (0.12f, 0.85f, 0.12f);
+                case SoundCue.ImpactHollow: return (0.15f, 1f, 0.08f);
+                case SoundCue.Step: return (0.3f, 0.3f, 0.1f);
                 case SoundCue.Heartbeat: return (0.6f, 1f, 0f);
-                case SoundCue.UiClick: return (0.35f, 0.35f, 0.04f);
-                case SoundCue.SlideGrab: return (0.45f, 0.45f, 0.03f);
-                case SoundCue.SlideBack: return (0.35f, 0.35f, 0.03f);
-                default: return (0.7f, 0.7f, 0f);
+                case SoundCue.PhoneReveal: return (0.6f, 0.6f, 0f);
+                case SoundCue.UiClick: return (0.7f, 0.7f, 0.06f);
+                case SoundCue.SlideGrab: return (0.8f, 0.8f, 0.03f);
+                case SoundCue.SlideBack: return (0.6f, 0.6f, 0.03f);
+                default: return (1f, 1f, 0f);
+            }
+        }
+
+        private float GroupVolume(SoundCue cue) {
+            switch (cue) {
+                case SoundCue.Grab:
+                case SoundCue.Throw:
+                case SoundCue.Tug:
+                    return tuning.sfxHandVolume;
+                case SoundCue.ImpactSoft:
+                case SoundCue.ImpactHard:
+                case SoundCue.ImpactHollow:
+                    return tuning.sfxImpactVolume;
+                case SoundCue.Step:
+                    return tuning.sfxStepVolume;
+                case SoundCue.Heartbeat:
+                    return tuning.sfxHeartbeatVolume;
+                case SoundCue.UiClick:
+                case SoundCue.SlideGrab:
+                case SoundCue.SlideBack:
+                    return tuning.sfxUiVolume;
+                default:
+                    return tuning.sfxEventVolume;
             }
         }
 
@@ -101,18 +125,32 @@ namespace MissedCall.Feature.Ringtone {
                     return;
                 }
 
-                nextImpactTime = now + ImpactSpacing;
+                nextImpactTime = now + tuning.impactSpacing;
             }
 
             (float min, float max, float jitter) = SfxLevel(sound.Cue);
-            float gain = Mathf.Lerp(min, max, sound.Intensity);
-            float rate = 1f + ((float)sfxRandom.NextDouble() * 2f - 1f) * jitter;
-            if (sound.Cue == SoundCue.Throw) {
-                rate *= Mathf.Lerp(0.85f, 1.2f, sound.Intensity);
+            float gain = Mathf.Lerp(min, max, sound.Intensity) * tuning.sfxVolume * GroupVolume(sound.Cue);
+            if (gain <= 0.001f) {
+                return;
             }
 
-            int id = ids[sfxRandom.Next(ids.Length)];
-            backend.PlaySample(id, gain, rate, sound.Spatial, sound.Position);
+            float rate = 1f + ((float)sfxRandom.NextDouble() * 2f - 1f) * jitter;
+            if (sound.Cue == SoundCue.Throw) {
+                rate *= Mathf.Lerp(0.9f, 1.12f, sound.Intensity);
+            }
+
+            // 볼륨도 ±15% 흔든다.
+            gain *= 1f + ((float)sfxRandom.NextDouble() * 2f - 1f) * 0.15f;
+
+            // 직전과 같은 변형은 고르지 않는다.
+            lastVariant.TryGetValue(sound.Cue, out int last);
+            int index = sfxRandom.Next(ids.Length);
+            if (ids.Length > 1 && index == last) {
+                index = (index + 1 + sfxRandom.Next(ids.Length - 1)) % ids.Length;
+            }
+
+            lastVariant[sound.Cue] = index;
+            backend.PlaySample(ids[index], gain, rate, sound.Spatial, sound.Position);
         }
 
         private Vector3 ListenerPosition => listener != null ? listener.position : Vector3.zero;

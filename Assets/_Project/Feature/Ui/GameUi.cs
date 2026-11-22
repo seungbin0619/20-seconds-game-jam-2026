@@ -42,6 +42,8 @@ namespace MissedCall.Feature.Ui {
         [SerializeField] private Vector2 cursorHotspot = new(16f, 16f);
         [Tooltip("커서가 버튼 위에 있을 때 버튼 색을 밝히는 비율")]
         [SerializeField] private float hoverBrighten = 0.12f;
+        [Tooltip("커서가 버튼 위에 있을 때 버튼 크기 배율")]
+        [SerializeField] private float hoverScale = 1.05f;
 
         private float endedAt;
         private int shownMinute = -1;
@@ -51,6 +53,13 @@ namespace MissedCall.Feature.Ui {
         private bool awaitingClick;
 
         private void Awake() {
+            // UiShape가 도형 값을 넣는 채널. 씬의 오버라이드가 프리팹 값을 덮어도 켜지게 여기서도 켠다.
+            var canvas = GetComponent<Canvas>();
+            if (canvas != null) {
+                canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord1
+                    | AdditionalCanvasShaderChannels.TexCoord2 | AdditionalCanvasShaderChannels.TexCoord3;
+            }
+
             hud.Bind(flow);
             aim.Bind(flow);
             answer.Bind(flow);
@@ -100,14 +109,23 @@ namespace MissedCall.Feature.Ui {
         private void Show() {
             RoundState state = flow.State;
             bool paused = flow.IsPaused;
-            titleScreen.SetActive(state == RoundState.Title);
-            hud.gameObject.SetActive(GameFlow.IsRunning(state));
-            aim.gameObject.SetActive(state == RoundState.Playing && !paused);
-            answer.gameObject.SetActive(state == RoundState.Answer && !paused);
-            result.gameObject.SetActive(state is RoundState.Won or RoundState.Missed);
-            pauseScreen.SetActive(paused && !awaitingClick);
-            resumeHint.SetActive(paused && awaitingClick);
+            Visible(titleScreen, state == RoundState.Title);
+            Visible(hud.gameObject, GameFlow.IsRunning(state));
+            Visible(aim.gameObject, state == RoundState.Playing && !paused);
+            Visible(answer.gameObject, state == RoundState.Answer && !paused);
+            Visible(result.gameObject, state is RoundState.Won or RoundState.Missed);
+            Visible(pauseScreen, paused && !awaitingClick);
+            Visible(resumeHint, paused && awaitingClick);
             shownMinute = -1;
+        }
+
+        // 화면에 UiScreen이 있으면 전환 효과와 함께 켜고 끈다.
+        private static void Visible(GameObject screen, bool value) {
+            if (screen.TryGetComponent(out UiScreen transition)) {
+                transition.SetVisible(value);
+            } else {
+                screen.SetActive(value);
+            }
         }
 
         private void Update() {
@@ -194,6 +212,11 @@ namespace MissedCall.Feature.Ui {
             Color normal = primary ? UiPalette.Ring : UiPalette.Secondary;
             Color hover = primary ? Color.Lerp(UiPalette.Ring, Color.white, hoverBrighten) : UiPalette.SecondaryHover;
             button.color = hovered ? hover : normal;
+            // 커서를 올리면 살짝 커지고, 누르면 눌렸다 튄다.
+            float scale = button.rectTransform.localScale.x;
+            float target = hovered ? (mouse.leftButton.isPressed ? 0.96f : hoverScale) : 1f;
+            scale = Mathf.Lerp(scale, target, 1f - Mathf.Exp(-28f * Time.unscaledDeltaTime));
+            button.rectTransform.localScale = new Vector3(scale, scale, 1f);
             bool clicked = hovered && mouse.leftButton.wasPressedThisFrame;
             if (clicked) {
                 SoundCues.Play(SoundCue.UiClick);
@@ -204,7 +227,11 @@ namespace MissedCall.Feature.Ui {
 
         // Web에서는 커서를 다시 보이게 하면(Cursor.visible = true) 캔버스 커서가 기본 화살표로 돌아간다.
         // 포인터 잠금이 풀려 커서가 다시 보인 프레임마다 전용 커서를 다시 입힌다. LateUpdate라서 같은 프레임의 해제 뒤에 온다.
+        private static readonly int UiTimeId = Shader.PropertyToID("_McUiTime");
+
         private void LateUpdate() {
+            // UiHalftone의 점이 흐르는 시간. 일시정지 중에도 흐른다.
+            Shader.SetGlobalFloat(UiTimeId, Time.unscaledTime);
             bool shown = Cursor.visible && Cursor.lockState != CursorLockMode.Locked;
             if (!shown) {
                 cursorApplied = false;

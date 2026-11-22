@@ -11,9 +11,10 @@ namespace MissedCall.Feature.Ui {
         public static readonly Color Miss = Hex(0xFF6B57);
         public static readonly Color Answer = Hex(0x57D68D);
         public static readonly Color Frame = Hex(0x39424B);
-        /// <summary>보조 버튼 바탕 (Restart, Title). 받기 슬라이드 트랙과 같은 반투명 흰색</summary>
-        public static readonly Color Secondary = new(1f, 1f, 1f, 0.14f);
-        public static readonly Color SecondaryHover = new(1f, 1f, 1f, 0.24f);
+        /// <summary>보조 버튼 바탕 (Restart, Title). 반투명 흰색</summary>
+        // 선형 색 공간이라 흰색을 조금만 섞어도 밝게 보인다.
+        public static readonly Color Secondary = new(1f, 1f, 1f, 0.06f);
+        public static readonly Color SecondaryHover = new(1f, 1f, 1f, 0.13f);
 
         private static Color Hex(int rgb) => new(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f);
     }

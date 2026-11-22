@@ -78,7 +78,7 @@ Feature ──▶ Core ──▶ Shared
 | `Modifiers` | 판 변수 (미끼 소리, 진동 모드, 정전, 닫힌 문) | 신규 |
 | `Result` | 칭호 판정, 기록 저장과 조회 | 신규 |
 | `ScreenFx` | 풀스크린 셰이딩: 잉크 외곽선, 음영 단계, 남은 시간에 따라 조여 오는 연출. `GameFlow` 상태와 남은 시간을 읽어 전역 셰이더 값을 넣는다 | 신규 |
-| `Ui` | HUD, 타이틀, 받기 슬라이드, 결과, 기록 화면 (발신자 데이터는 `Core/Callers`) | HTML 오버레이, `CALLERS` |
+| `Ui` | HUD, 타이틀, 받기 슬라이드, 결과, 기록 화면 (발신자 데이터는 `Core/Callers`). 도형과 하프톤은 `UiHalftone.shader` + `UiShape`, 원근 기울임과 패널이 돌아 들어오고 나가는 움직임은 `UiTilt`, 화면을 켜고 끌 때의 전환은 `UiScreen`(`GameUi`가 `SetActive` 대신 부른다). 캔버스의 추가 셰이더 채널 TexCoord1~3을 `GameUi`가 켠다 | HTML 오버레이, `CALLERS` |
 
 에디터 전용 코드(라이트맵 굽기 도구 등)는 해당 기능 폴더의 `Editor/` 하위에 둔다. `MissedCall.Feature.Editor` asmdef는 `Feature/Room/Editor/`에 있다. 다른 기능의 `Editor/` 폴더는 이 asmdef를 가리키는 `.asmref`를 둔다 (예: `Ui/Editor`).
 

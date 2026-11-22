@@ -20,6 +20,10 @@ namespace MissedCall.Feature.Ui {
 
         private GameFlow flow;
         private float scale = 1f;
+        // 라벨이 보이는 정도 0~1. 켜고 끌 때 짧게 나타나고 사라진다.
+        private float labelShown;
+        [Tooltip("라벨이 나타나고 사라지는 시간(초)")]
+        [SerializeField] private float labelFade = 0.08f;
 
         public void Bind(GameFlow gameFlow) {
             flow = gameFlow;
@@ -27,6 +31,7 @@ namespace MissedCall.Feature.Ui {
 
         private void OnEnable() {
             scale = 1f;
+            labelShown = 0f;
             Apply(null, true);
         }
 
@@ -65,11 +70,18 @@ namespace MissedCall.Feature.Ui {
                 : Mathf.MoveTowards(scale, targetScale, Time.unscaledDeltaTime / transition * (phoneScale - 1f));
             ring.localScale = new Vector3(scale, scale, 1f);
             ringImage.color = color;
-            label.gameObject.SetActive(text != null);
             if (text != null) {
                 label.text = text;
                 label.color = target.Kind == AimKind.Phone ? UiPalette.Answer : UiPalette.Paper;
             }
+
+            float step = instant || labelFade <= 0f ? 1f : Time.unscaledDeltaTime / labelFade;
+            labelShown = Mathf.MoveTowards(labelShown, text != null ? 1f : 0f, step);
+            label.gameObject.SetActive(labelShown > 0f);
+            label.alpha = labelShown;
+            // 위에서 살짝 내려오며 나타난다
+            float lift = (1f - labelShown) * 6f;
+            label.rectTransform.anchoredPosition = new Vector2(0f, -22f + lift);
         }
     }
 }

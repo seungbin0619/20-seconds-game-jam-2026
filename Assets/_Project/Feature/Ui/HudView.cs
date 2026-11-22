@@ -18,6 +18,7 @@ namespace MissedCall.Feature.Ui {
 
         private GameFlow flow;
         private float hintUntil;
+        private float hintShownAt;
         private int lastSecond = -1;
         private float punch;
 
@@ -28,7 +29,8 @@ namespace MissedCall.Feature.Ui {
         /// <summary>새 판이 시작될 때 부른다. 힌트는 실제 시간으로 hintDuration 동안 보인다.</summary>
         public void ShowHint() {
             hint.gameObject.SetActive(true);
-            hint.alpha = 1f;
+            hint.alpha = 0f;
+            hintShownAt = Time.unscaledTime;
             hintUntil = Time.unscaledTime + flow.Tuning.hintDuration;
             lastSecond = -1;
             punch = 0f;
@@ -56,7 +58,8 @@ namespace MissedCall.Feature.Ui {
 
             if (hint.gameObject.activeSelf) {
                 float fade = hintFade > 0f ? (hintUntil - Time.unscaledTime) / hintFade : 0f;
-                hint.alpha = Mathf.Clamp01(fade);
+                float appear = hintFade > 0f ? (Time.unscaledTime - hintShownAt) / (hintFade * 0.6f) : 1f;
+                hint.alpha = Mathf.Clamp01(Mathf.Min(fade, appear));
                 if (fade <= 0f) {
                     hint.gameObject.SetActive(false);
                 }

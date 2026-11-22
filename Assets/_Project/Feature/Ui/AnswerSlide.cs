@@ -21,7 +21,7 @@ namespace MissedCall.Feature.Ui {
         [SerializeField] private float hoverScale = 1.08f;
         [Tooltip("손대지 않은 동안 손잡이가 오른쪽으로 살짝 밀렸다 돌아오며 끌라고 알려주는 폭(트랙 비율)과 간격(초)")]
         [SerializeField] private float nudge = 0.06f;
-        [SerializeField] private float nudgeInterval = 1.1f;
+        [SerializeField] private float nudgeInterval = 0.8f;
 
         private GameFlow flow;
         private float progress;

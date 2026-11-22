@@ -10,24 +10,27 @@ namespace MissedCall.Feature.Ringtone {
     internal static class SfxSynth {
         public const int SampleRate = 44100;
 
-        /// <summary>종류마다 변형 몇 개. 재생할 때 하나를 고르고 음높이를 조금 흔든다.</summary>
+        /// <summary>
+        /// 종류마다 변형 여러 개. 변형마다 잡음과 필터, 길이를 조금씩 다르게 만들고, 재생할 때 직전과 다른 하나를 골라
+        /// 음높이와 볼륨을 조금 흔든다. 같은 소리가 반복되어 귀에 걸리지 않게 한다.
+        /// </summary>
         public static float[][] Render(SoundCue cue) {
             var noise = new Noise(0x5EED + (int)cue * 7919);
             switch (cue) {
-                case SoundCue.Grab: return Variants(3, i => Grab(noise, i));
-                case SoundCue.Throw: return Variants(2, i => Whoosh(noise, i));
-                case SoundCue.Tug: return Variants(2, i => Tug(noise, i));
-                case SoundCue.ImpactSoft: return Variants(3, i => ImpactSoft(noise, i));
-                case SoundCue.ImpactHard: return Variants(3, i => ImpactHard(noise, i));
-                case SoundCue.ImpactHollow: return Variants(3, i => ImpactHollow(noise, i));
-                case SoundCue.Step: return Variants(4, i => Step(noise, i));
+                case SoundCue.Grab: return Variants(6, i => Grab(noise, i));
+                case SoundCue.Throw: return Variants(5, i => Whoosh(noise, i));
+                case SoundCue.Tug: return Variants(4, i => Tug(noise, i));
+                case SoundCue.ImpactSoft: return Variants(5, i => ImpactSoft(noise, i));
+                case SoundCue.ImpactHard: return Variants(5, i => ImpactHard(noise, i));
+                case SoundCue.ImpactHollow: return Variants(5, i => ImpactHollow(noise, i));
+                case SoundCue.Step: return Variants(6, i => Step(noise, i));
                 case SoundCue.PhonePickup: return new[] { PhonePickup(noise) };
                 case SoundCue.PhoneReveal: return new[] { PhoneReveal() };
                 case SoundCue.Heartbeat: return new[] { Heartbeat() };
                 case SoundCue.Win: return new[] { Win(noise) };
                 case SoundCue.Miss: return new[] { Miss() };
-                case SoundCue.UiClick: return new[] { Click(noise, 2400f, 0.5f) };
-                case SoundCue.SlideGrab: return new[] { Click(noise, 1500f, 0.55f) };
+                case SoundCue.UiClick: return Variants(3, i => Tock(noise, 760f + i * 70f, 0.5f));
+                case SoundCue.SlideGrab: return Variants(2, i => Tock(noise, 560f + i * 50f, 0.55f));
                 case SoundCue.SlideBack: return new[] { SlideBack(noise) };
                 default: return new[] { new float[1] };
             }
@@ -42,58 +45,89 @@ namespace MissedCall.Feature.Ringtone {
             return list;
         }
 
-        // 천을 움켜쥐는 짧은 마찰음
+        // -1~1 잡음으로 [from, to] 사이 값을 고른다. 변형마다 다른 값이 나온다.
+        private static float Pick(Noise noise, float from, float to) => Mathf.Lerp(from, to, noise.Next() * 0.5f + 0.5f);
+
+        // 천을 쥐는 바스락. 낮게 거른 작은 알갱이 몇 개를 겹친다. 날카로운 시작음이 없게 천천히 올라온다.
         private static float[] Grab(Noise noise, int variant) {
-            float length = 0.09f + variant * 0.015f;
+            float length = Pick(noise, 0.1f, 0.15f);
             var data = Buffer(length);
-            var band = new Biquad(Biquad.Kind.BandPass, 1800f + variant * 500f, 0.9f);
-            for (int i = 0; i < data.Length; i++) {
-                float t = Sec(i);
-                float env = Attack(t, 0.006f) * Mathf.Exp(-t * 38f);
-                data[i] = band.Process(noise.Next()) * env * 0.9f;
+            var low = new Biquad(Biquad.Kind.LowPass, Pick(noise, 650f, 1000f), 0.6f);
+            var rumble = new Biquad(Biquad.Kind.LowPass, 120f, 0.7f);
+            int grains = 3 + variant % 3;
+            var starts = new float[grains];
+            var levels = new float[grains];
+            for (int g = 0; g < grains; g++) {
+                starts[g] = Pick(noise, 0f, length * 0.55f);
+                levels[g] = Pick(noise, 0.4f, 1f);
             }
 
-            return Finish(data, 0.5f);
-        }
-
-        // 휙. 바람 소리 대역을 위로 쓸었다가 내린다.
-        private static float[] Whoosh(Noise noise, int variant) {
-            float length = 0.26f + variant * 0.06f;
-            var data = Buffer(length);
-            var band = new Biquad(Biquad.Kind.BandPass, 500f, 1.4f);
             for (int i = 0; i < data.Length; i++) {
                 float t = Sec(i);
-                float k = t / length;
-                float center = Mathf.Lerp(380f, 1400f, Mathf.Sin(k * Mathf.PI) * 0.9f + k * 0.1f);
-                band.Set(center, 1.4f);
-                float env = Mathf.Pow(Mathf.Sin(Mathf.Clamp01(k) * Mathf.PI), 1.6f);
-                data[i] = band.Process(noise.Next()) * env;
-            }
+                float env = 0f;
+                for (int g = 0; g < grains; g++) {
+                    float u = t - starts[g];
+                    if (u > 0f) {
+                        env += levels[g] * Attack(u, 0.012f) * Mathf.Exp(-u * 55f);
+                    }
+                }
 
-            return Finish(data, 0.5f);
-        }
-
-        // 깔린 물건이 끌리다 만다. 낮은 마찰음 두 번.
-        private static float[] Tug(Noise noise, int variant) {
-            float length = 0.16f;
-            var data = Buffer(length);
-            var band = new Biquad(Biquad.Kind.BandPass, 420f + variant * 90f, 1.6f);
-            for (int i = 0; i < data.Length; i++) {
-                float t = Sec(i);
-                float a = Attack(t, 0.004f) * Mathf.Exp(-t * 45f);
-                float b = t > 0.07f ? Attack(t - 0.07f, 0.004f) * Mathf.Exp(-(t - 0.07f) * 40f) * 0.7f : 0f;
-                data[i] = band.Process(noise.Next()) * (a + b);
+                float n = low.Process(noise.Next());
+                // 아주 낮은 대역을 빼서 웅웅거리지 않게
+                data[i] = (n - rumble.Process(n)) * env * Fade(t, length, 0.03f);
             }
 
             return Finish(data, 0.45f);
         }
 
+        // 휙. 바람 소리를 낮게 거르고 천천히 부풀었다 가라앉는다. 대역 공진 없이 부드럽게.
+        private static float[] Whoosh(Noise noise, int variant) {
+            float length = Pick(noise, 0.22f, 0.34f);
+            float peak = Pick(noise, 0.4f, 0.6f);
+            float top = Pick(noise, 550f, 800f);
+            var data = Buffer(length);
+            var low = new Biquad(Biquad.Kind.LowPass, 300f, 0.6f);
+            var low2 = new Biquad(Biquad.Kind.LowPass, 300f, 0.6f);
+            for (int i = 0; i < data.Length; i++) {
+                float t = Sec(i);
+                float k = t / length;
+                // 부푸는 곳(peak)에서 가장 밝다
+                float shape = k < peak ? k / peak : 1f - (k - peak) / (1f - peak);
+                shape = shape * shape * (3f - 2f * shape);
+                float cutoff = Mathf.Lerp(220f, top, shape);
+                low.Set(cutoff, 0.6f);
+                low2.Set(cutoff, 0.6f);
+                data[i] = low2.Process(low.Process(noise.Next())) * shape;
+            }
+
+            return Finish(data, 0.5f);
+        }
+
+        // 깔린 물건이 끌리다 만다. 먹먹한 한 번의 툭.
+        private static float[] Tug(Noise noise, int variant) {
+            float length = Pick(noise, 0.12f, 0.16f);
+            float body = Pick(noise, 70f, 95f);
+            var data = Buffer(length);
+            var low = new Biquad(Biquad.Kind.LowPass, Pick(noise, 260f, 380f), 0.6f);
+            for (int i = 0; i < data.Length; i++) {
+                float t = Sec(i);
+                float env = Attack(t, 0.01f) * Mathf.Exp(-t * 30f);
+                float thump = Mathf.Sin(2f * Mathf.PI * body * t) * 0.35f;
+                data[i] = (low.Process(noise.Next()) * 1.3f + thump) * env * Fade(t, length, 0.03f);
+            }
+
+            return Finish(data, 0.4f);
+        }
+
+        // 끝을 부드럽게 줄인다.
+        private static float Fade(float t, float length, float time) => Mathf.Clamp01((length - t) / time);
+
         // 천, 쿠션이 떨어지는 털썩
         private static float[] ImpactSoft(Noise noise, int variant) {
             float length = 0.16f;
             var data = Buffer(length);
-            var low = new Biquad(Biquad.Kind.LowPass, 520f + variant * 120f, 0.7f);
-            float body = 85f + variant * 12f;
+            var low = new Biquad(Biquad.Kind.LowPass, Pick(noise, 480f, 900f), 0.7f);
+            float body = Pick(noise, 80f, 130f);
             for (int i = 0; i < data.Length; i++) {
                 float t = Sec(i);
                 float env = Attack(t, 0.003f) * Mathf.Exp(-t * 32f);
@@ -108,9 +142,9 @@ namespace MissedCall.Feature.Ringtone {
         private static float[] ImpactHard(Noise noise, int variant) {
             float length = 0.14f;
             var data = Buffer(length);
-            var high = new Biquad(Biquad.Kind.BandPass, 2600f + variant * 400f, 0.8f);
+            var high = new Biquad(Biquad.Kind.BandPass, Pick(noise, 1300f, 2000f), 0.8f);
             var low = new Biquad(Biquad.Kind.LowPass, 900f, 0.7f);
-            float body = 170f + variant * 25f;
+            float body = Pick(noise, 160f, 280f);
             double phase = 0;
             for (int i = 0; i < data.Length; i++) {
                 float t = Sec(i);
@@ -118,7 +152,7 @@ namespace MissedCall.Feature.Ringtone {
                 phase += f / SampleRate;
                 float tone = Mathf.Sin((float)(phase * 2.0 * Math.PI)) * Mathf.Exp(-t * 34f);
                 float n = noise.Next();
-                float click = high.Process(n) * Mathf.Exp(-t * 260f) * 0.8f;
+                float click = high.Process(n) * Mathf.Exp(-t * 300f) * 0.3f;
                 float thud = low.Process(n) * Mathf.Exp(-t * 55f) * 0.7f;
                 data[i] = (tone * 0.8f + click + thud) * Attack(t, 0.0015f);
             }
@@ -130,8 +164,8 @@ namespace MissedCall.Feature.Ringtone {
         private static float[] ImpactHollow(Noise noise, int variant) {
             float length = 0.22f;
             var data = Buffer(length);
-            var r1 = new Biquad(Biquad.Kind.BandPass, 240f + variant * 30f, 6f);
-            var r2 = new Biquad(Biquad.Kind.BandPass, 410f + variant * 45f, 5f);
+            var r1 = new Biquad(Biquad.Kind.BandPass, Pick(noise, 220f, 360f), 6f);
+            var r2 = new Biquad(Biquad.Kind.BandPass, Pick(noise, 380f, 560f), 5f);
             var low = new Biquad(Biquad.Kind.LowPass, 1200f, 0.7f);
             for (int i = 0; i < data.Length; i++) {
                 float t = Sec(i);
@@ -148,8 +182,8 @@ namespace MissedCall.Feature.Ringtone {
         private static float[] Step(Noise noise, int variant) {
             float length = 0.1f;
             var data = Buffer(length);
-            var low = new Biquad(Biquad.Kind.LowPass, 300f + variant * 40f, 0.8f);
-            float body = 62f + variant * 6f;
+            var low = new Biquad(Biquad.Kind.LowPass, Pick(noise, 260f, 460f), 0.8f);
+            float body = Pick(noise, 58f, 90f);
             for (int i = 0; i < data.Length; i++) {
                 float t = Sec(i);
                 float env = Attack(t, 0.004f) * Mathf.Exp(-t * 45f);
@@ -167,7 +201,7 @@ namespace MissedCall.Feature.Ringtone {
             var high = new Biquad(Biquad.Kind.BandPass, 3200f, 1.2f);
             for (int i = 0; i < data.Length; i++) {
                 float t = Sec(i);
-                float click = high.Process(noise.Next()) * Mathf.Exp(-t * 300f) * 1.2f;
+                float click = high.Process(noise.Next()) * Mathf.Exp(-t * 350f) * 0.4f;
                 float chime = Bell(t - 0.03f, 1568f, 18f) * 0.5f + Bell(t - 0.09f, 2093f, 16f) * 0.4f;
                 data[i] = click + chime;
             }
@@ -221,7 +255,7 @@ namespace MissedCall.Feature.Ringtone {
                 float click = high.Process(noise.Next()) * Mathf.Exp(-t * 250f);
                 float tones = Bell(t, 1046.5f, 5f) * 0.45f + Bell(t - 0.08f, 1318.5f, 5f) * 0.4f +
                     Bell(t - 0.16f, 1568f, 4f) * 0.45f + Bell(t - 0.16f, 2093f, 6f) * 0.15f;
-                data[i] = click * 0.8f + tones;
+                data[i] = click * 0.3f + tones;
             }
 
             return Finish(data, 0.5f);
@@ -231,7 +265,7 @@ namespace MissedCall.Feature.Ringtone {
         private static float[] Miss() {
             float length = 0.95f;
             var data = Buffer(length);
-            var soft = new Biquad(Biquad.Kind.LowPass, 1800f, 0.7f);
+            var soft = new Biquad(Biquad.Kind.LowPass, 1200f, 0.7f);
             for (int i = 0; i < data.Length; i++) {
                 float t = Sec(i);
                 float sum = 0f;
@@ -244,7 +278,7 @@ namespace MissedCall.Feature.Ringtone {
 
                     float env = Attack(u, 0.01f) * Mathf.Clamp01((0.2f - u) / 0.02f);
                     float f = 480f - b * 25f;
-                    sum += (Square(f * u) * 0.5f + Mathf.Sin(2f * Mathf.PI * f * 1.29f * u) * 0.5f) * env;
+                    sum += (Square(f * u) * 0.2f + Mathf.Sin(2f * Mathf.PI * f * u) * 0.5f + Mathf.Sin(2f * Mathf.PI * f * 1.29f * u) * 0.4f) * env;
                 }
 
                 data[i] = soft.Process(sum);
@@ -253,14 +287,17 @@ namespace MissedCall.Feature.Ringtone {
             return Finish(data, 0.32f);
         }
 
-        private static float[] Click(Noise noise, float frequency, float level) {
-            float length = 0.04f;
+        // 부드러운 똑. 짧은 사인에 아주 약한 잡음.
+        private static float[] Tock(Noise noise, float frequency, float level) {
+            float length = 0.07f;
             var data = Buffer(length);
-            var band = new Biquad(Biquad.Kind.BandPass, frequency, 2f);
+            var low = new Biquad(Biquad.Kind.LowPass, frequency * 2f, 0.7f);
             for (int i = 0; i < data.Length; i++) {
                 float t = Sec(i);
-                float tone = Mathf.Sin(2f * Mathf.PI * frequency * 0.5f * t) * Mathf.Exp(-t * 120f) * 0.5f;
-                data[i] = (band.Process(noise.Next()) * Mathf.Exp(-t * 160f) + tone) * Attack(t, 0.001f);
+                float f = frequency * (1f + 0.15f * Mathf.Exp(-t * 80f));
+                float tone = Mathf.Sin(2f * Mathf.PI * f * t) * Mathf.Exp(-t * 65f);
+                float n = low.Process(noise.Next()) * Mathf.Exp(-t * 200f) * 0.25f;
+                data[i] = (tone + n) * Attack(t, 0.002f) * Fade(t, length, 0.01f);
             }
 
             return Finish(data, level);
@@ -318,7 +355,7 @@ namespace MissedCall.Feature.Ringtone {
         }
 
         // 합성용 결정적 잡음. 판 무작위와 상관없다.
-        private struct Noise {
+        private sealed class Noise {
             private uint state;
 
             public Noise(int seed) {

@@ -169,6 +169,28 @@ namespace MissedCall.Core {
         [Tooltip("시간이 다 됐을 때 벨 볼륨")]
         public float ringGainEnd = 1.2f;
 
+        [Header("Sfx")]
+        [Tooltip("효과음 전체 볼륨. 벨에는 영향이 없다")]
+        [Range(0f, 1f)] public float sfxVolume = 0.55f;
+        [Tooltip("잡기, 던지기, 끌리다 맒")]
+        [Range(0f, 1f)] public float sfxHandVolume = 0.5f;
+        [Tooltip("물건 충돌")]
+        [Range(0f, 1f)] public float sfxImpactVolume = 0.5f;
+        [Range(0f, 1f)] public float sfxStepVolume = 0.4f;
+        [Range(0f, 1f)] public float sfxHeartbeatVolume = 0.7f;
+        [Tooltip("폰 집기, 폰 드러남, 성공, 실패")]
+        [Range(0f, 1f)] public float sfxEventVolume = 0.7f;
+        [Tooltip("버튼, 받기 슬라이드")]
+        [Range(0f, 1f)] public float sfxUiVolume = 0.5f;
+        [Tooltip("물건이 이 속도(m/s)보다 세게 부딪혀야 소리가 난다")]
+        public float impactMinSpeed = 1.5f;
+        [Tooltip("이 속도(m/s)에서 충돌음이 가장 크다")]
+        public float impactFullSpeed = 6f;
+        [Tooltip("물건 하나가 다시 충돌음을 내기까지 간격(초)")]
+        public float impactCooldown = 0.15f;
+        [Tooltip("충돌음끼리의 최소 간격(초). 더미가 무너질 때 소리가 쏟아지지 않게 한다")]
+        public float impactSpacing = 0.06f;
+
         [Header("Ui")]
         [Tooltip("판 시작 후 힌트 문구를 보여주는 시간(초)")]
         public float hintDuration = 4f;

@@ -14,10 +14,10 @@ namespace MissedCall.Feature.Ui {
         [SerializeField] private TMP_Text quote;
         [SerializeField] private TMP_Text stat;
         [Tooltip("숫자가 올라가는 시간(초)")]
-        [SerializeField] private float countTime = 0.45f;
+        [SerializeField] private float countTime = 0.3f;
         [Tooltip("발신자의 말이 나타나기 시작하는 때와 걸리는 시간(초)")]
-        [SerializeField] private float quoteDelay = 0.3f;
-        [SerializeField] private float quoteFade = 0.35f;
+        [SerializeField] private float quoteDelay = 0.12f;
+        [SerializeField] private float quoteFade = 0.2f;
 
         private bool won;
         private float value;
