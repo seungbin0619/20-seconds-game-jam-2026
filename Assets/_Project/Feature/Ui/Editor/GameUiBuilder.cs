@@ -133,10 +133,6 @@ namespace MissedCall.Feature.Ui.Editor {
             var hud = rect.gameObject.AddComponent<HudView>();
             Image plate = Shape(rect, "ClockPlate", UiPalette.Night, 10f, 20f, 0.8f, 0f, 0.6f, 0.6f);
             Place(plate.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(210f, 82f));
-            // 초가 넘어갈 때 옆으로 밀려나는 숫자 잔상. 타이머 뒤에 둔다.
-            TMP_Text ghost = Text(rect, "ClockGhost", "20.0", 72f, UiPalette.Ring, displayFont, null, FontStyles.Italic);
-            Place(ghost.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -14f), new Vector2(400f, 80f));
-            ghost.alpha = 0f;
             TMP_Text clock = Text(rect, "Clock", "20.0", 72f, UiPalette.Ring, displayFont, displayShadow, FontStyles.Italic);
             Place(clock.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -14f), new Vector2(400f, 80f));
             TMP_Text hint = Text(rect, "Hint", "Follow the sound and clear the piles", 20f, UiPalette.Paper, bodyFont, bodyShadow);
@@ -151,7 +147,7 @@ namespace MissedCall.Feature.Ui.Editor {
             Stretch(tagText.rectTransform);
             tag.gameObject.SetActive(false);
             Wire(hud, ("clock", clock), ("hint", hint), ("modifierTag", tag.rectTransform), ("modifierText", tagText),
-                ("clockGhost", ghost), ("clockPlate", plate));
+                ("clockPlate", plate));
             return hud;
         }
 
