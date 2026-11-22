@@ -23,6 +23,8 @@ namespace MissedCall.Core.Audio {
         SlideBack,
         /// <summary>배터리가 다 되어 폰이 꺼진다 (배터리 부족 변수)</summary>
         BatteryDead,
+        /// <summary>고양이가 잡히려다 달아난다</summary>
+        Meow,
     }
 
     /// <summary>효과음 한 번. <see cref="Spatial"/>이면 <see cref="Position"/>에서 들린다.</summary>

@@ -189,7 +189,7 @@ namespace MissedCall.Feature.Ui.Editor {
             RectTransform handset = Handset(rect);
             Tag(handset, "LockTime", "Incoming call");
             TMP_Text caller = Text(handset, "Caller", "Mom", 20f, UiPalette.Paper, bodyFont, null, FontStyles.Bold);
-            Heading(handset, "Pick up!", 42f, UiPalette.Answer);
+            TMP_Text answerHeading = Heading(handset, "Pick up!", 42f, UiPalette.Answer);
 
             Image track = Shape(handset, "Track", Color.white, 0f, ButtonSkew, 0.7f, 0f, -0.35f, 0.06f);
             track.gameObject.AddComponent<LayoutElement>().preferredHeight = 62f;
@@ -200,7 +200,8 @@ namespace MissedCall.Feature.Ui.Editor {
             Image thumb = Shape(track.rectTransform, "Thumb", UiPalette.Answer, 8f, ButtonSkew * 0.8f, 0.8f, 0f, -0.3f);
             Place(thumb.rectTransform, new Vector2(0f, 0.5f), new Vector2(4f, 0f), new Vector2(66f, 54f), new Vector2(0f, 0.5f));
 
-            Wire(slide, ("track", track.rectTransform), ("thumb", thumb.rectTransform), ("caller", caller));
+            Wire(slide, ("track", track.rectTransform), ("thumb", thumb.rectTransform), ("caller", caller), ("heading", answerHeading),
+                ("trackLabel", hint));
             return slide;
         }
 

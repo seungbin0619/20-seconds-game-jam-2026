@@ -16,6 +16,10 @@ namespace MissedCall.Core {
         public float decoyWeight = 1f;
         public float noiseWeight = 1f;
         public float blackoutWeight = 1f;
+        [Tooltip("판에 플립폰이 나올 확률 (받는 방식이 다르다)")]
+        [Range(0f, 1f)] public float flipPhoneChance = 0.1f;
+        [Tooltip("판에 고양이가 폰 더미 위에 앉아 있을 확률")]
+        [Range(0f, 1f)] public float catChance = 0.12f;
         [Tooltip("배터리 부족 판에서 벨이 끊기는 경과 시간 범위(초)")]
         public Vector2 batteryRingTime = new(8f, 13f);
         [Tooltip("미끼 소리는 폰에서 이 거리(m) 넘게 떨어진 숨는 자리에 둔다")]

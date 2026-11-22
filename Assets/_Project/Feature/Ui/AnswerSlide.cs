@@ -13,6 +13,9 @@ namespace MissedCall.Feature.Ui {
         [SerializeField] private RectTransform track;
         [SerializeField] private RectTransform thumb;
         [SerializeField] private TMP_Text caller;
+        [Tooltip("제목과 트랙 안내 글자. 플립폰이면 문구가 바뀐다")]
+        [SerializeField] private TMP_Text heading;
+        [SerializeField] private TMP_Text trackLabel;
         [Tooltip("손잡이와 트랙 가장자리 사이 간격(px)")]
         [SerializeField] private float inset = 4f;
         [Tooltip("놓았을 때 처음 자리로 돌아가는 시간(초, 끝에서 처음까지)")]
@@ -28,6 +31,8 @@ namespace MissedCall.Feature.Ui {
         private bool dragging;
         private float grabOffset;
         private float idleTime;
+        // 플립폰: 슬라이드 대신 트랙을 클릭해서 연다.
+        private bool flip;
 
         public void Bind(GameFlow gameFlow) {
             flow = gameFlow;
@@ -39,6 +44,16 @@ namespace MissedCall.Feature.Ui {
             dragging = false;
             idleTime = 0f;
             caller.text = flow.Context.Caller != null ? flow.Context.Caller.displayName : "Unknown Number";
+            flip = flow.Context.FlipPhone;
+            if (heading != null) {
+                heading.text = flip ? "Flip it open!" : "Pick up!";
+            }
+
+            if (trackLabel != null) {
+                trackLabel.text = flip ? "Click to flip open" : "Slide to answer  >>";
+            }
+
+            thumb.gameObject.SetActive(!flip);
             Place(false);
         }
 
@@ -58,6 +73,19 @@ namespace MissedCall.Feature.Ui {
             }
 
             Vector2 screen = mouse.position.ReadValue();
+            if (flip) {
+                bool over = RectTransformUtility.RectangleContainsScreenPoint(track, screen, null);
+                float s = over ? hoverScale : 1f;
+                track.localScale = new Vector3(s, s, 1f);
+                if (over && mouse.leftButton.wasPressedThisFrame) {
+                    track.localScale = Vector3.one;
+                    SoundCues.Play(SoundCue.SlideGrab);
+                    flow.Answer();
+                }
+
+                return;
+            }
+
             bool overThumb = RectTransformUtility.RectangleContainsScreenPoint(thumb, screen, null);
             float pointerX = TrackX(screen);
             if (!dragging && overThumb && mouse.leftButton.wasPressedThisFrame) {

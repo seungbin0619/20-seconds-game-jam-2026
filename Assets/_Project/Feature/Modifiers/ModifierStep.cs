@@ -22,6 +22,7 @@ namespace MissedCall.Feature.Modifiers {
         public override void Prepare(RoundContext context) {
             // 시간대는 따로 뽑아 변수 고르기에 영향을 주지 않는다.
             context.Mood = context.Seed.Stream(RoundStream.Mood).Next(3);
+            context.FlipPhone = context.Seed.Stream(RoundStream.Extras).NextDouble() < tuning.flipPhoneChance;
 
             System.Random rng = context.Seed.Stream(RoundStream.Modifier);
             bool roll = rng.NextDouble() < tuning.modifierChance;

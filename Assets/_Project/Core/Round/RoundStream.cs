@@ -16,5 +16,7 @@ namespace MissedCall.Core.Round {
         Vibration = 7,
         /// <summary>시간대 연출(새벽, 한밤, 흐린 아침). 게임플레이와 무관하다.</summary>
         Mood = 8,
+        /// <summary>희귀 요소(플립폰, 고양이)를 붙일지.</summary>
+        Extras = 9,
     }
 }

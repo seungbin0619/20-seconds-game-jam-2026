@@ -77,6 +77,7 @@ Feature ──▶ Core ──▶ Shared
 | `Ringtone` | 발신자별 벨소리, 공간 음향, 벽 먹먹함, 문 쪽 음원, 효과음 | `initAudio`, `scheduleRing`, `oneShot` |
 | `Modifiers` | 판 변수 고르기 (`ModifierStep`, Phone 다음). 소리는 Ringtone, 정전은 ScreenFx, 꺼진 폰은 Phone, 태그는 Ui가 `RoundContext.Modifier`를 읽어 처리한다 | 신규 |
 | `Result` | 칭호 판정, 기록 저장과 조회 | 신규 |
+| `Cat` | 희귀 요소 고양이 (`CatStep`, Modifiers 다음). 폰 더미 위에 앉고 잡으려 하면 달아난다 | 신규 |
 | `ScreenFx` | 풀스크린 셰이딩: 잉크 외곽선, 음영 단계, 남은 시간에 따라 조여 오는 연출. `GameFlow` 상태와 남은 시간을 읽어 전역 셰이더 값을 넣는다 | 신규 |
 | `Ui` | HUD, 타이틀, 받기 슬라이드, 결과, 기록 화면 (발신자 데이터는 `Core/Callers`). 도형과 하프톤은 `UiHalftone.shader` + `UiShape`, 원근 기울임과 패널이 돌아 들어오고 나가는 움직임은 `UiTilt`, 화면을 켜고 끌 때의 전환은 `UiScreen`(`GameUi`가 `SetActive` 대신 부른다). 캔버스의 추가 셰이더 채널 TexCoord1~3을 `GameUi`가 켠다 | HTML 오버레이, `CALLERS` |
 

@@ -24,6 +24,8 @@ namespace MissedCall.Feature.Phone {
         [Tooltip("받지 못했을 때 화면 색 (프로토타입 0xff6b57)")]
         [SerializeField] private Color missedColor = new(1f, 0.42f, 0.34f);
         [SerializeField] private Color idleColor = new(0.08f, 0.1f, 0.12f);
+        [Tooltip("플립폰일 때 시각 요소 크기 배율 (짧고 두껍다)")]
+        [SerializeField] private Vector3 flipScale = new(0.9f, 2.2f, 0.62f);
         [Tooltip("덮임을 세고 진동으로 튀게 할 물건 레이어")]
         [SerializeField] private LayerMask clutterMask;
 
@@ -95,6 +97,7 @@ namespace MissedCall.Feature.Phone {
             }
 
             RoundState state = context.State;
+            visual.localScale = context.FlipPhone ? flipScale : Vector3.one;
             // 받기 화면에서만 숨긴다. 결과 화면에서는 폰이 다시 보인다.
             SetVisible(state != RoundState.Answer);
             if (!GameFlow.IsRunning(state)) {

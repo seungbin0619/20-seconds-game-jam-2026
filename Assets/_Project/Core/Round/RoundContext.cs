@@ -44,6 +44,9 @@ namespace MissedCall.Core.Round {
         /// <summary>배터리가 다 되어 벨과 화면이 꺼졌는가.</summary>
         public bool BatteryDead => Elapsed >= RingStopTime;
 
+        /// <summary>희귀 폰: 플립폰이면 슬라이드 대신 클릭해서 열어 받는다.</summary>
+        public bool FlipPhone { get; set; }
+
         /// <summary>시간대 연출. 0 새벽(기본), 1 한밤, 2 흐린 아침. ScreenFx가 색만 바꾼다.</summary>
         public int Mood { get; set; }
 
@@ -80,6 +83,7 @@ namespace MissedCall.Core.Round {
             Phone = null;
             Modifier = RoundModifier.None;
             Mood = 0;
+            FlipPhone = false;
             RingStopTime = float.PositiveInfinity;
             DecoyPosition = Vector3.zero;
             DecoyRoom = -1;

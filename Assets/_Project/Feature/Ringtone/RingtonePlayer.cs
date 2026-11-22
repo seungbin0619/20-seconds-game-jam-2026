@@ -84,6 +84,7 @@ namespace MissedCall.Feature.Ringtone {
                 case SoundCue.SlideGrab: return (0.8f, 0.8f, 0.03f);
                 case SoundCue.SlideBack: return (0.6f, 0.6f, 0.03f);
                 case SoundCue.BatteryDead: return (0.8f, 0.8f, 0f);
+                case SoundCue.Meow: return (0.8f, 0.8f, 0.08f);
                 default: return (1f, 1f, 0f);
             }
         }

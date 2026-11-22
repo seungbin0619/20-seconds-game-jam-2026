@@ -33,6 +33,7 @@ namespace MissedCall.Feature.Ringtone {
                 case SoundCue.SlideGrab: return Variants(2, i => Tock(noise, 560f + i * 50f, 0.55f));
                 case SoundCue.SlideBack: return new[] { SlideBack(noise) };
                 case SoundCue.BatteryDead: return new[] { BatteryDead() };
+                case SoundCue.Meow: return Variants(3, i => Meow(noise, i));
                 default: return new[] { new float[1] };
             }
         }
@@ -325,6 +326,32 @@ namespace MissedCall.Feature.Ringtone {
             }
 
             return Finish(data, 0.4f);
+        }
+
+        // 야옹. 음높이가 올라갔다 내려가는 배음 많은 소리를 모음처럼 걸러 낸다.
+        private static float[] Meow(Noise noise, int variant) {
+            float length = Pick(noise, 0.45f, 0.65f);
+            float peak = Pick(noise, 680f, 820f);
+            var data = Buffer(length);
+            var f1 = new Biquad(Biquad.Kind.BandPass, 900f, 2.5f);
+            var f2 = new Biquad(Biquad.Kind.BandPass, 2200f, 3f);
+            double phase = 0;
+            for (int i = 0; i < data.Length; i++) {
+                float t = Sec(i);
+                float k = t / length;
+                // 미- 야- 옹: 올라갔다 내려간다
+                float pitch = k < 0.35f ? Mathf.Lerp(peak * 0.7f, peak, k / 0.35f) : Mathf.Lerp(peak, peak * 0.62f, (k - 0.35f) / 0.65f);
+                pitch *= 1f + 0.015f * Mathf.Sin(2f * Mathf.PI * 6f * t);
+                phase += pitch / SampleRate;
+                float saw = (float)(2.0 * (phase - System.Math.Floor(phase)) - 1.0);
+                // 모음: '이'에서 '아'를 거쳐 '오'로
+                f1.Set(Mathf.Lerp(500f, 1000f, Mathf.Sin(k * Mathf.PI)), 2.5f);
+                f2.Set(Mathf.Lerp(2400f, 1300f, k), 3f);
+                float env = Attack(t, 0.04f) * Mathf.Clamp01((length - t) / 0.12f);
+                data[i] = (f1.Process(saw) + f2.Process(saw) * 0.5f) * env;
+            }
+
+            return Finish(data, 0.5f);
         }
 
         /// <summary>
