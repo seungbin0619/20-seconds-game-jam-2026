@@ -93,6 +93,9 @@ namespace MissedCall.Feature.Cat {
         public void Release(Vector3 velocity, Vector3 angularVelocity) {
         }
 
+        public void Knock(Vector3 velocity, Vector3 angularVelocity) {
+        }
+
         private Vector3 PickLanding() {
             const float margin = 0.6f;
             var half = new Vector3(0.15f, 0.12f, 0.25f);

@@ -186,7 +186,9 @@ namespace MissedCall.Feature.Ui.Editor {
             TMP_Text keys = Text(handset, "Keys",
                 string.Format(key, "WASD", "Walk") + "\n"
                 + string.Format(key, "Mouse", "Look around") + "\n"
-                + string.Format(key, "Hold click", "Grab, swing and release to throw"),
+                + string.Format(key, "Hold click", "Grab, swing and release to throw") + "
+"
+                + string.Format(key, "Right click", "Kick. Run into piles to knock them over"),
                 13f, UiPalette.Ring, bodyFont, null, FontStyles.Normal, TextAlignmentOptions.TopLeft);
             keys.lineSpacing = 8f;
             button = Pill(handset, "Button", "Ring It");

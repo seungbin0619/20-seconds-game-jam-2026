@@ -173,6 +173,22 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | `airBendScale` | 0.5 | 쿠션을 던져서 날아가는 동안 휘는 정도 (잡았을 때 값에 곱한다) |
 | `bendStiffness` | 60 | 쿠션 휘는 정도가 따라가는 스프링 세기 |
 | `bendDamping` | 8 | 위 스프링의 감쇠 |
+| `kickReach` | 0.6 | 발차기 구 중심까지 발 앞 거리(m) |
+| `kickHeight` | 0.3 | 발차기 구 중심 높이(m). 바닥 더미와 낮은 바구니까지 닿는다 |
+| `kickRadius` | 0.5 | 발차기 구 반지름(m) |
+| `kickSpeed` | 5 | 가운데 물건이 앞으로 날아가는 속도(m/s) |
+| `kickLift` | 2.6 | 찬 물건이 위로 뜨는 속도(m/s) |
+| `kickEnclosedLift` | 3.5 | 바구니, 상자 안 물건이 위로 들썩이는 속도(m/s). 앞으로 차면 테두리에 걸려 멈춰서 비우지는 못한다 |
+| `kickEnclosedForward` | 0.25 | 바구니, 상자 안 물건의 앞으로 가는 속도 비율 (`kickSpeed`에 곱함) |
+| `kickEdgeScale` | 0.45 | 구 가장자리 물건의 세기 배율 |
+| `kickSpread` | 0.6 | 옆에 있던 물건이 옆으로 벌어지는 비율 |
+| `kickSpin` | (8, 6, 8) | 찬 물건의 무작위 회전 최대(rad/s) |
+| `kickCooldown` | 0.5 | 다시 찰 수 있기까지(초) |
+| `slamMinSpeed` | 2.2 | 이 걷는 속도(m/s) 이상이면 박치기 |
+| `slamReach` | 0.2 | 몸 반지름에 더하는 박치기 닿는 거리(m) |
+| `slamPush` | 1.2 | 튕기는 속도 = 걷는 속도 × 이 값 |
+| `slamLift` | 1.6 | 최고 속도로 들이받았을 때 위로 뜨는 속도(m/s) |
+| `slamCooldown` | 0.35 | 박치기로 튕긴 물건이 다시 튕기기까지(초) |
 | `bendFlutter` | 0.5 | 쿠션이 움직이는 반대쪽 가장자리가 더 늘어지는 정도 |
 | `holdArriveDistance` | 0.25 | 이만큼 다가오면 손에 들어온 것으로 본다(m) |
 | `holdBreakDistance` | 0.9 | 손에 들어온 뒤 이만큼 멀어지면 놓친다(m) |
@@ -259,6 +275,8 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 폰 집기, 성공, 실패 | 상태 전환 | 딸깍과 알림음 / 올라가는 세 음 / 뚜-뚜-뚜 |
 | 심장 박동 | 마지막 5초 | 화면 맥박과 같은 박자, 100Hz 이하. 끝에 가까울수록 크다 |
 | UI | 버튼, 받기 슬라이드 잡기와 놓침 | 짧은 딸깍, 미끄러짐 |
+| 발차기 | 우클릭 | 낮은 퍽과 짧은 바람. 맞은 물건이 없으면 작게 |
+| 박치기 | 걷다가 더미를 들이받음 | 둔한 털썩. 튕긴 물건이 많을수록 크다 |
 
 같은 상황에서도 매번 다르게 들리도록 소리마다 변형을 여러 개(잡기 6, 던지기 5, 끌리다 맒 4, 충돌 종류마다 5, 발소리 6, UI 2~3) 만들고, 재생할 때 직전과 다른 변형을 골라 음높이(±6~12%)와 볼륨(±15%)을 흔든다. 잡기는 낮게 거른 바스락, 던지기는 공진 없는 부드러운 바람 소리, 끌리다 맒은 먹먹한 툭 한 번이다 (처음 버전은 귀에 거슬렸다).
 
@@ -267,7 +285,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 키 | 값 | 설명 |
 |---|---|---|
 | `sfxVolume` | 0.55 | 효과음 전체 볼륨. 벨에는 영향이 없다 |
-| `sfxHandVolume` | 0.5 | 잡기, 던지기, 끌리다 맒 |
+| `sfxHandVolume` | 0.5 | 잡기, 던지기, 끌리다 맒, 발차기, 박치기 |
 | `sfxImpactVolume` | 0.5 | 물건 충돌 |
 | `sfxStepVolume` | 0.4 | 발소리 |
 | `sfxHeartbeatVolume` | 0.7 | 심장 박동 |
@@ -286,6 +304,8 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 마우스 (포인터 잠금) | 둘러보기 |
 | 클릭 (누르고 있기) | 물건 잡기. 떼면 던진다. 휘두르며 떼면 그 방향으로 세게 날아간다 |
 | 클릭 | 폰 집기, 닫힌 문 열기 |
+| 우클릭 | 발차기. 발 앞 낮은 곳의 물건을 앞으로 차 올린다 (깔린 물건도 함께). 바구니, 상자 안 물건은 들썩이기만 한다 |
+| 빠르게 걸어 들이받기 | 박치기. `slamMinSpeed` 이상으로 걷다 몸에 닿은 물건이 걷는 방향으로 튕긴다 |
 | 손잡이를 클릭한 채 끌기 (`answer`, 커서 보임) | 슬라이드 |
 | 커서로 버튼 클릭 (`title`, 결과, 일시정지) | Ring It, Try Again, Resume, Restart, Title. 버튼 밖을 클릭하면 아무 일도 없다 |
 | Esc | 일시정지 (`playing`에서는 브라우저가 포인터 잠금을 푸는 것으로 감지). 일시정지 중에는 재개 (`playing`은 클릭 대기를 거침) |
@@ -319,7 +339,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 |---|---|
 | 타이틀 | Missed Call |
 | 타이틀 설명 | Your phone is ringing somewhere. Find it and pick up before it stops. |
-| 조작 안내 | WASD: Walk / Mouse: Look around / Hold click: Grab, swing and release to throw |
+| 조작 안내 | WASD: Walk / Mouse: Look around / Hold click: Grab, swing and release to throw / Right click: Kick. Run into piles to knock them over |
 | 시작 버튼 | Ring It |
 | 타이틀 하단 | Headphones make the direction much easier to hear. |
 | 플레이 힌트 | Follow the sound and clear the piles |

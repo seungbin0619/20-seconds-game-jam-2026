@@ -23,6 +23,8 @@ namespace MissedCall.Feature.Player {
         private Vector3 velocity;
         private float verticalSpeed;
         private int lastRoom = -1;
+        // 확인용 입력 대체. 값이 있으면 키보드 대신 쓴다 (에디터에서 리플렉션으로 넣는다).
+        private Vector2? debugInput;
 
         /// <summary>현재 수평 속도(월드).</summary>
         public Vector3 Velocity => velocity;
@@ -48,7 +50,7 @@ namespace MissedCall.Feature.Player {
         }
 
         private void Update() {
-            Vector2 input = flow.State == RoundState.Playing ? ReadInput() : Vector2.zero;
+            Vector2 input = flow.State == RoundState.Playing ? debugInput ?? ReadInput() : Vector2.zero;
             Simulate(input, Time.deltaTime);
         }
 

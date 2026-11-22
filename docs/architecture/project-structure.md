@@ -51,7 +51,7 @@ Feature ──▶ Core ──▶ Shared
 |---|---|
 | `Round/GameFlow` | 상태 머신 (`Title / Playing / Answer / Won / Missed`), 판 시작과 준비 단계 실행, 실제 시간 타이머. 입력은 읽지 않는다. Feature가 `StartRound`, `RequestRestart`(R), `PickUp`, `Answer`, `Pause`, `Resume`, `ReturnToTitle`을 호출하고 `StateChanged`, `PausedChanged`를 구독한다. 일시정지는 상태가 아니라 `IsPaused` 플래그이며 `Time.timeScale`을 0으로 둔다 |
 | `Round/RoundContext` | 판 공용 상태: 시드, 상태, 경과/남은 시간, `RoomGraph`, 발신자, 폰 위치·방·덮임 수, 진동 모드 여부, 플레이어 위치·방, 조준 대상, 판 통계(던진 수, 받은 시간). `GameFlow.Context`로 얻는다. 판 시작 때 통째로 초기화한다 |
-| `Round/RoundSeed`, `RoundStream` | 판 시드 하나에서 용도별(`Layout`, `Phone`, `Clutter`, `Start`, `Caller`, `Modifier`, `Throw`, `Vibration`) `System.Random`을 가른다. 한 기능의 뽑는 횟수가 바뀌어도 다른 기능의 결과는 그대로다. `RoundStream` 값은 바꾸지 않고 끝에만 추가한다 |
+| `Round/RoundSeed`, `RoundStream` | 판 시드 하나에서 용도별(`Layout`, `Phone`, `Clutter`, `Start`, `Caller`, `Modifier`, `Throw`, `Vibration`, `Mood`, `Extras`, `Shove`) `System.Random`을 가른다. 한 기능의 뽑는 횟수가 바뀌어도 다른 기능의 결과는 그대로다. `RoundStream` 값은 바꾸지 않고 끝에만 추가한다 |
 | `Round/RoundStep` | 판 준비 단계의 추상 MonoBehaviour. Feature가 상속하고, `GameFlow` 인스펙터의 순서대로 `Prepare(context)`가 불린다. 이전 판 오브젝트는 여기서 풀에 돌려놓는다 |
 | `Aim/IAimTarget`, `IThrowable`, `IGrabbable`, `AimKind`, `IPointerGate` | Interaction이 Clutter, Phone, Player를 모르고 조준·잡아 던지기·집기를 하기 위한 계약. 끌어오는 속도와 던지는 속도 계산, 집기 조건 판정은 Interaction이 하고 대상은 받은 속도를 적용만 한다. `IPointerGate`는 잠금 클릭을 거르기 위해 PointerLook이 구현한다. 폰(`IGrabbable`)은 콜라이더 없이 `GrabPoint`로 조준하며, Phone이 `RoundContext.Phone`에 넣는다 |
 | `GameTuning` (ScriptableObject) | 튜닝 값. [`game-design.md`](../design/game-design.md)와 일치시킨다 |

@@ -24,6 +24,11 @@ namespace MissedCall.Core.Aim {
         /// <summary>잡힌 동안 물리 스텝마다 따라갈 속도를 받는다.</summary>
         void Drive(Vector3 velocity);
 
+        /// <summary>
+        /// 손을 거치지 않고 튕겨 나간다 (발차기, 박치기). 둘러싸인 자리에서 빠져나온 것으로 보고 Enclosed를 지운다.
+        /// </summary>
+        void Knock(Vector3 velocity, Vector3 angularVelocity);
+
         /// <summary>손에서 놓는다. 중력을 되돌리고 받은 속도로 날아간다. 그냥 놓을 때는 0을 넘긴다.</summary>
         void Release(Vector3 velocity, Vector3 angularVelocity);
     }

@@ -34,6 +34,8 @@ namespace MissedCall.Feature.Ringtone {
                 case SoundCue.SlideBack: return new[] { SlideBack(noise) };
                 case SoundCue.BatteryDead: return new[] { BatteryDead() };
                 case SoundCue.Meow: return Variants(3, i => Meow(noise, i));
+                case SoundCue.Kick: return Variants(4, i => Kick(noise, i));
+                case SoundCue.Slam: return Variants(4, i => Slam(noise, i));
                 default: return new[] { new float[1] };
             }
         }
@@ -119,6 +121,41 @@ namespace MissedCall.Feature.Ringtone {
             }
 
             return Finish(data, 0.4f);
+        }
+
+        // 발차기. 발등이 닿는 낮은 퍽과 짧은 바람.
+        private static float[] Kick(Noise noise, int variant) {
+            float length = Pick(noise, 0.2f, 0.26f);
+            float body = Pick(noise, 62f, 85f);
+            var data = Buffer(length);
+            var low = new Biquad(Biquad.Kind.LowPass, Pick(noise, 380f, 520f), 0.7f);
+            var air = new Biquad(Biquad.Kind.LowPass, 600f, 0.6f);
+            for (int i = 0; i < data.Length; i++) {
+                float t = Sec(i);
+                float n = noise.Next();
+                float env = Attack(t, 0.003f) * Mathf.Exp(-t * 38f);
+                float thump = Mathf.Sin(2f * Mathf.PI * body * (1f + 0.5f * Mathf.Exp(-t * 50f)) * t) * Mathf.Exp(-t * 30f);
+                float swish = air.Process(n) * Mathf.Sin(Mathf.PI * Mathf.Clamp01(t / length)) * 0.35f;
+                data[i] = (low.Process(n) * 1.2f * env + thump * 0.9f + swish) * Fade(t, length, 0.04f);
+            }
+
+            return Finish(data, 0.6f);
+        }
+
+        // 몸으로 더미를 들이받는 둔한 털썩. 충돌음보다 낮고 길다.
+        private static float[] Slam(Noise noise, int variant) {
+            float length = Pick(noise, 0.22f, 0.3f);
+            float body = Pick(noise, 55f, 75f);
+            var data = Buffer(length);
+            var low = new Biquad(Biquad.Kind.LowPass, Pick(noise, 300f, 440f), 0.7f);
+            for (int i = 0; i < data.Length; i++) {
+                float t = Sec(i);
+                float env = Attack(t, 0.008f) * Mathf.Exp(-t * 20f);
+                float thump = Mathf.Sin(2f * Mathf.PI * body * t) * Mathf.Exp(-t * 26f) * 0.8f;
+                data[i] = (low.Process(noise.Next()) * 1.4f + thump) * env * Fade(t, length, 0.05f);
+            }
+
+            return Finish(data, 0.55f);
         }
 
         // 끝을 부드럽게 줄인다.

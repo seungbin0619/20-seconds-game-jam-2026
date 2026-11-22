@@ -169,6 +169,12 @@ three.js는 오른손, Unity는 왼손 좌표계다. 방이 대칭이 아니므�
 - 던지기: 떼면 `시선 수평 방향 × tapThrowForward + 위 × tapThrowUp + 휘두른 속도 × flickScale`, 최대 `maxThrowSpeed`. 휘두른 속도는 가로막힘을 따지지 않은 잡는 점의 최근 `flickWindow` 동안 평균 이동 속도라서 걷는 속도도 포함된다. 회전은 `RoundStream.Throw`에서 뽑는다.
 - 놓치기: 손에 들어온 뒤 `holdBreakDistance`보다 멀어지거나, `holdPullTimeout` 안에 손에 들어오지 않으면 속도 0으로 놓는다.
 - 둘러싸인 자리(바구니, 욕조): 먼저 `enclosedLift`만큼 수직으로 들고, 손에 들어올 때까지 그 높이 아래로 내리지 않는다. 내려다보고 있으면 잡는 점이 욕조 테두리보다 낮아 걸렸다.
+- 발차기와 박치기 (11/22, `Player/PlayerShove`, 프로토타입에 없음): 물건(Clutter 레이어)은 플레이어와 충돌하지 않으므로 겹침 질의로 찾아 `IThrowable.Knock`으로 속도를 준다. `Knock`은 `Release`처럼 천을 날아가는 상태로 두고 `Enclosed`를 지운다. 회전은 `RoundStream.Shove`에서 뽑는다.
+  - 발차기: 우클릭을 물리 스텝에서 처리한다. 발 앞 `kickReach`, 높이 `kickHeight`, 반지름 `kickRadius` 구 안의 물건을 앞쪽 위로 찬다. 가운데에서 멀수록 `kickEdgeScale`까지 약해진다.
+  - 바구니, 상자, 욕조 안 물건(`Enclosed`)은 앞으로 차면 테두리에 걸려 거의 움직이지 않았다 (위로 4.2~6.5m/s를 줘도 2~4개 중 0~2개만 빠져나옴, 바로 위로만 차면 0개). 그래서 위로 들썩이기만 하게 두고(`kickEnclosedLift`), 비우는 것은 들어 올리기로 한다.
+  - 박치기: `slamMinSpeed` 이상으로 걸을 때 몸 캡슐(반지름 + `slamReach`, 아래 구 중심은 발 높이) 안에서 걷는 방향 앞쪽 물건을 튕긴다. 아래 구 중심을 몸 반지름 높이에 두었더니 바닥에 깔린 납작한 물건(높이 0.06m)이 앞에서 닿지 않았다.
+  - 검증 (에디터, 깔개 더미, 시드 47·58): 1.6m 앞에서 걸어 들어가 물건 2~3개 중 2개가 0.2~1.3m 밀려남. 발차기는 깔개 더미 2~3개 모두 0.5m 안팎 날아감.
+  - 에디터 확인 팁: `unity command eval` 안에서 `Rigidbody.linearVelocity`를 넣으면 다음 스텝에 남지 않는다. 게임 루프에서 실행되게 `PlayerShove.QueueKick()`이나 `PlayerMotor`의 `debugInput`(리플렉션)을 쓴다.
 - 클릭 입력: `PointerLook`이 구현한 `Core/Aim/IPointerGate.CanAct`로 잠금 클릭을 거른다. Interaction은 Player를 참조하지 않는다.
 - 검증 (에디터, 시드 5000~5009, 판마다 물건 12개를 잡아 3가지 방식으로 던짐):
 

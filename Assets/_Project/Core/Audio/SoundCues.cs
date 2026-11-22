@@ -25,6 +25,10 @@ namespace MissedCall.Core.Audio {
         BatteryDead,
         /// <summary>고양이가 잡히려다 달아난다</summary>
         Meow,
+        /// <summary>발로 물건을 찬다</summary>
+        Kick,
+        /// <summary>걷다가 몸으로 더미를 들이받는다</summary>
+        Slam,
     }
 
     /// <summary>효과음 한 번. <see cref="Spatial"/>이면 <see cref="Position"/>에서 들린다.</summary>

@@ -242,6 +242,19 @@ namespace MissedCall.Feature.Clutter {
             body.angularVelocity = angularVelocity;
         }
 
+        public void Knock(Vector3 velocity, Vector3 angularVelocity) {
+            if (Held || Hanging) {
+                return;
+            }
+
+            Enclosed = false;
+            // 천은 날아가는 동안 펼쳐져 늘어진다 (던진 것과 같다).
+            airborne = true;
+            body.WakeUp();
+            body.linearVelocity = velocity;
+            body.angularVelocity = angularVelocity;
+        }
+
         private void OnDestroy() {
             if (bentMesh != null) {
                 Destroy(bentMesh);

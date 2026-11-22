@@ -117,6 +117,40 @@ namespace MissedCall.Core {
         [Tooltip("바구니처럼 둘러싸인 자리의 물건은 먼저 이만큼(m) 수직으로 들어 올린 뒤 끌어온다")]
         public float enclosedLift = 0.6f;
 
+        [Header("Shove")]
+        [Tooltip("우클릭 발차기. 발 앞 이 거리(m)에 차는 구의 중심을 둔다")]
+        public float kickReach = 0.6f;
+        [Tooltip("차는 구 중심의 높이(m). 바닥 더미와 낮은 바구니까지 닿는다")]
+        public float kickHeight = 0.3f;
+        [Tooltip("차는 구의 반지름(m)")]
+        public float kickRadius = 0.5f;
+        [Tooltip("가운데 물건이 앞으로 날아가는 속도(m/s)")]
+        public float kickSpeed = 5f;
+        [Tooltip("찬 물건이 위로 뜨는 속도(m/s)")]
+        public float kickLift = 2.6f;
+        [Tooltip("바구니, 상자 안 물건을 찼을 때 위로 튀는 속도(m/s). 앞으로 차면 테두리에 걸려 멈추므로 위로 들썩이게만 한다")]
+        public float kickEnclosedLift = 3.5f;
+        [Tooltip("바구니, 상자 안 물건을 찼을 때 앞으로 가는 속도 비율 (kickSpeed에 곱한다)")]
+        [Range(0f, 1f)] public float kickEnclosedForward = 0.25f;
+        [Tooltip("구 가장자리 물건의 세기 배율")]
+        [Range(0f, 1f)] public float kickEdgeScale = 0.45f;
+        [Tooltip("옆에 있던 물건이 옆으로 벌어지는 비율")]
+        public float kickSpread = 0.6f;
+        [Tooltip("찬 물건의 무작위 회전 속도 최대값 (rad/s, x y z 각각 ±)")]
+        public Vector3 kickSpin = new(8f, 6f, 8f);
+        [Tooltip("다시 찰 수 있기까지(초)")]
+        public float kickCooldown = 0.5f;
+        [Tooltip("이 걷는 속도(m/s) 이상이면 몸에 닿은 물건을 튕긴다 (박치기)")]
+        public float slamMinSpeed = 2.2f;
+        [Tooltip("몸 반지름에 더하는 박치기 닿는 거리(m)")]
+        public float slamReach = 0.2f;
+        [Tooltip("튕기는 속도 = 걷는 속도 × 이 값")]
+        public float slamPush = 1.2f;
+        [Tooltip("최고 속도로 들이받았을 때 위로 뜨는 속도(m/s)")]
+        public float slamLift = 1.6f;
+        [Tooltip("박치기로 튕긴 물건이 다시 튕기기까지(초)")]
+        public float slamCooldown = 0.35f;
+
         [Header("Throw")]
         [Tooltip("휘두르지 않고 놓아도 앞으로 툭 던지는 수평 속도. 휘두른 속도에 더해진다")]
         public float tapThrowForward = 2f;

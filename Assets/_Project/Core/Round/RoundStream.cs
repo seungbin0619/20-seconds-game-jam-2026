@@ -18,5 +18,7 @@ namespace MissedCall.Core.Round {
         Mood = 8,
         /// <summary>희귀 요소(플립폰, 고양이)를 붙일지.</summary>
         Extras = 9,
+        /// <summary>박치기와 발차기로 튀는 물건의 무작위 회전. 판 중 플레이어 입력에 따라 뽑는 횟수가 달라진다.</summary>
+        Shove = 10,
     }
 }

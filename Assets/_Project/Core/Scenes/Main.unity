@@ -702,6 +702,7 @@ GameObject:
   - component: {fileID: 1432201334}
   - component: {fileID: 1432201333}
   - component: {fileID: 1432201336}
+  - component: {fileID: 1432201337}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -837,6 +838,26 @@ MonoBehaviour:
   holdBlockers:
     serializedVersion: 2
     m_Bits: 4294966527
+--- !u!114 &1432201337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1432201329}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50b61cd7574d90a4aa47b0fb02c4745a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MissedCall.Feature::MissedCall.Feature.Player.PlayerShove
+  flow: {fileID: 754834954}
+  tuning: {fileID: 11400000, guid: db1031a9c9c4f1141a114311400a9d58, type: 2}
+  motor: {fileID: 1432201331}
+  controller: {fileID: 1432201335}
+  pointerGate: {fileID: 1432201332}
+  clutterMask:
+    serializedVersion: 2
+    m_Bits: 512
 --- !u!1001 &1702959553
 PrefabInstance:
   m_ObjectHideFlags: 0
