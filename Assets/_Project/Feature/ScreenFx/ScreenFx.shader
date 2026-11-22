@@ -3,9 +3,10 @@
 // 값은 머티리얼이 아니라 ScreenFxDriver가 전역 셰이더 값(_McFx*)으로 매 프레임 넣는다.
 //
 // 스타일: 손그림 외곽선 + 수채 (style/sketch). 외곽선을 연필처럼 끊기고 떨리게(라인 보일) 긋고,
-// 면은 종이 결 위에 묽게 번진 물감처럼 칠한다. 시간 연출도 그림체 안에서 한다:
-// 비네트 대신 가장자리부터 차오르는 빗금, 붉은 맥박 대신 번지는 붉은 물감, 종이가 저녁에서 밤으로
-// 어두워지고, 마지막 구간에는 선이 급하게 덧그려진다. 공통 ApplyTense는 쓰지 않는다.
+// 면은 종이 결 위에 묽게 번진 물감처럼 칠한다. 시간 연출은 UI(하프톤, 각진 카드)에 맞춘다 (11/22):
+// 비네트 대신 가장자리부터 하프톤 점이 차올라 화면을 조이고, 박자마다 점이 부풀며, 마지막 구간에는
+// 만화 집중선이 가장자리에서 번쩍이고 선이 급하게 덧그려진다. 종이는 저녁에서 밤으로 어두워진다.
+// 공통 ApplyTense는 쓰지 않는다.
 Shader "Hidden/MissedCall/ScreenFx" {
     SubShader {
         Tags { "RenderPipeline" = "UniversalPipeline" }
@@ -24,8 +25,12 @@ Shader "Hidden/MissedCall/ScreenFx" {
             static const half3 Paper = half3(0.914, 0.925, 0.918);
             // 시간이 다 됐을 때 종이에 곱하는 색. 어둡고 푸르다.
             static const half3 PaperDusk = half3(0.68, 0.74, 0.84);
-            // 화면을 잠식하는 물감(sRGB, 종이에 곱한다). 어두운 남색 먹물.
-            static const half3 WashInk = half3(0.24, 0.28, 0.36);
+            // 가장자리부터 차오르는 하프톤 점 색(sRGB). UI 배경색 #10161C.
+            static const half3 DotInk = half3(0.063, 0.086, 0.11);
+            // 집중선 색(sRGB). UI 본문색 #F3EEE3.
+            static const half3 LineInk = half3(0.953, 0.933, 0.89);
+            // 하프톤 칸 크기(1080p 기준 px)
+            static const float DotCell = 13;
             // 선이 다시 그려지는 횟수(1/s). 판이 끝나 갈수록 빨라진다.
             static const float BoilRate = 6;
             // 선이 흔들리는 폭(1080p 기준 px)
@@ -118,56 +123,52 @@ Shader "Hidden/MissedCall/ScreenFx" {
                 return Edge(p.uv + offset, p.texel * width * 1.3) * gap * low;
             }
 
-            // 비네트 대신: 가장자리부터 연필 빗금이 차오르고, 더 세지면 반대 방향 빗금이 겹친다.
-            half3 Hatch(half3 srgb, ScreenPixel p, float boil, half3 ink) {
-                // 비네트 최대치(fxVignetteMax, 0.45 언저리)에서 1이 되도록 맞춘다.
-                half amount = saturate(_McFxTense.x * 2.2);
-                if (amount <= 0) {
-                    return srgb;
-                }
-
-                float2 px = p.uv * _ScreenSize.xy / max(1, p.scale);
-                half wobble = Fbm(p.uv * 5 + boil * 0.37) * 0.25;
-                half reach = p.radius + wobble;
-                half regionA = smoothstep(0.95 - amount * 0.4, 1.05 - amount * 0.25, reach);
-                half regionB = smoothstep(1.05 - amount * 0.3, 1.15 - amount * 0.15, reach);
-
-                float jitter = Hash12(float2(boil, 3)) * 7;
-                half lineA = step(frac((px.x + px.y + jitter) / 7), 0.28);
-                half lineB = step(frac((px.x - px.y + jitter * 1.7) / 9), 0.22);
-                // 연필 농도가 군데군데 빠진다.
-                half pressure = lerp(0.5, 1, ValueNoise(px * 0.08 + boil));
-
-                half cover = max(lineA * regionA, lineB * regionB) * pressure;
-                return lerp(srgb, ink, cover * 0.85);
-            }
-
-            // 붉은 맥박 대신: 가장자리부터 어두운 물감이 화면을 잠식한다. 남은 시간에만 따라 넓어지고
-            // 물러나지 않는다. 벨 박자(맥박)는 번진 끝을 조금 밀어 넣고 고인 안료를 진하게 할 뿐이다.
-            // creep: 10초부터 조금씩, 마지막 5초에 크게 번져 0초에는 가운데만 남는다.
-            half3 RedWash(half3 srgb, ScreenPixel p, float t, half creep) {
+            // 비네트와 먹물 대신: 가장자리부터 45도 격자의 하프톤 점이 차오른다. 남은 시간에만 따라 넓어지고
+            // 물러나지 않는다. 박자(pulse)마다 점이 잠깐 부푼다. 0초에는 가운데만 남는다.
+            half3 HalftoneCreep(half3 srgb, ScreenPixel p, float t, half creep, half pulse) {
                 if (creep <= 0) {
                     return srgb;
                 }
 
-                half pulse = saturate(_McFxTense.z * 2.5);
-                // 물감 줄기: 큰 얼룩과 잔 줄기를 섞고, 천천히 기어 들어오게 흐른다.
-                float2 q = p.uv * float2(_ScreenSize.x * _ScreenSize.w, 1);
-                half tendril = (Fbm(q * 2.5 + t * 0.04) - 0.5) * 0.55 + (ValueNoise(q * 11 - t * 0.1) - 0.5) * 0.12;
-                half shape = p.radius + tendril;
-                half front = 1.2 - creep * 0.95 - pulse * 0.05;
+                float2 px = p.uv * _ScreenSize.xy / max(0.001, p.scale);
+                const float c = 0.70710678;
+                float2 grid = float2(px.x * c - px.y * c, px.x * c + px.y * c) / DotCell;
+                float2 f = frac(grid) - 0.5;
 
-                half wash = smoothstep(front, front + 0.18, shape);
-                // 안쪽일수록 물감이 겹쳐 진해진다.
-                half depth = smoothstep(front + 0.1, front + 0.6, shape);
-                // 번진 끝에 안료가 고여 진한 띠가 생긴다.
-                half rim = smoothstep(0.025, 0, abs(shape - front - 0.01));
+                // 가장자리 선이 살짝 일렁이며 들어온다.
+                half wobble = (Fbm(p.uv * 3 + t * 0.06) - 0.5) * 0.14;
+                half reach = p.radius + wobble;
+                half front = 1.15 - creep * 0.9 - pulse * 0.04;
+                half g = saturate((reach - front) / 0.45);
+                g = saturate(g + pulse * 0.18 * step(0.001, g));
+                half radius = sqrt(g) * 0.74;
+                half d = length(f) - radius;
+                half aa = max(fwidth(d), 1e-4);
+                half dotMask = saturate(0.5 - d / aa) * step(0.001, g);
+                return lerp(srgb, DotInk, dotMask * 0.94);
+            }
 
-                // 붉은색은 피처럼 보여서 어두운 남색 먹물로 바꿨다 (11/13).
-                half3 pigment = WashInk;
-                srgb *= lerp(1, pigment, wash * (0.75 + 0.25 * creep));
-                srgb *= lerp(1, pigment * 0.55, depth * 0.6 * creep);
-                return srgb * lerp(1, pigment * 0.6, rim * (0.35 + 0.3 * pulse));
+            // 마지막 구간: 화면 가장자리에서 가운데로 뻗는 만화 집중선. 박자마다 새로 그어지고, 끝에 가까울수록 깊이 들어온다.
+            half3 FocusLines(half3 srgb, ScreenPixel p, float beat, half low) {
+                if (low <= 0) {
+                    return srgb;
+                }
+
+                float aspect = _ScreenSize.x * _ScreenSize.w;
+                float2 v = (p.uv - 0.5) * float2(aspect, 1);
+                float angle = atan2(v.y, v.x) / 6.2831853 + 0.5;
+                const float count = 110;
+                float k = angle * count + Hash12(float2(beat, 5)) * count;
+                float id = floor(k);
+                half w = Hash12(float2(id, beat + 11));
+                // 일부 칸에만 선을 긋는다. 선마다 시작 깊이가 다르다.
+                half on = step(0.5, w);
+                half start = lerp(0.98, 0.5, low) + Hash12(float2(id, beat + 23)) * 0.2;
+                half along = saturate((p.radius - start) / 0.35);
+                // 안쪽으로 갈수록 가늘어지는 쐐기
+                half width = (0.12 + (w - 0.5) * 0.5) * along;
+                half lineMask = step(abs(frac(k) - 0.5), width * 0.5) * on * step(0.001, along);
+                return lerp(srgb, LineInk, lineMask * 0.75 * saturate(low * 1.5));
             }
 
             half4 Frag(Varyings input) : SV_Target {
@@ -187,8 +188,10 @@ Shader "Hidden/MissedCall/ScreenFx" {
                 srgb = lerp(srgb, ink, stroke * 0.9);
 
                 srgb = lerp(srgb, Luminance(srgb).xxx, _McFxTense.y);
-                srgb = RedWash(srgb, p, t, saturate(tight * 0.4 + low * 0.6));
-                srgb = Hatch(srgb, p, boil, ink);
+                half pulse = saturate(_McFxTense.z * 2.5);
+                srgb = HalftoneCreep(srgb, p, t, saturate(tight * 0.4 + low * 0.6), pulse);
+                // 집중선은 박자(진동 간격 1초)의 절반마다 새로 긋는다.
+                srgb = FocusLines(srgb, p, floor(t * 2), low);
                 return half4(SRGBToLinear(saturate(srgb)), 1);
             }
             ENDHLSL
