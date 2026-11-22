@@ -77,7 +77,7 @@ Feature ──▶ Core ──▶ Shared
 | `Ringtone` | 발신자별 벨소리, 공간 음향, 벽 먹먹함, 문 쪽 음원, 효과음 | `initAudio`, `scheduleRing`, `oneShot` |
 | `Modifiers` | 판 변수 고르기 (`ModifierStep`, Phone 다음). 소리는 Ringtone, 정전은 ScreenFx, 꺼진 폰은 Phone, 태그는 Ui가 `RoundContext.Modifier`를 읽어 처리한다 | 신규 |
 | `Result` | 칭호 판정, 기록 저장과 조회 | 신규 |
-| `Cat` | 희귀 요소 고양이 (`CatStep`, Modifiers 다음). 폰 더미 위에 앉고 잡으려 하면 달아난다 | 신규 |
+| `Cat` | 희귀 요소 고양이 (`CatStep`). **보류**: 코드만 남기고 씬의 판 준비 단계에서 뺐다 | 보류 |
 | `ScreenFx` | 풀스크린 셰이딩: 잉크 외곽선, 음영 단계, 남은 시간에 따라 조여 오는 연출. `GameFlow` 상태와 남은 시간을 읽어 전역 셰이더 값을 넣는다 | 신규 |
 | `Ui` | HUD, 타이틀, 받기 슬라이드, 결과, 기록 화면 (발신자 데이터는 `Core/Callers`). 도형과 하프톤은 `UiHalftone.shader` + `UiShape`, 원근 기울임과 패널이 돌아 들어오고 나가는 움직임은 `UiTilt`, 화면을 켜고 끌 때의 전환은 `UiScreen`(`GameUi`가 `SetActive` 대신 부른다). 캔버스의 추가 셰이더 채널 TexCoord1~3을 `GameUi`가 켠다 | HTML 오버레이, `CALLERS` |
 
@@ -97,8 +97,7 @@ Feature ──▶ Core ──▶ Shared
 
 | 에셋 | 출처 | 라이선스 | 위치 |
 |---|---|---|---|
-| 고양이 모델 `SM_LowpolyAnimal_Cat.fbx` | PolyOne Studio, [Free Pack - Lowpoly Animal](https://assetstore.unity.com/packages/3d/props/free-pack-lowpoly-animal-405472) (Unity Asset Store) | Standard Unity Asset Store EULA. 게임 빌드에 넣는 것은 자유롭고 출처 표기는 필요 없다. 원본 파일을 그대로 배포하면 안 되므로 공개 저장소에 올리지 않는다 | `Feature/Cat/Model/` (`.gitignore`) |
-| 야옹 녹음 3개 `cat_mewfood`, `cat_softmew`, `cat_mewpurr` | Kerzoven, [Cat Purr & Meow](https://opengameart.org/content/cat-purr-meow) (OpenGameArt) | CC0 | `Feature/Ringtone/Recordings/` (.wav를 .bytes로 넣음. `WavReader`가 실행 중에 읽는다) |
+| 고양이 모델 `SM_LowpolyAnimal_Cat.fbx` (고양이 보류 중, 게임에서 쓰지 않음) | PolyOne Studio, [Free Pack - Lowpoly Animal](https://assetstore.unity.com/packages/3d/props/free-pack-lowpoly-animal-405472) (Unity Asset Store) | Standard Unity Asset Store EULA. 게임 빌드에 넣는 것은 자유롭고 출처 표기는 필요 없다. 원본 파일을 그대로 배포하면 안 되므로 공개 저장소에 올리지 않는다 | `Feature/Cat/Model/` (`.gitignore`) |
 | 폰트 Pretendard | [orioncactus/pretendard](https://github.com/orioncactus/pretendard) | SIL OFL 1.1 | `Shared/Fonts/` |
 
 고양이 모델이 없는 새 체크아웃에서는 `Cat.prefab`의 메시가 비어 보인다. Package Manager > My Assets에서 Free Pack - Lowpoly Animal을 받아 `Model/SM_LowpolyAnimal_Cat.fbx`만 `Assets/_Project/Feature/Cat/Model/`에 가져오고(`.meta` 포함), 나머지 동물은 가져오지 않는다. 가져온 뒤 모델 import 설정에서 Material과 Animation을 끈다.

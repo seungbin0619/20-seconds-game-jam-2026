@@ -229,10 +229,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MissedCall.Feature::MissedCall.Feature.Ringtone.RingtonePlayer
   tuning: {fileID: 11400000, guid: db1031a9c9c4f1141a114311400a9d58, type: 2}
   listener: {fileID: 985647493}
-  meowRecordings:
-  - {fileID: 4900000, guid: 4d28be03eca14d54c93ccad619ae68e9, type: 3}
-  - {fileID: 4900000, guid: f543f88c321573d4ba3365ab21ac9e36, type: 3}
-  - {fileID: 4900000, guid: 82f110d2289949b42baedb48aa189a21, type: 3}
+  meowRecordings: []
 --- !u!4 &365298210
 Transform:
   m_ObjectHideFlags: 0
@@ -316,56 +313,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 563e0d000cc97e54fa65d6fbaad5c6cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MissedCall.Feature::MissedCall.Feature.Phone.PhoneDevice
---- !u!1 &666162380
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 666162382}
-  - component: {fileID: 666162381}
-  m_Layer: 0
-  m_Name: Cat
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &666162381
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 666162380}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c7205e9e3ff511e429cf861d180feb32, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MissedCall.Feature::MissedCall.Feature.Cat.CatStep
-  tuning: {fileID: 11400000, guid: db1031a9c9c4f1141a114311400a9d58, type: 2}
-  prefab: {fileID: 203884822346652433, guid: 392aca662d164ac429c00477f986b823, type: 3}
-  surfaceMask:
-    serializedVersion: 2
-    m_Bits: 4294967039
-  force: 0
---- !u!4 &666162382
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 666162380}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &702847830
 GameObject:
   m_ObjectHideFlags: 0
@@ -456,7 +403,6 @@ MonoBehaviour:
   - {fileID: 316570823}
   - {fileID: 1865553276}
   - {fileID: 1982259709}
-  - {fileID: 666162381}
   - {fileID: 1432201333}
 --- !u!4 &754834955
 Transform:
@@ -1146,4 +1092,3 @@ SceneRoots:
   - {fileID: 1702959553}
   - {fileID: 702847832}
   - {fileID: 1982259710}
-  - {fileID: 666162382}
