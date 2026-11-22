@@ -1,3 +1,4 @@
+using MissedCall.Core.Audio;
 using MissedCall.Core.Round;
 using TMPro;
 using UnityEngine;
@@ -18,11 +19,15 @@ namespace MissedCall.Feature.Ui {
         [SerializeField] private float returnTime = 0.2f;
         [Tooltip("커서가 손잡이 위에 있거나 끄는 동안 손잡이 크기 배율")]
         [SerializeField] private float hoverScale = 1.08f;
+        [Tooltip("손대지 않은 동안 손잡이가 오른쪽으로 살짝 밀렸다 돌아오며 끌라고 알려주는 폭(트랙 비율)과 간격(초)")]
+        [SerializeField] private float nudge = 0.06f;
+        [SerializeField] private float nudgeInterval = 1.1f;
 
         private GameFlow flow;
         private float progress;
         private bool dragging;
         private float grabOffset;
+        private float idleTime;
 
         public void Bind(GameFlow gameFlow) {
             flow = gameFlow;
@@ -32,6 +37,7 @@ namespace MissedCall.Feature.Ui {
         public void Begin() {
             progress = 0f;
             dragging = false;
+            idleTime = 0f;
             caller.text = flow.Context.Caller != null ? flow.Context.Caller.displayName : "Unknown Number";
             Place(false);
         }
@@ -57,10 +63,14 @@ namespace MissedCall.Feature.Ui {
             if (!dragging && overThumb && mouse.leftButton.wasPressedThisFrame) {
                 dragging = true;
                 grabOffset = pointerX - ThumbX;
+                SoundCues.Play(SoundCue.SlideGrab);
             }
 
             if (dragging && !mouse.leftButton.isPressed) {
                 dragging = false;
+                if (progress > 0.12f) {
+                    SoundCues.Play(SoundCue.SlideBack);
+                }
             }
 
             if (dragging) {
@@ -73,10 +83,23 @@ namespace MissedCall.Feature.Ui {
                     return;
                 }
             } else if (progress > 0f) {
-                progress = returnTime > 0f ? Mathf.MoveTowards(progress, 0f, Time.unscaledDeltaTime / returnTime) : 0f;
+                // 처음엔 빠르게, 끝에서 부드럽게 멈춘다. returnTime은 끝에서 처음까지 거의 다 돌아오는 시간이다.
+                float k = returnTime > 0f ? 4f / returnTime : 1000f;
+                progress = Mathf.Max(0f, progress * Mathf.Exp(-k * Time.unscaledDeltaTime) - 0.05f * Time.unscaledDeltaTime);
             }
 
+            idleTime = dragging || overThumb || progress > 0f ? 0f : idleTime + Time.unscaledDeltaTime;
             Place(dragging || overThumb);
+        }
+
+        // 손대지 않으면 주기마다 오른쪽으로 톡 밀렸다 돌아온다. 처음 0.4초는 가만히 둔다.
+        private float Nudge() {
+            if (idleTime < 0.4f || nudgeInterval <= 0f) {
+                return 0f;
+            }
+
+            float t = Mathf.Repeat(idleTime - 0.4f, nudgeInterval) / 0.35f;
+            return t < 1f ? nudge * Mathf.Sin(t * Mathf.PI) : 0f;
         }
 
         // 손잡이 왼쪽 끝이 움직일 수 있는 거리(px, 트랙 로컬)
@@ -91,7 +114,7 @@ namespace MissedCall.Feature.Ui {
         }
 
         private void Place(bool highlighted) {
-            thumb.anchoredPosition = new Vector2(inset + Room * progress, 0f);
+            thumb.anchoredPosition = new Vector2(inset + Room * (progress + Nudge()), 0f);
             float scale = highlighted ? hoverScale : 1f;
             thumb.localScale = new Vector3(scale, scale, 1f);
         }

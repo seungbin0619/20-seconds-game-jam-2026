@@ -245,8 +245,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: +
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: b16d96ea243f43a408d5efee474d4e34, type: 2}
-  m_sharedMaterial: {fileID: 368885006317320753, guid: b16d96ea243f43a408d5efee474d4e34, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 61121b10bd4a0f7469c5a0522198e739, type: 2}
+  m_sharedMaterial: {fileID: -970213379867355461, guid: 61121b10bd4a0f7469c5a0522198e739, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -588,8 +588,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Pointer lock sandbox
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: b16d96ea243f43a408d5efee474d4e34, type: 2}
-  m_sharedMaterial: {fileID: 368885006317320753, guid: b16d96ea243f43a408d5efee474d4e34, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 61121b10bd4a0f7469c5a0522198e739, type: 2}
+  m_sharedMaterial: {fileID: -970213379867355461, guid: 61121b10bd4a0f7469c5a0522198e739, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -731,9 +731,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MissedCall.Feature::MissedCall.Feature.Player.PointerLook
   tuning: {fileID: 11400000, guid: db1031a9c9c4f1141a114311400a9d58, type: 2}
+  flow: {fileID: 0}
   body: {fileID: 2122609507}
   head: {fileID: 419345306}
   pitchLimit: 80
+  lockTimeout: 1
 --- !u!1001 &2128509488
 PrefabInstance:
   m_ObjectHideFlags: 0

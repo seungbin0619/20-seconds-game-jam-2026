@@ -1,4 +1,5 @@
 using System;
+using MissedCall.Core.Audio;
 using MissedCall.Core.Round;
 using TMPro;
 using UnityEngine;
@@ -193,7 +194,12 @@ namespace MissedCall.Feature.Ui {
             Color normal = primary ? UiPalette.Ring : UiPalette.Secondary;
             Color hover = primary ? Color.Lerp(UiPalette.Ring, Color.white, hoverBrighten) : UiPalette.SecondaryHover;
             button.color = hovered ? hover : normal;
-            return hovered && mouse.leftButton.wasPressedThisFrame;
+            bool clicked = hovered && mouse.leftButton.wasPressedThisFrame;
+            if (clicked) {
+                SoundCues.Play(SoundCue.UiClick);
+            }
+
+            return clicked;
         }
 
         // Web에서는 커서를 다시 보이게 하면(Cursor.visible = true) 캔버스 커서가 기본 화살표로 돌아간다.

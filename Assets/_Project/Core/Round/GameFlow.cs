@@ -1,4 +1,5 @@
 using System;
+using MissedCall.Core.Audio;
 using UnityEngine;
 
 namespace MissedCall.Core.Round {
@@ -53,8 +54,14 @@ namespace MissedCall.Core.Round {
             ClearPause();
             RoundState previous = context.State;
             context.Reset(seed, tuning.duration);
-            foreach (RoundStep step in steps) {
-                step.Prepare(context);
+            // 물리 안정화 중 물건끼리 부딪히는 소리를 내지 않는다.
+            SoundCues.BeginMute();
+            try {
+                foreach (RoundStep step in steps) {
+                    step.Prepare(context);
+                }
+            } finally {
+                SoundCues.EndMute();
             }
 
             Debug.Log($"[GameFlow] Round start, seed {seed}");

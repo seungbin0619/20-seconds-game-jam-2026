@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics;
 using MissedCall.Core;
 using MissedCall.Core.Rooms;
@@ -44,6 +45,9 @@ namespace MissedCall.Feature.Clutter {
         /// <summary>자리가 맞지 않아 빠뜨린 베개, 쿠션 소품 수. 방 모듈 데이터 확인용.</summary>
         public int PropMisfits { get; private set; }
 
+        /// <summary>이번 판에 위쪽 물건을 맞추지 못한 숨는 자리. 확인용.</summary>
+        public List<HideSpot> MisfitSpots { get; } = new();
+
         /// <summary>마지막 안정화에 걸린 시간(ms). 성능 확인용.</summary>
         public double LastSettleMs { get; private set; }
 
@@ -70,6 +74,7 @@ namespace MissedCall.Feature.Clutter {
             pool.ReleaseAll();
             Misfits = 0;
             PropMisfits = 0;
+            MisfitSpots.Clear();
 
             RoomGraph graph = context.Graph;
             if (graph == null) {
@@ -127,8 +132,15 @@ namespace MissedCall.Feature.Clutter {
                 Vector3 offset = t.rotation * new Vector3(Range(rng, -jitter, jitter), 0f, Range(rng, -jitter, jitter));
                 Vector3 itemCenter = CenterOn(pileCenter + offset, y, kind);
                 if (!TryFitOrStraighten(kind.size, ref itemCenter, ref rotation, t.rotation)) {
-                    Misfits++;
-                    continue;
+                    // 자리보다 큰 물건이면 작은 물건으로 바꿔 넣는다. 그래도 안 들어가면 건너뛴다.
+                    kind = catalog.Get(catalog.fallbackPile);
+                    rotation = t.rotation * Quaternion.Euler(0f, Range(rng, -catalog.pileSpin, catalog.pileSpin), 0f);
+                    itemCenter = CenterOn(pileCenter + offset, y, kind);
+                    if (!TryFitOrStraighten(kind.size, ref itemCenter, ref rotation, t.rotation)) {
+                        Misfits++;
+                        MisfitSpots.Add(spot);
+                        continue;
+                    }
                 }
 
                 Spawn(kind, itemCenter, rotation, spot.Enclosed, rng);

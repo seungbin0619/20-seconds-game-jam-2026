@@ -16,7 +16,7 @@ namespace MissedCall.Feature.Ringtone {
         }
     }
 
-    /// <summary>프로토타입의 효과음 묶음. 임시 소리이며 폴리시 단계에서 확정한다.</summary>
+    /// <summary>프로토타입의 효과음 묶음. 지금은 Ringtone 샌드박스에서만 쓴다. 게임 효과음은 <see cref="SfxSynth"/>와 SoundCues.</summary>
     public static class Sfx {
         public static readonly OneShot[] Throw = { new OneShot(Waveform.Triangle, 170f, 0.1f, 0.28f) };
         public static readonly OneShot[] Grab = { new OneShot(Waveform.Triangle, 620f, 0.08f, 0.25f) };

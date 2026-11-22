@@ -18,17 +18,21 @@ namespace MissedCall.Feature.Ui.Editor {
         private const string PrefabPath = Root + "/GameUi.prefab";
         private const string DisplayShadowPath = Root + "/UiFont_Display_Shadow.mat";
         private const string BodyShadowPath = Root + "/UiFont_Body_Shadow.mat";
+        private const string BoldShadowPath = Root + "/UiFont_Bold_Shadow.mat";
 
-        // 디자인 폰트(Black Han Sans, IBM Plex Sans)를 넣기 전까지 둘 다 LiberationSans를 쓴다.
-        private const string DisplayFontPath = "Assets/_Project/Shared/Fonts/UiFont_LiberationSans SDF.asset";
-        private const string BodyFontPath = "Assets/_Project/Shared/Fonts/UiFont_LiberationSans SDF.asset";
+        // Pretendard. 제목은 ExtraBold, 본문은 Medium이며 본문의 굵은 글씨는 Bold 에셋을 쓴다 (폰트 굵기 표).
+        private const string DisplayFontPath = "Assets/_Project/Shared/Fonts/UiFont_Pretendard-ExtraBold SDF.asset";
+        private const string BodyFontPath = "Assets/_Project/Shared/Fonts/UiFont_Pretendard-Medium SDF.asset";
+        private const string BoldFontPath = "Assets/_Project/Shared/Fonts/UiFont_Pretendard-Bold SDF.asset";
 
         private const float HandsetWidth = 360f;
 
         private static TMP_FontAsset displayFont;
         private static TMP_FontAsset bodyFont;
+        private static TMP_FontAsset boldFont;
         private static Material displayShadow;
         private static Material bodyShadow;
+        private static Material boldShadow;
         private static Sprite circle;
         private static Sprite ring;
         private static Sprite panel;
@@ -49,13 +53,15 @@ namespace MissedCall.Feature.Ui.Editor {
 
             displayFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(DisplayFontPath);
             bodyFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(BodyFontPath);
-            if (displayFont == null || bodyFont == null) {
+            boldFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(BoldFontPath);
+            if (displayFont == null || bodyFont == null || boldFont == null) {
                 Debug.LogError("[GameUiBuilder] Font asset not found");
                 return;
             }
 
             displayShadow = ShadowMaterial(displayFont, DisplayShadowPath);
             bodyShadow = ShadowMaterial(bodyFont, BodyShadowPath);
+            boldShadow = ShadowMaterial(boldFont, BoldShadowPath);
 
             var root = new GameObject("GameUi", typeof(RectTransform));
             try {
@@ -224,6 +230,8 @@ namespace MissedCall.Feature.Ui.Editor {
             fill.type = Image.Type.Sliced;
             fill.color = UiPalette.Glass;
             fill.raycastTarget = false;
+            rect.gameObject.AddComponent<CanvasGroup>().blocksRaycasts = false;
+            rect.gameObject.AddComponent<PopIn>();
 
             Image frame = Img(rect, "Frame", panelFrame, UiPalette.Frame, Image.Type.Sliced);
             Stretch(frame.rectTransform);
@@ -297,6 +305,13 @@ namespace MissedCall.Feature.Ui.Editor {
             Material material = null, FontStyles style = FontStyles.Normal, TextAlignmentOptions align = TextAlignmentOptions.Center) {
             RectTransform rect = Node(name, parent);
             var tmp = rect.gameObject.AddComponent<TextMeshProUGUI>();
+            // 본문의 굵은 글씨는 가짜 굵게 대신 Bold 폰트를 직접 쓴다. 그림자 머티리얼도 그 폰트 것으로 바꾼다.
+            if (font == bodyFont && (style & FontStyles.Bold) != 0) {
+                font = boldFont;
+                style &= ~FontStyles.Bold;
+                material = material == bodyShadow ? boldShadow : null;
+            }
+
             tmp.font = font;
             if (material != null) {
                 tmp.fontSharedMaterial = material;

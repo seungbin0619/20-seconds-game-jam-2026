@@ -1,4 +1,5 @@
 using MissedCall.Core;
+using MissedCall.Core.Audio;
 using MissedCall.Core.Rooms;
 using MissedCall.Core.Round;
 using UnityEngine;
@@ -22,6 +23,9 @@ namespace MissedCall.Feature.Ringtone {
         private bool ringing;
         // 문턱처럼 어느 방에도 속하지 않는 곳에서는 마지막으로 있던 방을 쓴다. 벽 수가 튀지 않게 한다.
         private int lastPlayerRoom = -1;
+        private bool wasCovered;
+        private bool revealed;
+        private int lastBeat = -1;
 
         public bool Ringing => ringing;
 
@@ -58,6 +62,9 @@ namespace MissedCall.Feature.Ringtone {
             switch (next) {
                 case RoundState.Playing:
                     lastPlayerRoom = -1;
+                    revealed = false;
+                    wasCovered = false;
+                    lastBeat = -1;
                     EnsureVoice();
                     Stop();
                     if (!flow.Context.VibrationMode) {
@@ -69,15 +76,15 @@ namespace MissedCall.Feature.Ringtone {
 
                     break;
                 case RoundState.Answer:
-                    player.Play(Sfx.Grab);
+                    SoundCues.Play(SoundCue.PhonePickup);
                     break;
                 case RoundState.Won:
                     Stop();
-                    player.Play(Sfx.Win);
+                    SoundCues.Play(SoundCue.Win);
                     break;
                 case RoundState.Missed:
                     Stop();
-                    player.Play(Sfx.Miss);
+                    SoundCues.Play(SoundCue.Miss);
                     break;
                 default:
                     Stop();
@@ -89,6 +96,47 @@ namespace MissedCall.Feature.Ringtone {
             if (ringing) {
                 Apply();
             }
+
+            if (flow.State == RoundState.Playing && !flow.IsPaused) {
+                UpdateReveal();
+                UpdateHeartbeat();
+            }
+        }
+
+        // 덮고 있던 물건이 다 치워진 순간 한 번. 처음부터 드러나 있던 판에서는 울리지 않는다.
+        private void UpdateReveal() {
+            int covers = flow.Context.Covers;
+            if (covers > 0) {
+                wasCovered = true;
+            } else if (wasCovered && !revealed) {
+                revealed = true;
+                SoundCues.PlayAt(SoundCue.PhoneReveal, flow.Context.PhonePosition);
+            }
+        }
+
+        // 마지막 lowTimeWarning초에는 화면의 맥박(ScreenFx)과 같은 박자로 심장이 뛴다. 끝에 가까울수록 세다.
+        private void UpdateHeartbeat() {
+            RoundContext context = flow.Context;
+            if (context.TimeLeft > tuning.lowTimeWarning) {
+                return;
+            }
+
+            float interval = Mathf.Max(0.05f, tuning.jiggleInterval);
+            int beat = Mathf.FloorToInt((context.Elapsed - tuning.jiggleDelay) / interval);
+            if (beat == lastBeat) {
+                return;
+            }
+
+            bool first = lastBeat < 0;
+            lastBeat = beat;
+            // 경계를 넘자마자 박자 중간에서 울리지 않는다.
+            float phase = Mathf.Repeat((context.Elapsed - tuning.jiggleDelay) / interval, 1f);
+            if (first && phase > 0.15f) {
+                return;
+            }
+
+            float low = 1f - context.TimeLeft / Mathf.Max(0.01f, tuning.lowTimeWarning);
+            SoundCues.Play(SoundCue.Heartbeat, low);
         }
 
         private void Apply() {

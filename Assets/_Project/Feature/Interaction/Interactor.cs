@@ -1,6 +1,7 @@
 using System;
 using MissedCall.Core;
 using MissedCall.Core.Aim;
+using MissedCall.Core.Audio;
 using MissedCall.Core.Round;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -304,6 +305,7 @@ namespace MissedCall.Feature.Interaction {
             tugged = item;
             tugEndTime = Time.time + time;
             Tugs++;
+            SoundCues.Play(SoundCue.Tug);
             // 끌려 나오는 동안과 그 직후에는 다시 잡지 않는다.
             nextGrabTime = Time.unscaledTime + time + tuning.throwCooldown;
         }
@@ -335,6 +337,7 @@ namespace MissedCall.Feature.Interaction {
             liftPoint = item.Center + Vector3.up * tuning.enclosedLift;
             item.BeginHold();
             held = item;
+            SoundCues.Play(SoundCue.Grab);
             arrived = false;
             pullStartTime = Time.time;
         }
@@ -358,6 +361,7 @@ namespace MissedCall.Feature.Interaction {
             LastFlick = flick;
             LastThrowVelocity = velocity;
             flow.Context.Throws++;
+            SoundCues.Play(SoundCue.Throw, velocity.magnitude / Mathf.Max(0.01f, tuning.maxThrowSpeed));
             nextGrabTime = Time.unscaledTime + tuning.throwCooldown;
         }
 

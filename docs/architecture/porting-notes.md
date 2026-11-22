@@ -26,7 +26,7 @@ Feature/Ringtone/
 - 벽 먹먹함과 문 쪽 음원 위치는 C#에서 계산해 cutoff와 음원 위치로 넘긴다. jslib은 값을 적용만 한다.
   - `SoundPath.ThroughDoor`가 가상 음원 위치와 소수 벽 수를 만든다. `RoomGraph`는 첫 문 위치, 문 다음 지점(다음 문 또는 음원), 첫 문부터 음원까지 경로 길이, 벽 수를 넘겨야 한다.
   - `RingtonePlayer`는 음원 위치를 듣는 사람 기준 상대 위치로 보간한다. 걸을 때 음원이 끌려오지 않고, 경로가 바뀔 때만 부드럽게 옮겨간다.
-- 게임 연결은 `PhoneRinger`가 한다. `GameFlow.StateChanged`를 받아 `Playing`에서 울리고(진동 모드 판은 울리지 않음), `Answer`에서는 먹먹함 없이 계속 울리며 `Grab` 효과음을 내고, `Won`/`Missed`에서 멈추고 결과 효과음을 낸다. 매 `LateUpdate`(RingtonePlayer보다 먼저) `RoundContext`의 플레이어·폰 위치와 방, 덮임 수로 `RoomGraph.Route` → `SoundPath`를 계산해 넘긴다. 플레이어가 어느 방에도 없으면(문턱) 마지막 방을 쓴다.
+- 게임 연결은 `PhoneRinger`가 한다. `GameFlow.StateChanged`를 받아 `Playing`에서 울리고(진동 모드 판은 울리지 않음), `Answer`에서는 먹먹함 없이 계속 울리며 폰 집기 효과음을 내고, `Won`/`Missed`에서 멈추고 결과 효과음을 낸다. 폰이 드러나는 소리와 마지막 5초 심장 박동도 여기서 낸다. 매 `LateUpdate`(RingtonePlayer보다 먼저) `RoundContext`의 플레이어·폰 위치와 방, 덮임 수로 `RoomGraph.Route` → `SoundPath`를 계산해 넘긴다. 플레이어가 어느 방에도 없으면(문턱) 마지막 방을 쓴다.
   - 확인 (11/12, 에디터, 시드 100~129, 방마다 가운데에서): 폰 방은 벽 0, 다른 방은 1~2. 받기 화면에서 cutoff 7000(맑음), 판이 끝나면 멈춤. R 40회 연타에도 음원 1개 유지.
   - **이어폰으로 실제 집에서 방향감 확인은 남았다** (Chrome에서 직접).
 
@@ -58,7 +58,7 @@ Feature/Ringtone/
 - 진동 연출(`jiggle`)은 벨 한 주기의 절반마다 일어나므로, 파일이면 주기 길이를 패턴에 적어 둔다.
 - 파일 디코딩이 끝나기 전에는 재생할 수 없으므로 판 시작 전에 로딩을 끝낸다.
 | 시간에 따른 볼륨 증가 | 약하게 느껴짐. 0.75→1.2를 0.5→1.2로 넓힘 |
-| 효과음 | 들림. 소리는 임시 |
+| 효과음 | 들림. 11/22부터 `SfxSynth`가 C#에서 합성한 PCM을 `MC_Audio_CreateSample`로 올려 `MC_Audio_PlaySample`로 재생한다 (충돌음은 HRTF 패너로 위치에서). 에디터는 같은 샘플을 AudioSource 묶음으로 재생한다 |
 
 에디터 백엔드(`UnityAudioBackend`)는 HRTF가 아니므로 방향감 판단에 쓰지 않는다.
 - `AudioContext`는 사용자 제스처가 있어야 시작된다. Unity 버튼 콜백은 브라우저 이벤트 호출 스택 밖에서 실행되므로, jslib에서 `pointerdown`, `touchend`, `keydown` 리스너를 등록해 그 안에서 `resume()`을 호출한다.
@@ -217,10 +217,11 @@ three.js는 오른손, Unity는 왼손 좌표계다. 방이 대칭이 아니므�
   - 발신자: `Core/Callers/CallerCatalog_Default`에서 `CallerStep`(판 준비 첫 단계)이 `Caller` 스트림으로 고르고 `RoundContext.Caller`에 넣는다. Ui(문구)와 Ringtone(벨소리, 4단계)이 함께 읽으므로 Core에 둔다.
   - 에디터 확인 팁: Editor가 포커스를 잃으면 Input System이 마우스를 꺼서, 스크립트로 넣은 입력 이벤트가 버려진다. 테스트하는 동안만 `InputSystem.settings`의 복사본에서 `editorInputBehaviorInPlayMode`와 `backgroundBehavior`를 바꾸고 `InputSystem.EnableDevice(Mouse.current)`를 부른다. 플레이 모드가 아닐 때 `StartRound`를 부르면 편집 중인 씬에 집이 생기므로 `EditorApplication.isPlaying`을 먼저 확인한다.
 - 게임 텍스트는 영어만 쓴다. 프로토타입의 한국어 문구를 옮기지 말고 [`game-design.md`](../design/game-design.md)의 영어 문구를 쓴다.
-- Web에는 OS 폰트가 없다. Black Han Sans와 IBM Plex Sans를 프로젝트에 넣고 ASCII 범위의 **정적 TMP 아틀라스**로 만든다. 한글 글리프가 없어 아틀라스가 작다.
+- Web에는 OS 폰트가 없다. Pretendard(OFL)를 프로젝트에 넣고 ASCII 범위의 **정적 TMP 아틀라스**로 만든다. 한글 글리프가 없어 아틀라스가 작다.
+  - 11/22: `Shared/Fonts/UiFont_Pretendard-{ExtraBold,Medium,Bold} SDF` (512², SDFAA, 56pt, 여백 6, Mobile Distance Field). 제목은 ExtraBold, 본문은 Medium, 굵은 글씨는 Bold 에셋을 직접 쓴다(`GameUiBuilder`). Medium 에셋의 폰트 굵기 표 700에도 Bold를 넣어 `<b>`가 진짜 굵은 글씨로 나온다. 원본 otf는 에디터에서만 참조한다 (정적 아틀라스라 빌드에 들어가지 않는다).
   - 검증 (11/11): TMP 기본 LiberationSans로 ASCII 95자 정적 아틀라스(512², SDFAA, 48pt, Mobile Distance Field 셰이더)를 만들어 Web 빌드에서 모든 글자가 표시됨을 확인했다. 에셋은 `Shared/Fonts/UiFont_LiberationSans SDF` (빌드에서 266KB).
   - 만드는 법: `TMP_FontAsset.CreateFontAsset(ttf, 48, 5, SDFAA, 512, 512)` → `TryAddCharacters`(32~126) → 아틀라스와 머티리얼을 하위 에셋으로 저장 → `atlasPopulationMode = Static`.
-  - 크기 주의: `Assets/TextMesh Pro/Resources`는 쓰지 않아도 빌드에 들어간다. 기본 폰트 `LiberationSans SDF`(1MB), `LiberationSans.ttf`(344KB), `EmojiOne.png`(341KB)가 포함된다. 최종 폰트를 정하면 TMP Settings의 기본 폰트를 바꾸고 이 세 개를 빼서 약 1.7MB를 줄인다.
+  - 크기 주의: `Assets/TextMesh Pro/Resources`는 쓰지 않아도 빌드에 들어간다. 11/22에 TMP Settings의 기본 폰트를 Pretendard Medium으로 바꾸고, 대체 폰트와 기본 스프라이트를 비운 뒤 `LiberationSans SDF`(+Fallback, 머티리얼), `LiberationSans.ttf`, `EmojiOne`을 지웠다 (약 1.7MB).
 - `backdrop-filter` 블러는 옮기지 않는다. 반투명 패널로 대체한다.
 - 벨 박자에 맞춘 화면 깜빡임은 프레임 시간이 아니라 실제 시간 기준으로 계산한다.
 

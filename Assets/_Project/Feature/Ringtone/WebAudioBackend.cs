@@ -15,6 +15,8 @@ namespace MissedCall.Feature.Ringtone {
         [DllImport("__Internal")] private static extern void MC_Audio_OneShot(int wave, float frequency, float length, float level, float delay);
         [DllImport("__Internal")] private static extern void MC_Audio_Shutdown();
         [DllImport("__Internal")] private static extern void MC_Audio_SetPaused(int paused);
+        [DllImport("__Internal")] private static extern int MC_Audio_CreateSample(float[] data, int count, int sampleRate);
+        [DllImport("__Internal")] private static extern void MC_Audio_PlaySample(int id, float gain, float rate, int spatial, float x, float y, float z);
 
         public bool IsReady => MC_Audio_State() == 2;
 
@@ -49,6 +51,11 @@ namespace MissedCall.Feature.Ringtone {
 
         public void PlayOneShot(in OneShot shot) =>
             MC_Audio_OneShot((int)shot.Wave, shot.Frequency, shot.Length, shot.Level, shot.Delay);
+
+        public int CreateSample(float[] data, int sampleRate) => MC_Audio_CreateSample(data, data.Length, sampleRate);
+
+        public void PlaySample(int sample, float gain, float rate, bool spatial, Vector3 position) =>
+            MC_Audio_PlaySample(sample, gain, rate, spatial ? 1 : 0, position.x, position.y, position.z);
 
         public void SetPaused(bool paused) => MC_Audio_SetPaused(paused ? 1 : 0);
 

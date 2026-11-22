@@ -1,5 +1,6 @@
 using System;
 using MissedCall.Core;
+using MissedCall.Core.Audio;
 using UnityEngine;
 
 namespace MissedCall.Feature.Player {
@@ -47,6 +48,7 @@ namespace MissedCall.Feature.Player {
                 int stepAfter = Mathf.FloorToInt(phase / Mathf.PI);
                 if (stepAfter != stepBefore) {
                     Stepped?.Invoke(stepAfter & 1);
+                    SoundCues.Play(SoundCue.Step, ratio);
                 }
 
                 if (phase >= Mathf.PI * 2f) {

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using MissedCall.Core;
+using MissedCall.Core.Audio;
 using UnityEngine;
 
 namespace MissedCall.Feature.Ringtone {
@@ -11,7 +12,13 @@ namespace MissedCall.Feature.Ringtone {
         [SerializeField] private GameTuning tuning;
         [SerializeField] private Transform listener;
 
+        private const float ImpactSpacing = 0.03f;
+
         private readonly List<VoiceState> voices = new();
+        private readonly Dictionary<SoundCue, int[]> sfx = new();
+        // 효과음 변형과 음높이 흔들림용. 판 무작위와 상관없는 연출이다.
+        private readonly System.Random sfxRandom = new(1234);
+        private float nextImpactTime;
         private IRingtoneBackend backend;
 
         public bool IsReady => backend != null && backend.IsReady;
@@ -41,9 +48,72 @@ namespace MissedCall.Feature.Ringtone {
             backend = new UnityAudioBackend(transform);
 #endif
             backend.Init(tuning.rolloff);
+            LoadSfx();
         }
 
+        private void OnEnable() => SoundCues.Played += OnSound;
+        private void OnDisable() => SoundCues.Played -= OnSound;
+
         private void OnDestroy() => backend?.Dispose();
+
+        private void LoadSfx() {
+            foreach (SoundCue cue in (SoundCue[])System.Enum.GetValues(typeof(SoundCue))) {
+                float[][] variants = SfxSynth.Render(cue);
+                var ids = new int[variants.Length];
+                for (int i = 0; i < variants.Length; i++) {
+                    ids[i] = backend.CreateSample(variants[i], SfxSynth.SampleRate);
+                }
+
+                sfx[cue] = ids;
+            }
+        }
+
+        // 효과음마다 (가장 작을 때, 가장 클 때) 볼륨과 음높이 흔들림. intensity로 볼륨 사이를 고른다.
+        private static (float min, float max, float jitter) SfxLevel(SoundCue cue) {
+            switch (cue) {
+                case SoundCue.Grab: return (0.32f, 0.32f, 0.08f);
+                case SoundCue.Throw: return (0.18f, 0.55f, 0.06f);
+                case SoundCue.Tug: return (0.38f, 0.38f, 0.06f);
+                case SoundCue.ImpactSoft: return (0.12f, 0.6f, 0.1f);
+                case SoundCue.ImpactHard: return (0.1f, 0.55f, 0.1f);
+                case SoundCue.ImpactHollow: return (0.12f, 0.6f, 0.08f);
+                case SoundCue.Step: return (0.1f, 0.1f, 0.08f);
+                case SoundCue.Heartbeat: return (0.6f, 1f, 0f);
+                case SoundCue.UiClick: return (0.35f, 0.35f, 0.04f);
+                case SoundCue.SlideGrab: return (0.45f, 0.45f, 0.03f);
+                case SoundCue.SlideBack: return (0.35f, 0.35f, 0.03f);
+                default: return (0.7f, 0.7f, 0f);
+            }
+        }
+
+        private static bool IsImpact(SoundCue cue) =>
+            cue == SoundCue.ImpactSoft || cue == SoundCue.ImpactHard || cue == SoundCue.ImpactHollow;
+
+        private void OnSound(SoundEvent sound) {
+            if (!sfx.TryGetValue(sound.Cue, out int[] ids) || ids.Length == 0) {
+                return;
+            }
+
+            // 더미가 무너질 때 충돌음이 한꺼번에 쏟아지지 않게 간격을 둔다.
+            if (IsImpact(sound.Cue)) {
+                float now = Time.unscaledTime;
+                if (now < nextImpactTime) {
+                    return;
+                }
+
+                nextImpactTime = now + ImpactSpacing;
+            }
+
+            (float min, float max, float jitter) = SfxLevel(sound.Cue);
+            float gain = Mathf.Lerp(min, max, sound.Intensity);
+            float rate = 1f + ((float)sfxRandom.NextDouble() * 2f - 1f) * jitter;
+            if (sound.Cue == SoundCue.Throw) {
+                rate *= Mathf.Lerp(0.85f, 1.2f, sound.Intensity);
+            }
+
+            int id = ids[sfxRandom.Next(ids.Length)];
+            backend.PlaySample(id, gain, rate, sound.Spatial, sound.Position);
+        }
 
         private Vector3 ListenerPosition => listener != null ? listener.position : Vector3.zero;
 

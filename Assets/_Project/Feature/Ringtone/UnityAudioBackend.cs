@@ -15,6 +15,10 @@ namespace MissedCall.Feature.Ringtone {
         private readonly Transform host;
         private readonly List<Voice> voices = new();
         private readonly Dictionary<OneShot, AudioClip> oneShotClips = new();
+        private const int SamplePoolSize = 12;
+        private readonly List<AudioClip> samples = new();
+        private readonly List<AudioSource> samplePool = new();
+        private int nextSample;
         private AudioSource oneShotSource;
         private float rolloff;
 
@@ -83,6 +87,44 @@ namespace MissedCall.Feature.Ringtone {
             oneShotSource.PlayOneShot(clip, MasterGain);
         }
 
+        public int CreateSample(float[] data, int sampleRate) {
+            AudioClip clip = AudioClip.Create("Sfx " + samples.Count, Mathf.Max(1, data.Length), 1, sampleRate, false);
+            clip.SetData(data, 0);
+            samples.Add(clip);
+            return samples.Count - 1;
+        }
+
+        // 음높이를 소리마다 다르게 하려고 PlayOneShot 대신 돌려 쓰는 음원 묶음을 쓴다.
+        public void PlaySample(int sample, float gain, float rate, bool spatial, Vector3 position) {
+            if (sample < 0 || sample >= samples.Count) {
+                return;
+            }
+
+            if (samplePool.Count == 0) {
+                for (int i = 0; i < SamplePoolSize; i++) {
+                    var go = new GameObject("Sfx Source");
+                    go.transform.SetParent(host, false);
+                    var source = go.AddComponent<AudioSource>();
+                    source.playOnAwake = false;
+                    source.dopplerLevel = 0f;
+                    source.rolloffMode = AudioRolloffMode.Logarithmic;
+                    source.minDistance = 1f;
+                    source.maxDistance = MaxDistance;
+                    samplePool.Add(source);
+                }
+            }
+
+            AudioSource next = samplePool[nextSample];
+            nextSample = (nextSample + 1) % samplePool.Count;
+            next.Stop();
+            next.clip = samples[sample];
+            next.volume = Mathf.Clamp01(gain * MasterGain);
+            next.pitch = rate;
+            next.spatialBlend = spatial ? 1f : 0f;
+            next.transform.position = position;
+            next.Play();
+        }
+
         // 에디터 근사치. 벨 클립은 멈춘 자리에서 이어서 울린다 (Web은 처음부터 다시).
         public void SetPaused(bool paused) {
             AudioListener.pause = paused;
@@ -97,6 +139,10 @@ namespace MissedCall.Feature.Ringtone {
             }
 
             foreach (AudioClip clip in oneShotClips.Values) {
+                Object.Destroy(clip);
+            }
+
+            foreach (AudioClip clip in samples) {
                 Object.Destroy(clip);
             }
         }

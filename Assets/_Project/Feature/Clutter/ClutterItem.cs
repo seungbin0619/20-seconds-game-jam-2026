@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using MissedCall.Core;
 using MissedCall.Core.Aim;
+using MissedCall.Core.Audio;
 using MissedCall.Core.Rooms;
 using UnityEngine;
 
@@ -303,6 +304,26 @@ namespace MissedCall.Feature.Clutter {
 
         private void OnCollisionEnter(Collision collision) {
             airborne = false;
+            PlayImpact(collision);
+        }
+
+        // 충돌음. 진동(jiggle)으로 살짝 튀는 정도는 소리 내지 않는다: 폰 근처에서만 나서 소리 단서가 되어 버린다.
+        private const float ImpactMinSpeed = 0.9f;
+        private const float ImpactFullSpeed = 5f;
+        private const float ImpactCooldown = 0.12f;
+        private float nextImpactTime;
+
+        private void PlayImpact(Collision collision) {
+            float speed = collision.relativeVelocity.magnitude;
+            if (speed < ImpactMinSpeed || Time.time < nextImpactTime) {
+                return;
+            }
+
+            nextImpactTime = Time.time + ImpactCooldown;
+            SoundCue cue = Item == ItemKind.Book ? SoundCue.ImpactHard
+                : Item == ItemKind.Carton ? SoundCue.ImpactHollow : SoundCue.ImpactSoft;
+            Vector3 point = collision.contactCount > 0 ? collision.GetContact(0).point : transform.position;
+            SoundCues.PlayAt(cue, point, Mathf.InverseLerp(ImpactMinSpeed, ImpactFullSpeed, speed));
         }
 
         // 무언가에 닿은 채로 놓았으면 Enter가 오지 않으므로 Stay에서도 끝낸다.

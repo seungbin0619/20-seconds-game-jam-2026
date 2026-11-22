@@ -230,6 +230,51 @@ var MissedCallAudioLib = {
     osc.stop(t + length + 0.02);
   },
 
+  // 효과음 샘플. C#(SfxSynth)에서 합성한 PCM을 AudioBuffer로 올려 둔다. 데이터가 없어도 번호는 돌려준다.
+  MC_Audio_CreateSample: function (dataPtr, count, sampleRate) {
+    MCA.samples = MCA.samples || [];
+    var id = MCA.samples.length;
+    var ctx = MCA.ctx;
+    if (!ctx || count <= 0) {
+      MCA.samples.push(null);
+      return id;
+    }
+    var buffer = ctx.createBuffer(1, count, sampleRate);
+    buffer.copyToChannel
+      ? buffer.copyToChannel(HEAPF32.subarray(dataPtr >> 2, (dataPtr >> 2) + count), 0)
+      : buffer.getChannelData(0).set(HEAPF32.subarray(dataPtr >> 2, (dataPtr >> 2) + count));
+    MCA.samples.push(buffer);
+    return id;
+  },
+
+  // spatial이면 HRTF로 위치에서 들리게 한다. 벨보다 짧게 감쇠해 멀리서 난 소리가 단서를 흐리지 않게 한다.
+  MC_Audio_PlaySample: function (id, gain, rate, spatial, x, y, z) {
+    var ctx = MCA.ctx;
+    if (!ctx || ctx.state !== 'running' || MCA.paused || !MCA.samples) return;
+    var buffer = MCA.samples[id];
+    if (!buffer) return;
+    var src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.playbackRate.value = rate;
+    var amp = ctx.createGain();
+    amp.gain.value = gain;
+    src.connect(amp);
+    if (spatial) {
+      var panner = ctx.createPanner();
+      panner.panningModel = 'HRTF';
+      panner.distanceModel = 'inverse';
+      panner.refDistance = 1;
+      panner.rolloffFactor = 1.6;
+      panner.maxDistance = 20;
+      MCA.setPosition(panner, x, y, -z);
+      amp.connect(panner);
+      panner.connect(MCA.master);
+    } else {
+      amp.connect(MCA.master);
+    }
+    src.start();
+  },
+
   // 일시정지. AudioContext.suspend()는 쓰지 않는다: 위의 resume 리스너가 메뉴 클릭에서 다시 켜 버린다.
   // 대신 박자 예약을 멈추고 마스터 볼륨을 내린다. 이미 예약된 음(lookahead 안)은 볼륨으로 가린다.
   MC_Audio_SetPaused: function (paused) {

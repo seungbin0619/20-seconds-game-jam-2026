@@ -35,6 +35,8 @@ namespace MissedCall.Feature.Clutter {
         public float pileSpin = 17f;
         [Tooltip("숨는 자리에 맨 아래 물건이 들어가지 않을 때(욕조가 담요보다 좁을 때 등) 대신 까는 종류")]
         public ItemKind fallbackBase = ItemKind.SmallShirt;
+        [Tooltip("위로 쌓는 물건이 자리에 들어가지 않을 때(장난감 상자가 작은 셔츠보다 좁을 때 등) 대신 넣는 종류")]
+        public ItemKind fallbackPile = ItemKind.Book;
 
         [Header("Scatter")]
         [Tooltip("방 바닥에 흩뿌리는 종류")]
