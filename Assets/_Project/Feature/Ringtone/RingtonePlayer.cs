@@ -11,6 +11,8 @@ namespace MissedCall.Feature.Ringtone {
     public sealed class RingtonePlayer : MonoBehaviour {
         [SerializeField] private GameTuning tuning;
         [SerializeField] private Transform listener;
+        [Tooltip("야옹 녹음 (.wav를 .bytes로 넣은 것, CC0). 있으면 합성 야옹 대신 쓴다")]
+        [SerializeField] private TextAsset[] meowRecordings = new TextAsset[0];
 
         private readonly List<VoiceState> voices = new();
         private readonly Dictionary<SoundCue, int[]> sfx = new();
@@ -64,6 +66,27 @@ namespace MissedCall.Feature.Ringtone {
                 }
 
                 sfx[cue] = ids;
+            }
+
+            LoadRecordings(SoundCue.Meow, meowRecordings);
+        }
+
+        // 녹음 효과음이 있으면 그 종류의 합성 소리를 대신한다.
+        private void LoadRecordings(SoundCue cue, TextAsset[] recordings) {
+            var ids = new List<int>();
+            foreach (TextAsset recording in recordings) {
+                if (recording == null) {
+                    continue;
+                }
+
+                float[] data = WavReader.Read(recording.bytes, out int rate);
+                if (data != null && data.Length > 0) {
+                    ids.Add(backend.CreateSample(data, rate));
+                }
+            }
+
+            if (ids.Count > 0) {
+                sfx[cue] = ids.ToArray();
             }
         }
 
