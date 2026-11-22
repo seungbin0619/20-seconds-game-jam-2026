@@ -15,6 +15,19 @@ MonoBehaviour:
   duration: 20
   roomCount: {x: 2, y: 4}
   modifierChance: 0.5
+  vibrateWeight: 1
+  lowBatteryWeight: 1
+  decoyWeight: 1
+  noiseWeight: 1
+  blackoutWeight: 1
+  flipPhoneChance: 0.1
+  catChance: 0.3
+  batteryRingTime: {x: 8, y: 13}
+  decoyMinDistance: 2.5
+  decoyCovers: 2
+  noiseGain: 0.55
+  blackoutDarkness: 0.78
+  blackoutGlowRadius: 0.16
   walkSpeed: 3.2
   lookSpeed: 0.0023
   reach: 3.1
@@ -91,6 +104,17 @@ MonoBehaviour:
   emitterFollowSpeed: 6
   ringGainStart: 0.5
   ringGainEnd: 1.2
+  sfxVolume: 0.55
+  sfxHandVolume: 0.5
+  sfxImpactVolume: 0.5
+  sfxStepVolume: 0.4
+  sfxHeartbeatVolume: 0.7
+  sfxEventVolume: 0.7
+  sfxUiVolume: 0.5
+  impactMinSpeed: 1.5
+  impactFullSpeed: 6
+  impactCooldown: 0.15
+  impactSpacing: 0.06
   hintDuration: 4
   lowTimeWarning: 5
   resultInputDelay: 0.6
