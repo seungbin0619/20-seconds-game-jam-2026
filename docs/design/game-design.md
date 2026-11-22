@@ -363,7 +363,7 @@ won / missed ──다시 하기 또는 R──▶ playing (새 시드)
 | 조작 안내 | WASD: Walk / Mouse: Look around / Hold click: Grab, swing and release to throw / Right click: Kick. Run into piles to knock them over |
 | 시작 버튼 | Ring It |
 | 타이틀 하단 | Headphones make the direction much easier to hear. |
-| 플레이 힌트 | Follow the sound and clear the piles |
+| 플레이 힌트 | Follow the sound and clear the piles. Right click to kick |
 | 변수 태그 | Vibrate only / Low battery / Something else is ringing / Noisy house / Blackout / Robot vacuum on the loose |
 | 조준 라벨 | Grab / Grab phone / Open / Close |
 | 받기 화면 | Incoming call / (발신자 이름) / Pick up! / Slide to answer |

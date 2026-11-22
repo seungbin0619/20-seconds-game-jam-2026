@@ -137,7 +137,7 @@ namespace MissedCall.Feature.Ui.Editor {
             Place(plate.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(210f, 82f));
             TMP_Text clock = Text(rect, "Clock", "20.0", 72f, UiPalette.Ring, displayFont, displayShadow, FontStyles.Italic);
             Place(clock.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -14f), new Vector2(400f, 80f));
-            TMP_Text hint = Text(rect, "Hint", "Follow the sound and clear the piles", 20f, UiPalette.Paper, bodyFont, bodyShadow);
+            TMP_Text hint = Text(rect, "Hint", "Follow the sound and clear the piles. Right click to kick", 20f, UiPalette.Paper, bodyFont, bodyShadow);
             Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -96f), new Vector2(900f, 34f));
             // 판 변수 태그: 힌트 아래 기울인 강조색 띠
             Image tag = Shape(rect, "ModifierTag", UiPalette.Ring, 0f, ButtonSkew, 0.7f, 0f, -0.25f);

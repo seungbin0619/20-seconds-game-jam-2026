@@ -49,12 +49,21 @@ namespace MissedCall.Feature.Player {
         [DllImport("__Internal")]
         private static extern int PointerLock_IsLocked();
 
+        [DllImport("__Internal")]
+        private static extern void PointerLock_BlockContextMenu();
+
         private static bool BrowserLocked() => PointerLock_IsLocked() != 0;
+
+        private static void BlockContextMenu() => PointerLock_BlockContextMenu();
 #else
         private static bool BrowserLocked() => true;
+
+        private static void BlockContextMenu() {
+        }
 #endif
 
         private void OnEnable() {
+            BlockContextMenu();
             yaw = body.eulerAngles.y;
             pitch = NormalizeAngle(head.localEulerAngles.x);
             if (flow != null) {

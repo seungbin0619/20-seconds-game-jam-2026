@@ -3,4 +3,13 @@ mergeInto(LibraryManager.library, {
   PointerLock_IsLocked: function () {
     return document.pointerLockElement ? 1 : 0;
   },
+
+  // 우클릭은 발차기다. 캔버스에서 브라우저 메뉴가 뜨지 않게 한다.
+  PointerLock_BlockContextMenu: function () {
+    var canvas = Module.canvas || document.querySelector("canvas");
+    if (canvas && !canvas.dataset.noContextMenu) {
+      canvas.dataset.noContextMenu = "1";
+      canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    }
+  },
 });
