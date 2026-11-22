@@ -31,6 +31,8 @@ namespace MissedCall.Feature.Ui.Editor {
         // 패널 모서리 깎기, 버튼 기울임(px)
         private const float CardChamfer = 22f;
         private const float ButtonSkew = 16f;
+        // 타이틀 제목의 그림자 글자 (검정 68%)
+        private static readonly Color TitleShadow = new(0f, 0f, 0f, 0.678f);
 
         private static TMP_FontAsset displayFont;
         private static TMP_FontAsset bodyFont;
@@ -167,35 +169,25 @@ namespace MissedCall.Feature.Ui.Editor {
             RectTransform rect = Stretch(Node("Title", parent));
             Transition(rect, new Vector2(0f, -20f), 1f);
             Backdrop(rect, UiPalette.Night, 1f, 0.55f);
-            // 카드 뒤에 부재중 빨강 하프톤이 터지듯 퍼진다.
-            Image burst = Shape(rect, "Burst", UiPalette.Miss, 0f, 0f, 0.62f, UiShape.Burst, UiShape.TintedDots + 0.5f, 0f);
-            Place(burst.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(40f, 10f), new Vector2(980f, 980f), new Vector2(0.5f, 0.5f));
+            // 빨간 하프톤 배경과 부재중 배지는 넣었다가 뺐다 (11/22, 에디터에서 직접 다듬은 것을 옮김).
             RectTransform handset = Handset(rect);
-            Image stripe = handset.Find("Stripe").GetComponent<Image>();
-            stripe.color = UiPalette.Miss;
-            // 부재중 알림 배지
-            Image badge = Shape(handset, "Badge", UiPalette.Miss, 8f, 0f, 0.6f, 0f, -0.25f);
-            badge.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
-            Place(badge.rectTransform, new Vector2(1f, 1f), new Vector2(10f, 14f), new Vector2(40f, 40f), new Vector2(0.5f, 0.5f));
-            badge.rectTransform.localEulerAngles = new Vector3(0f, 0f, -8f);
-            TMP_Text count = Text(badge.rectTransform, "Count", "1", 22f, UiPalette.Ring, displayFont, null, FontStyles.Italic);
-            Stretch(count.rectTransform);
             clock = Tag(handset, "LockTime", "00:00");
-            // 제목: 빨간 글자를 깔고 흰 글자를 살짝 어긋나게 얹어 만화 인쇄처럼 보이게 한다.
-            TMP_Text title = Heading(handset, "Missed Call", 56f, UiPalette.Miss);
-            TMP_Text titleTop = Text(title.rectTransform, "Top", "Missed Call", 56f, UiPalette.Ring, displayFont, null,
+            // 제목: 어두운 그림자 글자를 깔고 초록 글자를 살짝 어긋나게 얹는다.
+            TMP_Text title = Heading(handset, "Missed Call", 56f, TitleShadow);
+            TMP_Text titleTop = Text(title.rectTransform, "Top", "Missed Call", 56f, UiPalette.Answer, displayFont, null,
                 FontStyles.Italic | FontStyles.UpperCase);
             Stretch(titleTop.rectTransform);
             titleTop.rectTransform.offsetMin = new Vector2(-4f, 4f);
             titleTop.rectTransform.offsetMax = new Vector2(-4f, 4f);
-            Text(handset, "Lead", "Your phone is ringing somewhere. Find it and pick up before it stops.", 18f, UiPalette.Text2, bodyFont);
+            Text(handset, "Lead", "Your phone is ringing somewhere. Find it and pick up before it stops.", 16f, UiPalette.Text2, bodyFont);
             // 키 이름은 흰색 100%, 설명은 3단계 투명도. 줄마다 투명도를 다시 정한다.
-            string key = "<alpha=#FF><b>{0}</b>  <alpha=#73>{1}";
+            // 글자 그대로의 백슬래시+t. TMP가 탭으로 바꿔 키 이름 뒤 설명을 탭 위치에 맞춘다.
+            string key = "<alpha=#FF><b>{0}</b>\\t  <alpha=#73>{1}";
             TMP_Text keys = Text(handset, "Keys",
                 string.Format(key, "WASD", "Walk") + "\n"
                 + string.Format(key, "Mouse", "Look around") + "\n"
                 + string.Format(key, "Hold click", "Grab, swing and release to throw"),
-                15f, UiPalette.Ring, bodyFont, null, FontStyles.Normal, TextAlignmentOptions.TopLeft);
+                13f, UiPalette.Ring, bodyFont, null, FontStyles.Normal, TextAlignmentOptions.TopLeft);
             keys.lineSpacing = 8f;
             button = Pill(handset, "Button", "Ring It");
             Text(handset, "Note", "Headphones make the direction much easier to hear.", 14f, UiPalette.Text4, bodyFont);
