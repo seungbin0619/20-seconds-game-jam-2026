@@ -1,8 +1,10 @@
 # Missed Call
 
+> Submitted to [20 Second Game Jam 2026](https://itch.io/jam/20-second-game-jam-2026) on itch.io.
+
 **Your phone is ringing somewhere. Find it and pick up before it stops.**
 
-A first-person game made for the 20 Second Game Jam 2026. You have 20 seconds to track down a ringing phone by sound alone, dig it out from under the clutter, and answer it.
+A first-person game where you have 20 seconds to track down a ringing phone by sound alone, dig it out from under the clutter, and answer it.
 
 ![Gameplay](docs/media/play.gif)
 
